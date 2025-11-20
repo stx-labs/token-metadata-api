@@ -12,8 +12,24 @@
                 "preset": "conventionalcommits"
             }
         ],
+        [
+            "@semantic-release/npm",
+            {
+                "pkgRoot": "./client",
+                "npmPublish": true
+            }
+        ],
         "@semantic-release/github",
         "@semantic-release/changelog",
-        "@semantic-release/git"
+        [
+            "@semantic-release/git",
+            {
+                "assets": [
+                    "CHANGELOG.md",
+                    "client/package.json",
+                    "client/package-lock.json"
+                ]
+            }
+        ]
     ]
 }

@@ -126,6 +126,8 @@ export interface operations {
                  * @example SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9
                  */
                 address?: string;
+                /** @description If enabled, only tokens with valid SIP-016 metadata will be returned */
+                valid_metadata_only?: boolean;
                 /** @description Result offset */
                 offset?: number;
                 /** @description Results per page */
@@ -165,23 +167,30 @@ export interface operations {
                             total_supply?: string;
                             /**
                              * Format: uri
+                             * @description URI for this token's metadata JSON
                              * @example ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
                              */
                             token_uri?: string;
-                            /** @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets */
+                            /**
+                             * @description Description
+                             * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                             */
                             description?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image_uri?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image_thumbnail_uri?: string;
                             /**
                              * Format: uri
+                             * @description Original image URL
                              * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image_canonical_uri?: string;
@@ -189,6 +198,11 @@ export interface operations {
                             tx_id: string;
                             /** @example ST399W7Z9WS0GMSNQGJGME5JAENKN56D65VGMGKGA */
                             sender_address: string;
+                            /**
+                             * @description Clarity asset identifier
+                             * @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6.token-ststx-earn-v1::stSTXearn
+                             */
+                            asset_identifier: string;
                             /** @example SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2 */
                             contract_principal: string;
                         }[];
@@ -222,41 +236,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @example Wrapped USD */
+                        /**
+                         * @description Token name
+                         * @example Wrapped USD
+                         */
                         name?: string;
-                        /** @example xUSD */
+                        /**
+                         * @description Token symbol
+                         * @example xUSD
+                         */
                         symbol?: string;
-                        /** @example 8 */
+                        /**
+                         * @description Number of decimal places clients should use to format this token's amounts
+                         * @example 8
+                         */
                         decimals?: number;
-                        /** @example 9999980000000 */
+                        /**
+                         * @description Current circulating supply as reported by its contract. Clients should format this amount with the correct number of `decimals` before displaying to users
+                         * @example 9999980000000
+                         */
                         total_supply?: string;
                         /**
                          * Format: uri
+                         * @description URI for this token's metadata JSON
                          * @example ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
                          */
                         token_uri?: string;
-                        /** @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets */
+                        /**
+                         * @description Description
+                         * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                         */
                         description?: string;
                         /**
                          * Format: uri
+                         * @description Cached image URL
                          * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                          */
                         image_uri?: string;
                         /**
                          * Format: uri
+                         * @description Cached image URL
                          * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                          */
                         image_thumbnail_uri?: string;
                         /**
                          * Format: uri
+                         * @description Original image URL
                          * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                          */
                         image_canonical_uri?: string;
-                        /** @example 0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd */
+                        /**
+                         * @description ID for the transaction that deployed this token
+                         * @example 0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd
+                         */
                         tx_id: string;
-                        /** @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6 */
+                        /**
+                         * @description Deployer address
+                         * @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6
+                         */
                         sender_address: string;
-                        /** @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6.token-ststx-earn-v1::stSTXearn */
+                        /**
+                         * @description Clarity asset identifier
+                         * @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6.token-ststx-earn-v1::stSTXearn
+                         */
                         asset_identifier: string;
                         /** Metadata */
                         metadata?: {
@@ -264,20 +306,26 @@ export interface operations {
                             sip: number;
                             /** @example Satoshi's Team #12200 */
                             name?: string;
-                            /** @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets */
+                            /**
+                             * @description Description
+                             * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                             */
                             description?: string;
                             /**
                              * Format: uri
+                             * @description Original image URL
                              * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_thumbnail_image?: string;
@@ -389,6 +437,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * Format: uri
+                         * @description URI for this token's metadata JSON
                          * @example ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
                          */
                         token_uri?: string;
@@ -398,20 +447,26 @@ export interface operations {
                             sip: number;
                             /** @example Satoshi's Team #12200 */
                             name?: string;
-                            /** @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets */
+                            /**
+                             * @description Description
+                             * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                             */
                             description?: string;
                             /**
                              * Format: uri
+                             * @description Original image URL
                              * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_thumbnail_image?: string;
@@ -523,6 +578,7 @@ export interface operations {
                     "application/json": {
                         /**
                          * Format: uri
+                         * @description URI for this token's metadata JSON
                          * @example ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
                          */
                         token_uri?: string;
@@ -536,20 +592,26 @@ export interface operations {
                             sip: number;
                             /** @example Satoshi's Team #12200 */
                             name?: string;
-                            /** @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets */
+                            /**
+                             * @description Description
+                             * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                             */
                             description?: string;
                             /**
                              * Format: uri
+                             * @description Original image URL
                              * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_image?: string;
                             /**
                              * Format: uri
+                             * @description Cached image URL
                              * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
                              */
                             cached_thumbnail_image?: string;
