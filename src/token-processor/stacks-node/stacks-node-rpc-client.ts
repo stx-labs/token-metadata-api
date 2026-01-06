@@ -4,7 +4,7 @@ import {
   ClarityValueUInt,
   TransactionVersion,
   decodeClarityValue,
-} from 'stacks-encoding-native-js';
+} from '@hirosystems/stacks-encoding-native-js';
 import { request, errors } from 'undici';
 import { ENV } from '../../env';
 import { RetryableJobError } from '../queue/errors';
@@ -41,7 +41,7 @@ export class StacksNodeRpcClient {
 
   static create(args: { contractPrincipal: string }): StacksNodeRpcClient {
     const randomPrivKey = makeRandomPrivKey();
-    const senderAddress = getAddressFromPrivateKey(randomPrivKey.data, TransactionVersion.Mainnet);
+    const senderAddress = getAddressFromPrivateKey(randomPrivKey, 'mainnet');
     const client = new StacksNodeRpcClient({
       contractPrincipal: args.contractPrincipal,
       senderAddress: senderAddress,
