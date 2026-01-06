@@ -35,7 +35,6 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       },
     ],
   },
-  exposeRoute: true,
 };
 
 // ==========================
