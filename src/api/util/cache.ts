@@ -37,9 +37,9 @@ export async function handleChainTipCache(request: FastifyRequest, reply: Fastif
   return handleCache(ETagType.chainTip, request, reply);
 }
 
-export function setReplyNonCacheable(reply: FastifyReply) {
-  reply.removeHeader('Cache-Control');
-  reply.removeHeader('Etag');
+export async function setReplyNonCacheable(reply: FastifyReply): Promise<void> {
+  await reply.removeHeader('Cache-Control');
+  await reply.removeHeader('Etag');
 }
 
 /**

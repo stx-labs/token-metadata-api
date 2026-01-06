@@ -25,7 +25,7 @@ export const TokenErrorResponseSchema = {
 };
 
 export async function generateTokenErrorResponse(error: any, reply: FastifyReply) {
-  setReplyNonCacheable(reply);
+  await setReplyNonCacheable(reply);
   if (error instanceof TokenNotFoundError) {
     await reply.code(404).send(Value.Create(TokenNotFoundResponse));
   } else if (error instanceof ContractNotFoundError) {
