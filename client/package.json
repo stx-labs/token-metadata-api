@@ -9,6 +9,11 @@
     "swagger-client",
     "@hirosystems/token-metadata-api-client"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hirosystems/token-metadata-api.git",
+    "directory": "client"
+  },
   "license": "GPL-3.0",
   "engines": {
     "node": ">=22"
