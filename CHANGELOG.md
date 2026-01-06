@@ -1,3 +1,9 @@
+## [2.0.0-next.2](https://github.com/hirosystems/token-metadata-api/compare/v2.0.0-next.1...v2.0.0-next.2) (2026-01-06)
+
+### Bug Fixes
+
+* add repo urls to package json ([#333](https://github.com/hirosystems/token-metadata-api/issues/333)) ([a37776e](https://github.com/hirosystems/token-metadata-api/commit/a37776ec1b5ffdefa41106d6f8e71009262a8993))
+
 ## [2.0.0-next.1](https://github.com/hirosystems/token-metadata-api/compare/v1.3.2...v2.0.0-next.1) (2026-01-06)
 
 ### ⚠ BREAKING CHANGES
