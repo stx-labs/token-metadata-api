@@ -13,7 +13,7 @@ import {
   getSmartContractSip,
 } from '../../token-processor/util/sip-validation';
 import { ClarityAbi } from '@stacks/transactions';
-import { ClarityTypeID, decodeClarityValue } from 'stacks-encoding-native-js';
+import { ClarityTypeID, decodeClarityValue } from '@hirosystems/stacks-encoding-native-js';
 import BigNumber from 'bignumber.js';
 
 export type CachedEvent<T> = {
