@@ -1,3 +1,17 @@
+## [1.3.2](https://github.com/hirosystems/token-metadata-api/compare/v1.3.1...v1.3.2) (2025-10-02)
+
+
+### Bug Fixes
+
+* force close db connection after a configurable timeout ([#321](https://github.com/hirosystems/token-metadata-api/issues/321)) ([2b02e81](https://github.com/hirosystems/token-metadata-api/commit/2b02e81095e10584be0649b749af4d15dd43337e))
+
+## [1.3.1](https://github.com/hirosystems/token-metadata-api/compare/v1.3.0...v1.3.1) (2025-10-02)
+
+
+### Bug Fixes
+
+* replace hard coded IPFS gateways with configurable gateway ([#319](https://github.com/hirosystems/token-metadata-api/issues/319)) ([d04012f](https://github.com/hirosystems/token-metadata-api/commit/d04012f9187a8885bab5046bb626010f681f57fb))
+
 ## [1.3.0](https://github.com/hirosystems/token-metadata-api/compare/v1.2.0...v1.3.0) (2025-06-16)
 
 

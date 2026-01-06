@@ -102,7 +102,7 @@ async function initApp() {
     name: 'DB',
     forceKillable: false,
     handler: async () => {
-      await db.close();
+      await db.close({ timeout: ENV.PG_CLOSE_TIMEOUT });
     },
   });
 }
