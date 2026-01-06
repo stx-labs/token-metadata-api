@@ -1,3 +1,9 @@
+## [1.3.1-next.1](https://github.com/hirosystems/token-metadata-api/compare/v1.3.0...v1.3.1-next.1) (2026-01-06)
+
+### Bug Fixes
+
+* replace hard coded IPFS gateways with configurable gateway ([#319](https://github.com/hirosystems/token-metadata-api/issues/319)) ([d04012f](https://github.com/hirosystems/token-metadata-api/commit/d04012f9187a8885bab5046bb626010f681f57fb))
+
 ## [1.3.0](https://github.com/hirosystems/token-metadata-api/compare/v1.2.0...v1.3.0) (2025-06-16)
 
 
