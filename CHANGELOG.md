@@ -1,3 +1,13 @@
+## [2.0.0-next.1](https://github.com/hirosystems/token-metadata-api/compare/v1.3.2...v2.0.0-next.1) (2026-01-06)
+
+### ⚠ BREAKING CHANGES
+
+* consolidate migration files (#332)
+
+### Miscellaneous Chores
+
+* consolidate migration files ([#332](https://github.com/hirosystems/token-metadata-api/issues/332)) ([5a6a3c8](https://github.com/hirosystems/token-metadata-api/commit/5a6a3c8cbf6f41a0cddf15905166d5c4cd6a94a4))
+
 ## [1.3.2](https://github.com/hirosystems/token-metadata-api/compare/v1.3.1...v1.3.2) (2025-10-02)
 
 
