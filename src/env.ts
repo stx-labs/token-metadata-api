@@ -21,40 +21,15 @@ const schema = Type.Object({
   API_PORT: Type.Number({ default: 3000, minimum: 0, maximum: 65535 }),
   /** Port in which to serve the Admin RPC interface */
   ADMIN_RPC_PORT: Type.Number({ default: 3001, minimum: 0, maximum: 65535 }),
-  /** Port in which to receive chainhook events */
-  EVENT_PORT: Type.Number({ default: 3099, minimum: 0, maximum: 65535 }),
-  /** Event server body limit (bytes) */
-  EVENT_SERVER_BODY_LIMIT: Type.Integer({ default: 20971520 }),
-  /** Hostname that will be reported to the chainhook node so it can call us back with events */
-  EXTERNAL_HOSTNAME: Type.String({ default: '127.0.0.1' }),
+
   /** Port in which to serve prometheus metrics */
   PROMETHEUS_PORT: Type.Number({ default: 9153 }),
+
   /** Port in which to serve the profiler */
   PROFILER_PORT: Type.Number({ default: 9119 }),
 
   SNP_REDIS_URL: Type.String(),
   SNP_REDIS_STREAM_KEY_PREFIX: Type.String(),
-
-  /** Hostname of the chainhook node we'll use to register predicates */
-  CHAINHOOK_NODE_RPC_HOST: Type.String({ default: '127.0.0.1' }),
-  /** Control port of the chainhook node */
-  CHAINHOOK_NODE_RPC_PORT: Type.Number({ default: 20456, minimum: 0, maximum: 65535 }),
-  /**
-   * Authorization token that the chainhook node must send with every event to make sure it's
-   * coming from the valid instance
-   */
-  CHAINHOOK_NODE_AUTH_TOKEN: Type.String(),
-  /**
-   * Register chainhook predicates automatically when the API is first launched. Set this to `false`
-   * if you're configuring your predicates manually.
-   */
-  CHAINHOOK_AUTO_PREDICATE_REGISTRATION: Type.Boolean({ default: true }),
-  /**
-   * File path to a directory where the `predicate.json` file will be persisted by the API when
-   * registering its chainhook predicate so it can validate and resume later. Only used if auto
-   * predicate registration is enabled.
-   */
-  CHAINHOOK_PREDICATE_PATH: Type.String({ default: '.' }),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),
