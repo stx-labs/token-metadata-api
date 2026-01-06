@@ -6,7 +6,7 @@ import {
   ClarityValueList,
   ClarityValueUInt,
   decodeClarityValue,
-} from 'stacks-encoding-native-js';
+} from '@hirosystems/stacks-encoding-native-js';
 import { DbSipNumber } from '../../pg/types';
 import { StacksTransactionSmartContractEvent } from '@hirosystems/chainhook-client';
 
