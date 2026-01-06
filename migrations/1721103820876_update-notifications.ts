@@ -43,4 +43,15 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('update_notifications', ['token_id', 'block_height', 'tx_index', 'event_index'], {
     unique: true,
   });
+  pgm.createIndex(
+    'update_notifications',
+    [
+      'update_mode',
+      'token_id',
+      { name: 'block_height', sort: 'DESC' },
+      { name: 'tx_index', sort: 'DESC' },
+      { name: 'event_index', sort: 'DESC' },
+    ],
+    { where: "update_mode = 'dynamic'" }
+  );
 }
