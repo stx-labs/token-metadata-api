@@ -62,6 +62,7 @@ const schema = Type.Object({
   PG_CONNECTION_POOL_MAX: Type.Number({ default: 10 }),
   PG_IDLE_TIMEOUT: Type.Number({ default: 30 }),
   PG_MAX_LIFETIME: Type.Number({ default: 60 }),
+  PG_CLOSE_TIMEOUT: Type.Number({ default: 10 }),
 
   STACKS_NODE_RPC_HOST: Type.String(),
   STACKS_NODE_RPC_PORT: Type.Number({ minimum: 0, maximum: 65535 }),
