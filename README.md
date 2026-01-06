@@ -72,7 +72,7 @@ database, the Token Metadata Service local database, and the Stacks node RPC int
 [`env.ts`](https://github.com/hirosystems/token-metadata-api/blob/develop/src/env.ts) for all
 available configuration options.
 
-Build the app (NodeJS v18+ is required)
+Build the app (NodeJS v22+ is required)
 ```
 npm install
 npm run build
