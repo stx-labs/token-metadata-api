@@ -74,4 +74,7 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('tokens', 'COALESCE(updated_at, created_at)');
   pgm.createIndex('tokens', ['name']);
   pgm.createIndex('tokens', ['symbol']);
+  pgm.createIndex('tokens', ['type', 'LOWER(name)'], { where: "type = 'ft'" });
+  pgm.createIndex('tokens', ['type', 'LOWER(symbol)'], { where: "type = 'ft'" });
+  pgm.createIndex('tokens', ['type']);
 }
