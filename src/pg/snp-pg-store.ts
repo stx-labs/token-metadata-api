@@ -5,18 +5,18 @@ import {
   logger,
   stopwatch,
 } from '@hirosystems/api-toolkit';
-import { ENV } from '../../env';
+import { ENV } from '../env';
 import {
   NftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
-} from '../../token-processor/util/sip-validation';
-import { DbSmartContractInsert, DbTokenType, DbSmartContract, DbSipNumber } from '../types';
-import { dbSipNumberToDbTokenType } from '../../token-processor/util/helpers';
+} from '../token-processor/util/sip-validation';
+import { DbSmartContractInsert, DbTokenType, DbSmartContract, DbSipNumber } from './types';
+import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
-import { SnpProcessedBlock, SnpProcessedEvent } from '../../snp/snp-block-processor';
+import { SnpProcessedBlock, SnpProcessedEvent } from '../snp/snp-block-processor';
 
-export class ChainhookPgStore extends BasePgStoreModule {
+export class SnpPgStore extends BasePgStoreModule {
   async writeBlock(block: SnpProcessedBlock): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       logger.info(`ChainhookPgStore apply block ${block.block_height} #${block.index_block_hash}`);

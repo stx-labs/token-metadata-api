@@ -42,7 +42,7 @@ import {
   runMigrations,
 } from '@hirosystems/api-toolkit';
 import * as path from 'path';
-import { ChainhookPgStore } from './chainhook/chainhook-pg-store';
+import { SnpPgStore } from './snp-pg-store';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -50,7 +50,7 @@ export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
  * Connects and queries the Token Metadata Service's local postgres DB.
  */
 export class PgStore extends BasePgStore {
-  readonly chainhook: ChainhookPgStore;
+  readonly snp: SnpPgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -77,7 +77,7 @@ export class PgStore extends BasePgStore {
 
   constructor(sql: PgSqlClient) {
     super(sql);
-    this.chainhook = new ChainhookPgStore(this);
+    this.snp = new SnpPgStore(this);
   }
 
   async getSmartContract(

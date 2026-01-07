@@ -24,7 +24,7 @@ import {
   decodeTransaction,
   TxPayloadTypeID,
 } from '@hirosystems/stacks-encoding-native-js';
-import { ChainhookPgStore } from '../pg/chainhook/chainhook-pg-store';
+import { SnpPgStore } from '../pg/snp-pg-store';
 
 export type SnpProcessedEvent<T> = {
   event: T;
@@ -50,7 +50,7 @@ export type SnpProcessedBlock = {
 };
 
 export class SnpBlockProcessor {
-  private readonly db: ChainhookPgStore;
+  private readonly db: SnpPgStore;
 
   private block: SnpProcessedBlock = {
     block_height: 0,
@@ -63,7 +63,7 @@ export class SnpBlockProcessor {
     ftSupplyDelta: new Map<string, BigNumber>(),
   };
 
-  constructor(args: { db: ChainhookPgStore }) {
+  constructor(args: { db: SnpPgStore }) {
     this.db = args.db;
   }
 
