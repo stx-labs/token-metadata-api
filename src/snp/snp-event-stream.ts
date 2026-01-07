@@ -1,24 +1,31 @@
-import { parseBoolean, SERVER_VERSION } from '@hirosystems/api-toolkit';
+import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 import { logger as defaultLogger } from '@hirosystems/api-toolkit';
 import { StacksEventStream, StacksEventStreamType } from '@hirosystems/salt-n-pepper-client';
 import { EventEmitter } from 'node:events';
-import { SnpBlock, SnpBlockSchema } from './schemas';
+import { SnpBlockSchema } from './schemas';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
+import { SnpBlockProcessor } from './snp-block-processor';
 
 const SnpBlockCType = TypeCompiler.Compile(SnpBlockSchema);
 
 export class SnpEventStreamHandler {
-  // db: PgWriteStore;
-  logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
-  snpClientStream: StacksEventStream;
-  redisUrl: string;
-  redisStreamPrefix: string | undefined;
+  private readonly blockProcessor: SnpBlockProcessor;
+  private readonly logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
+  private readonly snpClientStream: StacksEventStream;
+  private readonly redisUrl: string;
+  private readonly redisStreamPrefix: string | undefined;
 
   readonly events = new EventEmitter<{
     processedMessage: [{ msgId: string }];
   }>();
 
-  constructor(opts: { redisUrl: string; redisStreamPrefix: string; lastMessageId: string }) {
+  constructor(opts: {
+    redisUrl: string;
+    redisStreamPrefix: string;
+    lastMessageId: string;
+    blockProcessor: SnpBlockProcessor;
+  }) {
+    this.blockProcessor = opts.blockProcessor;
     this.redisUrl = opts.redisUrl;
     this.redisStreamPrefix = opts.redisStreamPrefix;
 
@@ -42,7 +49,7 @@ export class SnpEventStreamHandler {
     });
   }
 
-  async handleMsg(messageId: string, timestamp: string, path: string, body: any) {
+  async handleMsg(messageId: string, _timestamp: string, path: string, body: any) {
     this.logger.debug(`Received SNP stream event ${path}, msgId: ${messageId}`);
     if (path !== '/new_block') {
       this.logger.warn(`Unsupported SNP stream event ${path}, skipping...`);
@@ -51,23 +58,13 @@ export class SnpEventStreamHandler {
     if (!SnpBlockCType.Check(body)) {
       throw new Error(`Failed to parse SNP block body: ${body}`);
     }
-    const block = body;
-
-    // const response = await this.eventServer.fastifyInstance.inject({
-    //   method: 'POST',
-    //   url: path,
-    //   payload: body,
-    // });
-
-    // if (response.statusCode < 200 || response.statusCode > 299) {
-    //   const errorMessage = `Failed to process SNP message ${messageId} at path ${path}, status: ${response.statusCode}, body: ${response.body}`;
-    //   this.logger.error(errorMessage);
-    //   throw new Error(errorMessage);
-    // }
-
-    // await this.db.updateLastIngestedSnpRedisMsgId(this.db.sql, messageId);
-    await Promise.resolve();
-    this.events.emit('processedMessage', { msgId: messageId });
+    try {
+      await this.blockProcessor.process(body);
+      this.events.emit('processedMessage', { msgId: messageId });
+    } catch (error) {
+      this.logger.error(error, `Failed to process block`);
+      throw new Error(`Failed to process block: ${error}`);
+    }
   }
 
   async stop(): Promise<void> {

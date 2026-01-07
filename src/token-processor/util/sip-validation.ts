@@ -8,7 +8,7 @@ import {
   decodeClarityValue,
 } from '@hirosystems/stacks-encoding-native-js';
 import { DbSipNumber } from '../../pg/types';
-import { StacksTransactionSmartContractEvent } from '@hirosystems/chainhook-client';
+import { SnpSmartContractPrintEvent } from '../../snp/schemas';
 
 const FtTraitFunctions: ClarityAbiFunction[] = [
   {
@@ -307,9 +307,9 @@ export type TokenMetadataUpdateNotification = {
  */
 export function getContractLogMetadataUpdateNotification(
   sender: string,
-  event: StacksTransactionSmartContractEvent
+  event: SnpSmartContractPrintEvent
 ): TokenMetadataUpdateNotification | undefined {
-  const log = event.data;
+  const log = event.contract_event;
   try {
     // Validate that we have the correct SIP-019 payload structure.
     const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);
@@ -381,9 +381,9 @@ export type SftMintEvent = NftMintEvent & {
 };
 
 export function getContractLogSftMintEvent(
-  event: StacksTransactionSmartContractEvent
+  event: SnpSmartContractPrintEvent
 ): SftMintEvent | undefined {
-  const log = event.data;
+  const log = event.contract_event;
   try {
     // Validate that we have the correct SIP-013 `sft_mint` payload structure.
     const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);

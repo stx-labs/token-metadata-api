@@ -80,6 +80,7 @@ export const SnpEventSchema = Type.Union([
 export type SnpEvent = Static<typeof SnpEventSchema>;
 
 export const SnpTransactionSchema = Type.Object({
+  raw_tx: Type.String(),
   status: Type.Union([
     Type.Literal('success'),
     Type.Literal('abort_by_response'),

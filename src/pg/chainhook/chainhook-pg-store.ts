@@ -5,7 +5,6 @@ import {
   logger,
   stopwatch,
 } from '@hirosystems/api-toolkit';
-import { StacksEvent, StacksPayload } from '@hirosystems/chainhook-client';
 import { ENV } from '../../env';
 import {
   NftMintEvent,
@@ -13,45 +12,23 @@ import {
   TokenMetadataUpdateNotification,
 } from '../../token-processor/util/sip-validation';
 import { DbSmartContractInsert, DbTokenType, DbSmartContract, DbSipNumber } from '../types';
-import { BlockCache, CachedEvent } from './block-cache';
 import { dbSipNumberToDbTokenType } from '../../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
+import { SnpProcessedBlock, SnpProcessedEvent } from '../../snp/snp-block-processor';
 
 export class ChainhookPgStore extends BasePgStoreModule {
-  async processPayload(payload: StacksPayload): Promise<void> {
+  async writeBlock(block: SnpProcessedBlock): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      for (const block of payload.rollback) {
-        logger.info(`ChainhookPgStore rollback block ${block.block_identifier.index}`);
-        const time = stopwatch();
-        await this.updateStacksBlock(sql, block, 'rollback');
-        logger.info(
-          `ChainhookPgStore rollback block ${
-            block.block_identifier.index
-          } finished in ${time.getElapsedSeconds()}s`
-        );
-      }
-      if (payload.rollback.length) {
-        const earliestRolledBack = Math.min(...payload.rollback.map(r => r.block_identifier.index));
-        await this.updateChainTipBlockHeight(earliestRolledBack - 1);
-      }
-      for (const block of payload.apply) {
-        if (block.block_identifier.index <= (await this.getLastIngestedBlockHeight())) {
-          logger.info(
-            `ChainhookPgStore skipping previously ingested block ${block.block_identifier.index}`
-          );
-          continue;
-        }
-        logger.info(`ChainhookPgStore apply block ${block.block_identifier.index}`);
-        const time = stopwatch();
-        await this.updateStacksBlock(sql, block, 'apply');
-        await this.enqueueDynamicTokensDueForRefresh();
-        await this.updateChainTipBlockHeight(block.block_identifier.index);
-        logger.info(
-          `ChainhookPgStore apply block ${
-            block.block_identifier.index
-          } finished in ${time.getElapsedSeconds()}s`
-        );
-      }
+      logger.info(`ChainhookPgStore apply block ${block.block_height} #${block.index_block_hash}`);
+      const time = stopwatch();
+      await this.applyTransactions(sql, block);
+      await this.enqueueDynamicTokensDueForRefresh();
+      await this.updateChainTipBlockHeight(block.block_height);
+      logger.info(
+        `ChainhookPgStore apply block ${block.block_height} #${
+          block.index_block_hash
+        } finished in ${time.getElapsedSeconds()}s`
+      );
     });
   }
 
@@ -100,14 +77,14 @@ export class ChainhookPgStore extends BasePgStoreModule {
 
   async applyContractDeployment(
     sql: PgSqlClient,
-    contract: CachedEvent<SmartContractDeployment>,
-    cache: BlockCache
+    contract: SnpProcessedEvent<SmartContractDeployment>,
+    block: SnpProcessedBlock
   ) {
     await this.enqueueContract(sql, {
       principal: contract.event.principal,
       sip: contract.event.sip,
-      block_height: cache.block.index,
-      index_block_hash: cache.block.hash,
+      block_height: block.block_height,
+      index_block_hash: block.index_block_hash,
       tx_id: contract.tx_id,
       tx_index: contract.tx_index,
       fungible_token_name: contract.event.fungible_token_name ?? null,
@@ -163,58 +140,39 @@ export class ChainhookPgStore extends BasePgStoreModule {
     return result[0].block_height;
   }
 
-  private async updateStacksBlock(
-    sql: PgSqlClient,
-    block: StacksEvent,
-    direction: 'apply' | 'rollback'
-  ) {
-    const cache = new BlockCache(block.block_identifier);
-    for (const tx of block.transactions) {
-      cache.transaction(tx);
-    }
-    switch (direction) {
-      case 'apply':
-        await this.applyTransactions(sql, cache);
-        break;
-      case 'rollback':
-        await this.rollBackTransactions(sql, cache);
-        break;
-    }
+  private async applyTransactions(sql: PgSqlClient, block: SnpProcessedBlock) {
+    for (const contract of block.contracts)
+      await this.applyContractDeployment(sql, contract, block);
+    for (const notification of block.notifications)
+      await this.applyNotification(sql, notification, block);
+    await this.applyTokenMints(sql, block.nftMints, DbTokenType.nft, block);
+    await this.applyTokenMints(sql, block.sftMints, DbTokenType.sft, block);
+    for (const [contract, delta] of block.ftSupplyDelta)
+      await this.applyFtSupplyChange(sql, contract, delta, block);
   }
 
-  private async applyTransactions(sql: PgSqlClient, cache: BlockCache) {
-    for (const contract of cache.contracts)
-      await this.applyContractDeployment(sql, contract, cache);
-    for (const notification of cache.notifications)
-      await this.applyNotification(sql, notification, cache);
-    await this.applyTokenMints(sql, cache.nftMints, DbTokenType.nft, cache);
-    await this.applyTokenMints(sql, cache.sftMints, DbTokenType.sft, cache);
-    for (const [contract, delta] of cache.ftSupplyDelta)
-      await this.applyFtSupplyChange(sql, contract, delta, cache);
-  }
-
-  private async rollBackTransactions(sql: PgSqlClient, cache: BlockCache) {
-    for (const contract of cache.contracts)
-      await this.rollBackContractDeployment(sql, contract, cache);
-    for (const notification of cache.notifications)
-      await this.rollBackNotification(sql, notification, cache);
-    await this.rollBackTokenMints(sql, cache.nftMints, DbTokenType.nft, cache);
-    await this.rollBackTokenMints(sql, cache.sftMints, DbTokenType.sft, cache);
-    for (const [contract, delta] of cache.ftSupplyDelta)
-      await this.applyFtSupplyChange(sql, contract, delta.negated(), cache);
-  }
+  // private async rollBackTransactions(sql: PgSqlClient, cache: BlockCache) {
+  //   for (const contract of cache.contracts)
+  //     await this.rollBackContractDeployment(sql, contract, cache);
+  //   for (const notification of cache.notifications)
+  //     await this.rollBackNotification(sql, notification, cache);
+  //   await this.rollBackTokenMints(sql, cache.nftMints, DbTokenType.nft, cache);
+  //   await this.rollBackTokenMints(sql, cache.sftMints, DbTokenType.sft, cache);
+  //   for (const [contract, delta] of cache.ftSupplyDelta)
+  //     await this.applyFtSupplyChange(sql, contract, delta.negated(), cache);
+  // }
 
   private async applyNotification(
     sql: PgSqlClient,
-    event: CachedEvent<TokenMetadataUpdateNotification>,
-    cache: BlockCache
+    event: SnpProcessedEvent<TokenMetadataUpdateNotification>,
+    block: SnpProcessedBlock
   ) {
     const contractResult = await sql<{ id: number }[]>`
       SELECT id FROM smart_contracts WHERE principal = ${event.event.contract_id} LIMIT 1
     `;
     if (contractResult.count == 0) {
       logger.warn(
-        `ChainhookPgStore found SIP-019 notification for non-existing token contract ${event.event.contract_id} at block ${cache.block.index}`
+        `ChainhookPgStore found SIP-019 notification for non-existing token contract ${event.event.contract_id} at block ${block.block_height} #${block.index_block_hash}`
       );
       return;
     }
@@ -241,8 +199,8 @@ export class ChainhookPgStore extends BasePgStoreModule {
         INSERT INTO update_notifications
         (token_id, update_mode, ttl, block_height, index_block_hash, tx_id, tx_index, event_index)
         (
-          SELECT id, ${notification.update_mode}, ${notification.ttl ?? null}, ${cache.block.index},
-            ${cache.block.hash}, ${event.tx_id}, ${event.tx_index},
+          SELECT id, ${notification.update_mode}, ${notification.ttl ?? null},
+            ${block.block_height}, ${block.index_block_hash}, ${event.tx_id}, ${event.tx_index},
             ${event.event_index}
           FROM previous_modes
           WHERE update_mode <> 'frozen'
@@ -256,7 +214,7 @@ export class ChainhookPgStore extends BasePgStoreModule {
     logger.info(
       `ChainhookPgStore apply SIP-019 notification ${notification.contract_id} (${
         notification.token_ids ?? 'all'
-      }) at block ${cache.block.index}`
+      }) at block ${block.block_height} #${block.index_block_hash}`
     );
   }
 
@@ -264,7 +222,7 @@ export class ChainhookPgStore extends BasePgStoreModule {
     sql: PgSqlClient,
     contract: string,
     delta: BigNumber,
-    cache: BlockCache
+    block: SnpProcessedBlock
   ): Promise<void> {
     await sql`
       UPDATE tokens
@@ -273,7 +231,7 @@ export class ChainhookPgStore extends BasePgStoreModule {
         AND token_number = 1
     `;
     logger.info(
-      `ChainhookPgStore apply FT supply change for ${contract} (${delta}) at block ${cache.block.index}`
+      `ChainhookPgStore apply FT supply change for ${contract} (${delta}) at block ${block.block_height} #${block.index_block_hash}`
     );
   }
 
@@ -339,9 +297,9 @@ export class ChainhookPgStore extends BasePgStoreModule {
 
   private async applyTokenMints(
     sql: PgSqlClient,
-    mints: CachedEvent<NftMintEvent>[],
+    mints: SnpProcessedEvent<NftMintEvent>[],
     tokenType: DbTokenType,
-    cache: BlockCache
+    block: SnpProcessedBlock
   ): Promise<void> {
     if (mints.length == 0) return;
     for await (const batch of batchIterate(mints, 500)) {
@@ -354,14 +312,14 @@ export class ChainhookPgStore extends BasePgStoreModule {
         logger.info(
           `ChainhookPgStore apply ${tokenType.toUpperCase()} mint ${m.event.contractId} (${
             m.event.tokenId
-          }) at block ${cache.block.index}`
+          }) at block ${block.block_height} #${block.index_block_hash}`
         );
         tokenValues.set(tokenKey, [
           m.event.contractId,
           tokenType,
           m.event.tokenId.toString(),
-          cache.block.index,
-          cache.block.hash,
+          block.block_height,
+          block.index_block_hash,
           m.tx_id,
           m.tx_index,
         ]);
