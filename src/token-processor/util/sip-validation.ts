@@ -8,7 +8,7 @@ import {
   decodeClarityValue,
 } from '@hirosystems/stacks-encoding-native-js';
 import { DbSipNumber } from '../../pg/types';
-import { SnpSmartContractPrintEvent } from '../../snp/schemas';
+import { StacksCoreContractEvent } from '../../stacks-core/schemas';
 
 const FtTraitFunctions: ClarityAbiFunction[] = [
   {
@@ -307,7 +307,7 @@ export type TokenMetadataUpdateNotification = {
  */
 export function getContractLogMetadataUpdateNotification(
   sender: string,
-  event: SnpSmartContractPrintEvent
+  event: StacksCoreContractEvent
 ): TokenMetadataUpdateNotification | undefined {
   const log = event.contract_event;
   try {
@@ -381,7 +381,7 @@ export type SftMintEvent = NftMintEvent & {
 };
 
 export function getContractLogSftMintEvent(
-  event: SnpSmartContractPrintEvent
+  event: StacksCoreContractEvent
 ): SftMintEvent | undefined {
   const log = event.contract_event;
   try {

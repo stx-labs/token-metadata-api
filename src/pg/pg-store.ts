@@ -42,7 +42,7 @@ import {
   runMigrations,
 } from '@hirosystems/api-toolkit';
 import * as path from 'path';
-import { SnpPgStore } from './snp-pg-store';
+import { StacksCorePgStore } from './stacks-core-pg-store';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -50,7 +50,7 @@ export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
  * Connects and queries the Token Metadata Service's local postgres DB.
  */
 export class PgStore extends BasePgStore {
-  readonly snp: SnpPgStore;
+  readonly snp: StacksCorePgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -77,7 +77,7 @@ export class PgStore extends BasePgStore {
 
   constructor(sql: PgSqlClient) {
     super(sql);
-    this.snp = new SnpPgStore(this);
+    this.snp = new StacksCorePgStore(this);
   }
 
   async getSmartContract(

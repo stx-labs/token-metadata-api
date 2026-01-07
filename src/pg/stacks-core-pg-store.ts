@@ -14,21 +14,21 @@ import {
 import { DbSmartContractInsert, DbTokenType, DbSmartContract, DbSipNumber } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
-import { SnpProcessedBlock, SnpProcessedEvent } from '../snp/snp-block-processor';
+import {
+  ProcessedStacksCoreBlock,
+  ProcessedStacksCoreEvent,
+} from '../stacks-core/stacks-core-block-processor';
 
-export class SnpPgStore extends BasePgStoreModule {
-  async writeBlock(block: SnpProcessedBlock): Promise<void> {
+export class StacksCorePgStore extends BasePgStoreModule {
+  /**
+   * Writes a processed Stacks Core block to the database.
+   * @param block - The processed Stacks Core block to write.
+   */
+  async writeBlock(block: ProcessedStacksCoreBlock): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      logger.info(`ChainhookPgStore apply block ${block.block_height} #${block.index_block_hash}`);
-      const time = stopwatch();
       await this.applyTransactions(sql, block);
       await this.enqueueDynamicTokensDueForRefresh();
-      await this.updateChainTipBlockHeight(block.block_height);
-      logger.info(
-        `ChainhookPgStore apply block ${block.block_height} #${
-          block.index_block_hash
-        } finished in ${time.getElapsedSeconds()}s`
-      );
+      await this.updateChainTipBlockHeight(block.blockHeight);
     });
   }
 
@@ -77,14 +77,14 @@ export class SnpPgStore extends BasePgStoreModule {
 
   async applyContractDeployment(
     sql: PgSqlClient,
-    contract: SnpProcessedEvent<SmartContractDeployment>,
-    block: SnpProcessedBlock
+    contract: ProcessedStacksCoreEvent<SmartContractDeployment>,
+    block: ProcessedStacksCoreBlock
   ) {
     await this.enqueueContract(sql, {
       principal: contract.event.principal,
       sip: contract.event.sip,
-      block_height: block.block_height,
-      index_block_hash: block.index_block_hash,
+      block_height: block.blockHeight,
+      index_block_hash: block.indexBlockHash,
       tx_id: contract.tx_id,
       tx_index: contract.tx_index,
       fungible_token_name: contract.event.fungible_token_name ?? null,
@@ -126,9 +126,6 @@ export class SnpPgStore extends BasePgStoreModule {
       ON CONFLICT (smart_contract_id) WHERE token_id IS NULL DO
         UPDATE SET updated_at = NOW(), status = 'pending'
     `;
-    logger.info(
-      `ChainhookPgStore apply contract deploy ${contract.principal} (${contract.sip}) at block ${contract.block_height}`
-    );
   }
 
   async updateChainTipBlockHeight(blockHeight: number): Promise<void> {
@@ -140,7 +137,7 @@ export class SnpPgStore extends BasePgStoreModule {
     return result[0].block_height;
   }
 
-  private async applyTransactions(sql: PgSqlClient, block: SnpProcessedBlock) {
+  private async applyTransactions(sql: PgSqlClient, block: ProcessedStacksCoreBlock) {
     for (const contract of block.contracts)
       await this.applyContractDeployment(sql, contract, block);
     for (const notification of block.notifications)
@@ -164,16 +161,13 @@ export class SnpPgStore extends BasePgStoreModule {
 
   private async applyNotification(
     sql: PgSqlClient,
-    event: SnpProcessedEvent<TokenMetadataUpdateNotification>,
-    block: SnpProcessedBlock
+    event: ProcessedStacksCoreEvent<TokenMetadataUpdateNotification>,
+    block: ProcessedStacksCoreBlock
   ) {
     const contractResult = await sql<{ id: number }[]>`
       SELECT id FROM smart_contracts WHERE principal = ${event.event.contract_id} LIMIT 1
     `;
     if (contractResult.count == 0) {
-      logger.warn(
-        `ChainhookPgStore found SIP-019 notification for non-existing token contract ${event.event.contract_id} at block ${block.block_height} #${block.index_block_hash}`
-      );
       return;
     }
     const notification = event.event;
@@ -200,7 +194,7 @@ export class SnpPgStore extends BasePgStoreModule {
         (token_id, update_mode, ttl, block_height, index_block_hash, tx_id, tx_index, event_index)
         (
           SELECT id, ${notification.update_mode}, ${notification.ttl ?? null},
-            ${block.block_height}, ${block.index_block_hash}, ${event.tx_id}, ${event.tx_index},
+            ${block.blockHeight}, ${block.indexBlockHash}, ${event.tx_id}, ${event.tx_index},
             ${event.event_index}
           FROM previous_modes
           WHERE update_mode <> 'frozen'
@@ -211,18 +205,13 @@ export class SnpPgStore extends BasePgStoreModule {
       SET status = 'pending', updated_at = NOW()
       WHERE token_id IN (SELECT token_id FROM new_mode_inserts)
     `;
-    logger.info(
-      `ChainhookPgStore apply SIP-019 notification ${notification.contract_id} (${
-        notification.token_ids ?? 'all'
-      }) at block ${block.block_height} #${block.index_block_hash}`
-    );
   }
 
   private async applyFtSupplyChange(
     sql: PgSqlClient,
     contract: string,
     delta: BigNumber,
-    block: SnpProcessedBlock
+    block: ProcessedStacksCoreBlock
   ): Promise<void> {
     await sql`
       UPDATE tokens
@@ -230,9 +219,6 @@ export class SnpPgStore extends BasePgStoreModule {
       WHERE smart_contract_id = (SELECT id FROM smart_contracts WHERE principal = ${contract})
         AND token_number = 1
     `;
-    logger.info(
-      `ChainhookPgStore apply FT supply change for ${contract} (${delta}) at block ${block.block_height} #${block.index_block_hash}`
-    );
   }
 
   private async rollBackContractDeployment(
@@ -243,9 +229,6 @@ export class SnpPgStore extends BasePgStoreModule {
     await sql`
       DELETE FROM smart_contracts WHERE principal = ${contract.event.principal}
     `;
-    logger.info(
-      `ChainhookPgStore rollback contract ${contract.event.principal} at block ${cache.block.index}`
-    );
   }
 
   private async rollBackNotification(
@@ -259,11 +242,6 @@ export class SnpPgStore extends BasePgStoreModule {
         AND tx_index = ${notification.tx_index}
         AND event_index = ${notification.event_index}
     `;
-    logger.info(
-      `ChainhookPgStore rollback SIP-019 notification ${notification.event.contract_id} (${
-        notification.event.token_ids ?? 'all'
-      }) at block ${cache.block.index}`
-    );
   }
 
   private async enqueueDynamicTokensDueForRefresh(): Promise<void> {
@@ -297,9 +275,9 @@ export class SnpPgStore extends BasePgStoreModule {
 
   private async applyTokenMints(
     sql: PgSqlClient,
-    mints: SnpProcessedEvent<NftMintEvent>[],
+    mints: ProcessedStacksCoreEvent<NftMintEvent>[],
     tokenType: DbTokenType,
-    block: SnpProcessedBlock
+    block: ProcessedStacksCoreBlock
   ): Promise<void> {
     if (mints.length == 0) return;
     for await (const batch of batchIterate(mints, 500)) {
@@ -309,17 +287,12 @@ export class SnpPgStore extends BasePgStoreModule {
         // This makes sure we only keep the first occurrence.
         const tokenKey = `${m.event.contractId}-${m.event.tokenId}`;
         if (tokenValues.has(tokenKey)) continue;
-        logger.info(
-          `ChainhookPgStore apply ${tokenType.toUpperCase()} mint ${m.event.contractId} (${
-            m.event.tokenId
-          }) at block ${block.block_height} #${block.index_block_hash}`
-        );
         tokenValues.set(tokenKey, [
           m.event.contractId,
           tokenType,
           m.event.tokenId.toString(),
-          block.block_height,
-          block.index_block_hash,
+          block.blockHeight,
+          block.indexBlockHash,
           m.tx_id,
           m.tx_index,
         ]);
@@ -363,7 +336,7 @@ export class SnpPgStore extends BasePgStoreModule {
     for await (const batch of batchIterate(mints, 500)) {
       const values = batch.map(m => {
         logger.info(
-          `ChainhookPgStore rollback ${tokenType.toUpperCase()} mint ${m.event.contractId} (${
+          `StacksCorePgStore rollback ${tokenType.toUpperCase()} mint ${m.event.contractId} (${
             m.event.tokenId
           }) at block ${cache.block.index}`
         );

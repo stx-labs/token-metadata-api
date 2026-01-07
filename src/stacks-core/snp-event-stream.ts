@@ -2,14 +2,14 @@ import { SERVER_VERSION } from '@hirosystems/api-toolkit';
 import { logger as defaultLogger } from '@hirosystems/api-toolkit';
 import { StacksEventStream, StacksEventStreamType } from '@hirosystems/salt-n-pepper-client';
 import { EventEmitter } from 'node:events';
-import { SnpBlockSchema } from './schemas';
+import { StacksCoreBlockSchema } from './schemas';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
-import { SnpBlockProcessor } from './snp-block-processor';
+import { StacksCoreBlockProcessor } from './stacks-core-block-processor';
 
-const SnpBlockCType = TypeCompiler.Compile(SnpBlockSchema);
+const SnpBlockCType = TypeCompiler.Compile(StacksCoreBlockSchema);
 
 export class SnpEventStreamHandler {
-  private readonly blockProcessor: SnpBlockProcessor;
+  private readonly blockProcessor: StacksCoreBlockProcessor;
   private readonly logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
   private readonly snpClientStream: StacksEventStream;
   private readonly redisUrl: string;
@@ -23,7 +23,7 @@ export class SnpEventStreamHandler {
     redisUrl: string;
     redisStreamPrefix: string;
     lastMessageId: string;
-    blockProcessor: SnpBlockProcessor;
+    blockProcessor: StacksCoreBlockProcessor;
   }) {
     this.blockProcessor = opts.blockProcessor;
     this.redisUrl = opts.redisUrl;
