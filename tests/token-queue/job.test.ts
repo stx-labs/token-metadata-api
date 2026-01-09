@@ -50,7 +50,7 @@ describe('Job', () => {
   });
 
   test('valid job marked as done', async () => {
-    const job = new TestDbJob({ db, job: dbJob });
+    const job = new TestDbJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const jobs1 = await db.getPendingJobBatch({ limit: 1 });
@@ -61,7 +61,7 @@ describe('Job', () => {
   });
 
   test('retryable error increases retry_count', async () => {
-    const job = new TestRetryableJob({ db, job: dbJob });
+    const job = new TestRetryableJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const jobs1 = await db.getJob({ id: 1 });
@@ -75,7 +75,7 @@ describe('Job', () => {
   });
 
   test('user error marks job invalid', async () => {
-    const job = new TestUserErrorJob({ db, job: dbJob });
+    const job = new TestUserErrorJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const jobs1 = await db.getPendingJobBatch({ limit: 1 });
@@ -88,7 +88,7 @@ describe('Job', () => {
   test('retry_count limit reached marks entry as failed', async () => {
     ENV.JOB_QUEUE_STRICT_MODE = false;
     ENV.JOB_QUEUE_MAX_RETRIES = 0;
-    const job = new TestRetryableJob({ db, job: dbJob });
+    const job = new TestRetryableJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const status = await db.sql<{ status: string }[]>`SELECT status FROM jobs`;
@@ -99,7 +99,7 @@ describe('Job', () => {
     ENV.JOB_QUEUE_STRICT_MODE = true;
     ENV.JOB_QUEUE_MAX_RETRIES = 0;
     ENV.JOB_QUEUE_RETRY_AFTER_MS = 0;
-    const job = new TestRetryableJob({ db, job: dbJob });
+    const job = new TestRetryableJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const jobs1 = await db.getPendingJobBatch({ limit: 1 });
@@ -109,7 +109,7 @@ describe('Job', () => {
 
   test('pending job batches consider retry_after', async () => {
     ENV.JOB_QUEUE_RETRY_AFTER_MS = 200;
-    const job = new TestRetryableJob({ db, job: dbJob });
+    const job = new TestRetryableJob({ db, job: dbJob, network: 'mainnet' });
 
     await expect(job.work()).resolves.not.toThrow();
     const jobs1 = await db.getPendingJobBatch({ limit: 1 });
@@ -122,7 +122,7 @@ describe('Job', () => {
 
   test('db errors are not re-thrown', async () => {
     await db.close();
-    const job = new TestDbJob({ db, job: dbJob });
+    const job = new TestDbJob({ db, job: dbJob, network: 'mainnet' });
     await expect(job.work()).resolves.not.toThrow();
   });
 });

@@ -7,8 +7,6 @@ import {
   DbMetadataAttribute,
   DbMetadataProperty,
   DbSipNumber,
-  DbSmartContractInsert,
-  DbTokenType,
 } from '../../src/pg/types';
 import { ENV } from '../../src/env';
 import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-token-job';
@@ -97,7 +95,7 @@ describe('ProcessTokenJob', () => {
         });
       setGlobalDispatcher(agent);
 
-      const processor = new ProcessTokenJob({ db, job: tokenJob });
+      const processor = new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' });
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
@@ -169,7 +167,7 @@ describe('ProcessTokenJob', () => {
         .persist();
       setGlobalDispatcher(agent);
 
-      const processor = new ProcessTokenJob({ db, job: tokenJob });
+      const processor = new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' });
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
@@ -239,7 +237,7 @@ describe('ProcessTokenJob', () => {
         });
       setGlobalDispatcher(agent);
 
-      const processor = new ProcessTokenJob({ db, job: tokenJob });
+      const processor = new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' });
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
@@ -329,7 +327,7 @@ describe('ProcessTokenJob', () => {
         });
       setGlobalDispatcher(agent);
 
-      const processor = new ProcessTokenJob({ db, job: tokenJob });
+      const processor = new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' });
       await processor.work();
 
       const token = await db.getTokenMetadataBundle({
@@ -408,7 +406,7 @@ describe('ProcessTokenJob', () => {
         .reply(200, metadata);
       setGlobalDispatcher(agent);
 
-      await new ProcessTokenJob({ db, job: tokenJob }).work();
+      await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       const bundle = await db.getTokenMetadataBundle({
         contractPrincipal: 'ABCD.test-nft',
@@ -524,7 +522,7 @@ describe('ProcessTokenJob', () => {
         .reply(200, metadataSpanish);
       setGlobalDispatcher(agent);
 
-      await new ProcessTokenJob({ db, job: tokenJob }).work();
+      await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       const bundle = await db.getTokenMetadataBundle({
         contractPrincipal: 'ABCD.test-nft',
@@ -620,7 +618,7 @@ describe('ProcessTokenJob', () => {
       setGlobalDispatcher(agent);
 
       // Process once
-      await new ProcessTokenJob({ db, job: tokenJob }).work();
+      await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       const bundle1 = await db.getTokenMetadataBundle({
         contractPrincipal: 'ABCD.test-nft',
@@ -662,7 +660,7 @@ describe('ProcessTokenJob', () => {
         })
         .reply(200, metadata2);
       await db.updateJobStatus({ id: tokenJob.id, status: DbJobStatus.pending });
-      await new ProcessTokenJob({ db, job: tokenJob }).work();
+      await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       const bundle2 = await db.getTokenMetadataBundle({
         contractPrincipal: 'ABCD.test-nft',
@@ -717,7 +715,7 @@ describe('ProcessTokenJob', () => {
         .reply(200, metadata);
       setGlobalDispatcher(agent);
 
-      await new ProcessTokenJob({ db, job: tokenJob }).work();
+      await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       await expect(
         db.getTokenMetadataBundle({
@@ -777,7 +775,7 @@ describe('ProcessTokenJob', () => {
         });
       setGlobalDispatcher(agent);
 
-      const processor = new ProcessTokenJob({ db, job: tokenJob });
+      const processor = new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' });
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
@@ -859,7 +857,7 @@ describe('ProcessTokenJob', () => {
         })
         .reply(429, { error: 'nope' }, { headers: { 'retry-after': '999' } });
       try {
-        await new ProcessTokenJob({ db, job: tokenJob }).work();
+        await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
       } catch (error) {
         expect(error).toBeInstanceOf(RetryableJobError);
         const err = error as RetryableJobError;
@@ -876,9 +874,9 @@ describe('ProcessTokenJob', () => {
           retry_after: 99999,
         },
       });
-      await expect(new ProcessTokenJob({ db, job: tokenJob }).handler()).rejects.toThrow(
-        /skipping fetch to rate-limited hostname/
-      );
+      await expect(
+        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
+      ).rejects.toThrow(/skipping fetch to rate-limited hostname/);
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
       expect(host).not.toBeUndefined();
     });
@@ -913,7 +911,9 @@ describe('ProcessTokenJob', () => {
       `;
 
       // Token is processed now.
-      await expect(new ProcessTokenJob({ db, job: tokenJob }).handler()).resolves.not.toThrow();
+      await expect(
+        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
+      ).resolves.not.toThrow();
 
       // Rate limited host is gone.
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
@@ -945,8 +945,8 @@ describe('ProcessTokenJob', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(new ProcessTokenJob({ db, job: tokenJob }).handler()).rejects.toThrow(
-      RetryableJobError
-    );
+    await expect(
+      new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
+    ).rejects.toThrow(RetryableJobError);
   });
 });
