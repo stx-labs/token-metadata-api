@@ -50,7 +50,7 @@ export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
  * Connects and queries the Token Metadata Service's local postgres DB.
  */
 export class PgStore extends BasePgStore {
-  readonly snp: StacksCorePgStore;
+  readonly core: StacksCorePgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -77,7 +77,7 @@ export class PgStore extends BasePgStore {
 
   constructor(sql: PgSqlClient) {
     super(sql);
-    this.snp = new StacksCorePgStore(this);
+    this.core = new StacksCorePgStore(this);
   }
 
   async getSmartContract(

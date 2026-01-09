@@ -5,9 +5,14 @@ import { EventEmitter } from 'node:events';
 import { StacksCoreBlockSchema } from './schemas';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { StacksCoreBlockProcessor } from './stacks-core-block-processor';
+import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
 
 const SnpBlockCType = TypeCompiler.Compile(StacksCoreBlockSchema);
 
+/**
+ * Handles the SNP event stream and processes Stacks Core blocks.
+ * This is used to index the Stacks Core blockchain and write blocks to the database.
+ */
 export class SnpEventStreamHandler {
   private readonly blockProcessor: StacksCoreBlockProcessor;
   private readonly logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
@@ -70,4 +75,18 @@ export class SnpEventStreamHandler {
   async stop(): Promise<void> {
     await this.snpClientStream.stop();
   }
+}
+
+export function buildSnpEventStreamHandler(opts: {
+  redisUrl: string;
+  redisStreamPrefix: string;
+  db: StacksCorePgStore;
+}) {
+  const blockProcessor = new StacksCoreBlockProcessor({ db: opts.db });
+  return new SnpEventStreamHandler({
+    redisUrl: opts.redisUrl,
+    redisStreamPrefix: opts.redisStreamPrefix,
+    lastMessageId: '0',
+    blockProcessor,
+  });
 }
