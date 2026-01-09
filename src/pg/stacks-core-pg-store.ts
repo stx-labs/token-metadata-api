@@ -1,17 +1,17 @@
-import {
-  BasePgStoreModule,
-  PgSqlClient,
-  batchIterate,
-  logger,
-  stopwatch,
-} from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
 import { ENV } from '../env';
 import {
   NftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
 } from '../token-processor/util/sip-validation';
-import { DbSmartContractInsert, DbTokenType, DbSmartContract, DbSipNumber } from './types';
+import {
+  DbSmartContractInsert,
+  DbTokenType,
+  DbSmartContract,
+  DbSipNumber,
+  DbChainTip,
+} from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
 import {
@@ -26,10 +26,63 @@ export class StacksCorePgStore extends BasePgStoreModule {
    */
   async writeBlock(block: ProcessedStacksCoreBlock): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      await this.applyTransactions(sql, block);
+      await this.insertBlock(sql, block);
+      for (const contract of block.contracts)
+        await this.applyContractDeployment(sql, contract, block);
+      for (const notification of block.notifications)
+        await this.applyNotification(sql, notification, block);
+      await this.applyTokenMints(sql, block.nftMints, DbTokenType.nft, block);
+      await this.applyTokenMints(sql, block.sftMints, DbTokenType.sft, block);
+      for (const [contract, delta] of block.ftSupplyDelta)
+        await this.applyFtSupplyChange(sql, contract, delta, block);
       await this.enqueueDynamicTokensDueForRefresh();
-      await this.updateChainTipBlockHeight(block.blockHeight);
     });
+  }
+
+  async insertBlock(sql: PgSqlClient, block: ProcessedStacksCoreBlock): Promise<void> {
+    const values = {
+      block_height: block.blockHeight,
+      index_block_hash: block.indexBlockHash,
+    };
+    await sql`INSERT INTO blocks ${sql(values)}`;
+  }
+
+  async getChainTip(sql: PgSqlClient): Promise<DbChainTip | null> {
+    const result = await sql<DbChainTip[]>`
+      SELECT index_block_hash, block_height
+      FROM blocks
+      ORDER BY block_height DESC
+      LIMIT 1
+    `;
+    return result.count > 0 ? result[0] : null;
+  }
+
+  /**
+   * Reverts the database to a new chain tip after a re-org.
+   * @param sql - The SQL client to use.
+   * @param newChainTip - The new chain tip to revert to.
+   */
+  async revertToChainTip(sql: PgSqlClient, newChainTip: DbChainTip): Promise<void> {
+    // Before deleting blocks, we need to undo all FT supply deltas for the blocks we're about to
+    // delete.
+    await sql`
+      WITH ft_supply_deltas AS (
+        SELECT token_id, SUM(delta) AS delta
+        FROM ft_supply_deltas
+        WHERE block_height > ${newChainTip.block_height}
+        GROUP BY token_id
+      )
+      UPDATE tokens
+      SET total_supply = total_supply - (SELECT delta FROM ft_supply_deltas WHERE token_id = tokens.id),
+        updated_at = NOW()
+      WHERE id IN (SELECT token_id FROM ft_supply_deltas)
+    `;
+    // Finally, delete all blocks with a height greater than the chain tip's block height. This will
+    // cascade delete all tokens, smart contracts, FT supply deltas, update notifications and jobs
+    // associated with those blocks.
+    await sql`
+      DELETE FROM blocks WHERE block_height > ${newChainTip.block_height}
+    `;
   }
 
   /**
@@ -128,37 +181,6 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  async updateChainTipBlockHeight(blockHeight: number): Promise<void> {
-    await this.sql`UPDATE chain_tip SET block_height = ${blockHeight}`;
-  }
-
-  private async getLastIngestedBlockHeight(): Promise<number> {
-    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
-    return result[0].block_height;
-  }
-
-  private async applyTransactions(sql: PgSqlClient, block: ProcessedStacksCoreBlock) {
-    for (const contract of block.contracts)
-      await this.applyContractDeployment(sql, contract, block);
-    for (const notification of block.notifications)
-      await this.applyNotification(sql, notification, block);
-    await this.applyTokenMints(sql, block.nftMints, DbTokenType.nft, block);
-    await this.applyTokenMints(sql, block.sftMints, DbTokenType.sft, block);
-    for (const [contract, delta] of block.ftSupplyDelta)
-      await this.applyFtSupplyChange(sql, contract, delta, block);
-  }
-
-  // private async rollBackTransactions(sql: PgSqlClient, cache: BlockCache) {
-  //   for (const contract of cache.contracts)
-  //     await this.rollBackContractDeployment(sql, contract, cache);
-  //   for (const notification of cache.notifications)
-  //     await this.rollBackNotification(sql, notification, cache);
-  //   await this.rollBackTokenMints(sql, cache.nftMints, DbTokenType.nft, cache);
-  //   await this.rollBackTokenMints(sql, cache.sftMints, DbTokenType.sft, cache);
-  //   for (const [contract, delta] of cache.ftSupplyDelta)
-  //     await this.applyFtSupplyChange(sql, contract, delta.negated(), cache);
-  // }
-
   private async applyNotification(
     sql: PgSqlClient,
     event: ProcessedStacksCoreEvent<TokenMetadataUpdateNotification>,
@@ -214,33 +236,24 @@ export class StacksCorePgStore extends BasePgStoreModule {
     block: ProcessedStacksCoreBlock
   ): Promise<void> {
     await sql`
+      WITH smart_contract_id AS (
+        SELECT id FROM smart_contracts
+        WHERE principal = ${contract}
+      ),
+      token_id AS (
+        SELECT id FROM tokens
+        WHERE smart_contract_id = (SELECT id FROM smart_contract_id)
+          AND token_number = 1
+      ),
+      delta_insert AS (
+        INSERT INTO ft_supply_deltas (token_id, block_height, index_block_hash, delta)
+        VALUES (
+          (SELECT id FROM token_id), ${block.blockHeight}, ${block.indexBlockHash}, ${delta}
+        )
+      )
       UPDATE tokens
       SET total_supply = total_supply + ${delta}, updated_at = NOW()
-      WHERE smart_contract_id = (SELECT id FROM smart_contracts WHERE principal = ${contract})
-        AND token_number = 1
-    `;
-  }
-
-  private async rollBackContractDeployment(
-    sql: PgSqlClient,
-    contract: CachedEvent<SmartContractDeployment>,
-    cache: BlockCache
-  ): Promise<void> {
-    await sql`
-      DELETE FROM smart_contracts WHERE principal = ${contract.event.principal}
-    `;
-  }
-
-  private async rollBackNotification(
-    sql: PgSqlClient,
-    notification: CachedEvent<TokenMetadataUpdateNotification>,
-    cache: BlockCache
-  ): Promise<void> {
-    await sql`
-      DELETE FROM update_notifications
-      WHERE block_height = ${cache.block.index}
-        AND tx_index = ${notification.tx_index}
-        AND event_index = ${notification.event_index}
+        WHERE id = (SELECT id FROM token_id)
     `;
   }
 
@@ -322,35 +335,6 @@ export class StacksCorePgStore extends BasePgStoreModule {
         INSERT INTO jobs (token_id) (SELECT id AS token_id FROM token_inserts)
         ON CONFLICT (token_id) WHERE smart_contract_id IS NULL DO
           UPDATE SET updated_at = NOW(), status = 'pending'
-      `;
-    }
-  }
-
-  private async rollBackTokenMints(
-    sql: PgSqlClient,
-    mints: CachedEvent<NftMintEvent>[],
-    tokenType: DbTokenType,
-    cache: BlockCache
-  ): Promise<void> {
-    if (mints.length == 0) return;
-    for await (const batch of batchIterate(mints, 500)) {
-      const values = batch.map(m => {
-        logger.info(
-          `StacksCorePgStore rollback ${tokenType.toUpperCase()} mint ${m.event.contractId} (${
-            m.event.tokenId
-          }) at block ${cache.block.index}`
-        );
-        return [m.event.contractId, m.event.tokenId.toString()];
-      });
-      await sql`
-        WITH delete_values (principal, token_number) AS (VALUES ${sql(values)})
-        DELETE FROM tokens WHERE id IN (
-          SELECT t.id
-          FROM delete_values AS d
-          INNER JOIN smart_contracts AS s ON s.principal = d.principal::text
-          INNER JOIN tokens AS t
-            ON t.smart_contract_id = s.id AND t.token_number = d.token_number::bigint
-        )
       `;
     }
   }

@@ -78,49 +78,63 @@ export class StacksCoreBlockProcessor {
     logger.info(
       `${this.constructor.name} processing block ${block.block_height} #${block.index_block_hash}`
     );
-    this.block.blockHeight = block.block_height;
-    this.block.indexBlockHash = block.index_block_hash;
 
-    for (const transaction of block.transactions) {
-      if (transaction.status !== 'success') continue;
-
-      const indexedTransaction: ProcessedStacksCoreTransaction = {
-        tx: transaction,
-        decoded: decodeTransaction(transaction.raw_tx.substring(2)),
-      };
-      this.block.transactions.set(transaction.txid, indexedTransaction);
-
-      // Check for smart contract deployments.
-      this.processSmartContract(indexedTransaction);
-    }
-    // Check for token metadata updates and token supply deltas.
-    for (const event of block.events) {
-      const transaction = this.block.transactions.get(event.txid);
-      if (!transaction) continue;
-      switch (event.type) {
-        case 'contract_event':
-          this.processContractEvent(transaction, event);
-          break;
-        case 'ft_mint_event':
-          this.processFtMintEvent(event);
-          break;
-        case 'ft_burn_event':
-          this.processFtBurnEvent(event);
-          break;
-        case 'nft_mint_event':
-          this.processNftMintEvent(transaction, event);
-          break;
-        case 'nft_burn_event':
-          // Burned NFTs still have their metadata in the database, so we don't need to do anything
-          // here.
-          break;
+    await this.db.sqlWriteTransaction(async sql => {
+      // Check if this block represents a re-org. Revert to its parent's chain tip if it does.
+      const chainTip = await this.db.getChainTip(sql);
+      if (chainTip && chainTip.index_block_hash !== block.parent_index_block_hash) {
+        logger.info(
+          `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${
+            block.block_height - 1
+          } ${block.parent_index_block_hash}`
+        );
+        await this.db.revertToChainTip(sql, chainTip);
       }
-    }
 
-    await this.db.writeBlock(this.block);
+      // Process the block.
+      this.block.blockHeight = block.block_height;
+      this.block.indexBlockHash = block.index_block_hash;
+      for (const transaction of block.transactions) {
+        if (transaction.status !== 'success') continue;
+
+        const indexedTransaction: ProcessedStacksCoreTransaction = {
+          tx: transaction,
+          decoded: decodeTransaction(transaction.raw_tx.substring(2)),
+        };
+        this.block.transactions.set(transaction.txid, indexedTransaction);
+
+        // Check for smart contract deployments.
+        this.processSmartContract(indexedTransaction);
+      }
+      // Check for token metadata updates and token supply deltas.
+      for (const event of block.events) {
+        const transaction = this.block.transactions.get(event.txid);
+        if (!transaction) continue;
+        switch (event.type) {
+          case 'contract_event':
+            this.processContractEvent(transaction, event);
+            break;
+          case 'ft_mint_event':
+            this.processFtMintEvent(event);
+            break;
+          case 'ft_burn_event':
+            this.processFtBurnEvent(event);
+            break;
+          case 'nft_mint_event':
+            this.processNftMintEvent(transaction, event);
+            break;
+          case 'nft_burn_event':
+            // Burned NFTs still have their metadata in the database, so we don't need to do anything
+            // here.
+            break;
+        }
+      }
+
+      await this.db.writeBlock(this.block);
+    });
     this.clear();
     logger.info(
-      `${this.constructor.name} processed block ${block.block_height} #${
+      `${this.constructor.name} processed block ${block.block_height} ${
         block.index_block_hash
       } in ${time.getElapsedSeconds()}s`
     );

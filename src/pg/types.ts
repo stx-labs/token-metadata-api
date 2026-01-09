@@ -1,6 +1,11 @@
 import { PgJsonb, PgNumeric, PgSqlQuery } from '@hirosystems/api-toolkit';
 import { FtOrderBy, Order } from '../api/schemas';
 
+export type DbChainTip = {
+  index_block_hash: string;
+  block_height: number;
+};
+
 export enum DbSipNumber {
   /** Non-Fungible Tokens */
   sip009 = 'sip-009',
