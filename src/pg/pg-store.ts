@@ -287,11 +287,6 @@ export class PgStore extends BasePgStore {
     }
   }
 
-  async getChainTipBlockHeight(): Promise<number> {
-    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
-    return result[0].block_height;
-  }
-
   /**
    * Returns a token ETag based on its last updated date.
    * @param contractPrincipal - smart contract principal

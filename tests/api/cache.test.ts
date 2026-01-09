@@ -44,7 +44,16 @@ describe('ETag cache', () => {
     });
     expect(cached.statusCode).toBe(304);
 
-    await db.chainhook.updateChainTipBlockHeight(100);
+    await db.core.insertBlock(db.sql, {
+      blockHeight: 100,
+      indexBlockHash: '0x123',
+      transactions: new Map(),
+      contracts: [],
+      notifications: [],
+      sftMints: [],
+      nftMints: [],
+      ftSupplyDelta: new Map(),
+    });
     const cached2 = await fastify.inject({
       method: 'GET',
       url: '/metadata/v1/',
