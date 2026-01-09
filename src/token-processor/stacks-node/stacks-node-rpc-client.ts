@@ -14,6 +14,7 @@ import {
   StacksNodeHttpError,
 } from '../util/errors';
 import { ClarityAbi, getAddressFromPrivateKey, makeRandomPrivKey } from '@stacks/transactions';
+import { StacksNetworkName } from '@stacks/network';
 
 interface ReadOnlyContractCallSuccessResponse {
   okay: true;
@@ -39,9 +40,12 @@ export class StacksNodeRpcClient {
   private readonly senderAddress: string;
   private readonly basePath: string;
 
-  static create(args: { contractPrincipal: string }): StacksNodeRpcClient {
+  static create(args: {
+    contractPrincipal: string;
+    network: StacksNetworkName;
+  }): StacksNodeRpcClient {
     const randomPrivKey = makeRandomPrivKey();
-    const senderAddress = getAddressFromPrivateKey(randomPrivKey, 'mainnet');
+    const senderAddress = getAddressFromPrivateKey(randomPrivKey, args.network);
     const client = new StacksNodeRpcClient({
       contractPrincipal: args.contractPrincipal,
       senderAddress: senderAddress,

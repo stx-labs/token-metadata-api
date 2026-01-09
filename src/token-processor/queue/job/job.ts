@@ -5,6 +5,7 @@ import { DbJob, DbJobInvalidReason, DbJobStatus } from '../../../pg/types';
 import { getUserErrorInvalidReason, TooManyRequestsHttpError, UserError } from '../../util/errors';
 import { RetryableJobError } from '../errors';
 import { getJobQueueProcessingMode, JobQueueProcessingMode } from '../helpers';
+import { StacksNetworkName } from '@stacks/network';
 
 /**
  * An abstract class for a job that will be processed by `JobQueue`. It only contains logic for
@@ -13,10 +14,12 @@ import { getJobQueueProcessingMode, JobQueueProcessingMode } from '../helpers';
 export abstract class Job {
   protected readonly db: PgStore;
   protected readonly job: DbJob;
+  protected readonly network: StacksNetworkName;
 
-  constructor(args: { db: PgStore; job: DbJob }) {
+  constructor(args: { db: PgStore; job: DbJob; network: StacksNetworkName }) {
     this.db = args.db;
     this.job = args.job;
+    this.network = args.network;
   }
 
   /**

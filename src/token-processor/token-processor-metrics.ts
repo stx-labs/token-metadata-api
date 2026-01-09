@@ -19,8 +19,8 @@ export class TokenProcessorMetrics {
       name: `token_metadata_block_height`,
       help: 'The most recent Bitcoin block height ingested by the API',
       async collect() {
-        const height = await db.getChainTipBlockHeight();
-        this.set(height);
+        const height = await db.core.getChainTip(db.sql);
+        this.set(height?.block_height ?? 0);
       },
     });
     this.token_metadata_job_count = new prom.Gauge({

@@ -7,6 +7,7 @@ import { buildAdminRpcServer } from './admin-rpc/init';
 import { isProdEnv } from './api/util/helpers';
 import { buildProfilerServer, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
 import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream';
+import { StacksNetworkName } from '@stacks/network';
 
 /**
  * Initializes background services. Only for `default` and `writeonly` run modes.
@@ -15,7 +16,7 @@ import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream';
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
 
-  const jobQueue = new JobQueue({ db });
+  const jobQueue = new JobQueue({ db, network: ENV.NETWORK as StacksNetworkName });
   registerShutdownConfig({
     name: 'Job Queue',
     forceKillable: false,

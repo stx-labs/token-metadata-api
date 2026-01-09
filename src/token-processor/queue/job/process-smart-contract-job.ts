@@ -50,6 +50,7 @@ export class ProcessSmartContractJob extends Job {
   private async getNftContractLastTokenId(contract: DbSmartContract): Promise<bigint | undefined> {
     const client = StacksNodeRpcClient.create({
       contractPrincipal: contract.principal,
+      network: this.network,
     });
     return await client.readUIntFromContract('get-last-token-id');
   }
