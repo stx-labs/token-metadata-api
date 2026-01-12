@@ -4,13 +4,6 @@ import { buildApiServer } from '../src/api/init';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import {
-  StacksEvent,
-  StacksPayload,
-  StacksTransaction,
-  StacksTransactionEvent,
-} from '@hirosystems/chainhook-client';
-import { BlockCache, CachedEvent } from '../src/pg/chainhook/block-cache';
 import { SmartContractDeployment } from '../src/token-processor/util/sip-validation';
 import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types';
 import { waiter } from '@hirosystems/api-toolkit';

@@ -2,6 +2,7 @@ import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosyste
 import { ENV } from '../env';
 import {
   NftMintEvent,
+  SftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
 } from '../token-processor/util/sip-validation';
@@ -14,35 +15,40 @@ import {
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
-import {
-  ProcessedStacksCoreBlock,
-  ProcessedStacksCoreEvent,
-} from '../stacks-core/stacks-core-block-processor';
+import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
 
 export class StacksCorePgStore extends BasePgStoreModule {
   /**
    * Writes a processed Stacks Core block to the database.
    * @param block - The processed Stacks Core block to write.
    */
-  async writeBlock(block: ProcessedStacksCoreBlock): Promise<void> {
+  async writeProcessedBlock(args: {
+    block: DecodedStacksBlock;
+    contracts: SmartContractDeployment[];
+    notifications: TokenMetadataUpdateNotification[];
+    nftMints: NftMintEvent[];
+    sftMints: SftMintEvent[];
+    ftSupplyDelta: Map<string, BigNumber>;
+  }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
-      await this.insertBlock(sql, block);
-      for (const contract of block.contracts)
-        await this.applyContractDeployment(sql, contract, block);
-      for (const notification of block.notifications)
-        await this.applyNotification(sql, notification, block);
-      await this.applyTokenMints(sql, block.nftMints, DbTokenType.nft, block);
-      await this.applyTokenMints(sql, block.sftMints, DbTokenType.sft, block);
-      for (const [contract, delta] of block.ftSupplyDelta)
-        await this.applyFtSupplyChange(sql, contract, delta, block);
+      await this.insertBlock(sql, args.block);
+      for (const contract of args.contracts)
+        await this.applyContractDeployment(sql, contract, args.block);
+      for (const notification of args.notifications)
+        await this.applyNotification(sql, notification, args.block);
+      await this.applyTokenMints(sql, args.nftMints, DbTokenType.nft, args.block);
+      await this.applyTokenMints(sql, args.sftMints, DbTokenType.sft, args.block);
+      for (const [contract, delta] of args.ftSupplyDelta)
+        await this.applyFtSupplyChange(sql, contract, delta, args.block);
       await this.enqueueDynamicTokensDueForRefresh();
     });
   }
 
-  async insertBlock(sql: PgSqlClient, block: ProcessedStacksCoreBlock): Promise<void> {
+  async insertBlock(sql: PgSqlClient, block: DecodedStacksBlock): Promise<void> {
     const values = {
-      block_height: block.blockHeight,
-      index_block_hash: block.indexBlockHash,
+      block_height: block.block_height,
+      index_block_hash: block.index_block_hash,
+      parent_index_block_hash: block.parent_index_block_hash,
     };
     await sql`INSERT INTO blocks ${sql(values)}`;
   }
@@ -130,18 +136,18 @@ export class StacksCorePgStore extends BasePgStoreModule {
 
   async applyContractDeployment(
     sql: PgSqlClient,
-    contract: ProcessedStacksCoreEvent<SmartContractDeployment>,
-    block: ProcessedStacksCoreBlock
+    contract: SmartContractDeployment,
+    block: DecodedStacksBlock
   ) {
     await this.enqueueContract(sql, {
-      principal: contract.event.principal,
-      sip: contract.event.sip,
-      block_height: block.blockHeight,
-      index_block_hash: block.indexBlockHash,
+      principal: contract.principal,
+      sip: contract.sip,
+      block_height: block.block_height,
+      index_block_hash: block.index_block_hash,
       tx_id: contract.tx_id,
       tx_index: contract.tx_index,
-      fungible_token_name: contract.event.fungible_token_name ?? null,
-      non_fungible_token_name: contract.event.non_fungible_token_name ?? null,
+      fungible_token_name: contract.fungible_token_name ?? null,
+      non_fungible_token_name: contract.non_fungible_token_name ?? null,
     });
   }
 
@@ -183,27 +189,22 @@ export class StacksCorePgStore extends BasePgStoreModule {
 
   private async applyNotification(
     sql: PgSqlClient,
-    event: ProcessedStacksCoreEvent<TokenMetadataUpdateNotification>,
-    block: ProcessedStacksCoreBlock
+    event: TokenMetadataUpdateNotification,
+    block: DecodedStacksBlock
   ) {
     const contractResult = await sql<{ id: number }[]>`
-      SELECT id FROM smart_contracts WHERE principal = ${event.event.contract_id} LIMIT 1
+      SELECT id FROM smart_contracts WHERE principal = ${event.contract_id} LIMIT 1
     `;
     if (contractResult.count == 0) {
       return;
     }
-    const notification = event.event;
     await sql`
       WITH affected_token_ids AS (
         SELECT t.id
         FROM tokens AS t
         INNER JOIN smart_contracts AS s ON s.id = t.smart_contract_id
-        WHERE s.principal = ${notification.contract_id}
-        ${
-          notification.token_ids?.length
-            ? sql`AND t.token_number IN ${sql(notification.token_ids)}`
-            : sql``
-        }
+        WHERE s.principal = ${event.contract_id}
+        ${event.token_ids?.length ? sql`AND t.token_number IN ${sql(event.token_ids)}` : sql``}
       ),
       previous_modes AS (
         SELECT DISTINCT ON (a.id) a.id, COALESCE(m.update_mode, 'standard') AS update_mode
@@ -215,8 +216,8 @@ export class StacksCorePgStore extends BasePgStoreModule {
         INSERT INTO update_notifications
         (token_id, update_mode, ttl, block_height, index_block_hash, tx_id, tx_index, event_index)
         (
-          SELECT id, ${notification.update_mode}, ${notification.ttl ?? null},
-            ${block.blockHeight}, ${block.indexBlockHash}, ${event.tx_id}, ${event.tx_index},
+          SELECT id, ${event.update_mode}, ${event.ttl ?? null},
+            ${block.block_height}, ${block.index_block_hash}, ${event.tx_id}, ${event.tx_index},
             ${event.event_index}
           FROM previous_modes
           WHERE update_mode <> 'frozen'
@@ -233,7 +234,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     sql: PgSqlClient,
     contract: string,
     delta: BigNumber,
-    block: ProcessedStacksCoreBlock
+    block: DecodedStacksBlock
   ): Promise<void> {
     await sql`
       WITH smart_contract_id AS (
@@ -248,7 +249,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       delta_insert AS (
         INSERT INTO ft_supply_deltas (token_id, block_height, index_block_hash, delta)
         VALUES (
-          (SELECT id FROM token_id), ${block.blockHeight}, ${block.indexBlockHash}, ${delta}
+          (SELECT id FROM token_id), ${block.block_height}, ${block.index_block_hash}, ${delta}
         )
       )
       UPDATE tokens
@@ -288,26 +289,26 @@ export class StacksCorePgStore extends BasePgStoreModule {
 
   private async applyTokenMints(
     sql: PgSqlClient,
-    mints: ProcessedStacksCoreEvent<NftMintEvent>[],
+    mints: NftMintEvent[],
     tokenType: DbTokenType,
-    block: ProcessedStacksCoreBlock
+    block: DecodedStacksBlock
   ): Promise<void> {
     if (mints.length == 0) return;
     for await (const batch of batchIterate(mints, 500)) {
       const tokenValues = new Map<string, (string | number)[]>();
-      for (const m of batch) {
+      for (const mint of batch) {
         // SFT tokens may mint one single token more than once given that it's an FT within an NFT.
         // This makes sure we only keep the first occurrence.
-        const tokenKey = `${m.event.contractId}-${m.event.tokenId}`;
+        const tokenKey = `${mint.contractId}-${mint.tokenId}`;
         if (tokenValues.has(tokenKey)) continue;
         tokenValues.set(tokenKey, [
-          m.event.contractId,
+          mint.contractId,
           tokenType,
-          m.event.tokenId.toString(),
-          block.blockHeight,
-          block.indexBlockHash,
-          m.tx_id,
-          m.tx_index,
+          mint.tokenId.toString(),
+          block.block_height,
+          block.index_block_hash,
+          mint.tx_id,
+          mint.tx_index,
         ]);
       }
       await sql`
