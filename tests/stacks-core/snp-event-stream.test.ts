@@ -26,6 +26,8 @@ describe('SNP event stream', () => {
     await db.close();
   });
 
+  test('stub', () => {});
+
   // describe('chain tip', () => {
   //   test('updates chain tip on chainhook event', async () => {
   //     await db.chainhook.processPayload(

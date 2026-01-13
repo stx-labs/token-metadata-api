@@ -28,10 +28,7 @@ describe('contract deployments', () => {
             tx_id: '0x01',
             sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
           })
-            .setSmartContractPayload(
-              'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
-              SIP_009_ABI
-            )
+            .setSmartContractPayload('friedger-pool-nft', SIP_009_ABI)
             .build()
         )
         .build()

@@ -52,12 +52,13 @@ describe('NFT events', () => {
 
   test('NFT contract can start with zero tokens', async () => {
     const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
-    const contractId = `${address}.friedger-pool-nft`;
+    const contractName = 'friedger-pool-nft';
+    const contractId = `${address}.${contractName}`;
     await processor.processBlock(
       new TestBlockBuilder({ block_height: 90 })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
-            .setSmartContractPayload(contractId, SIP_009_ABI)
+            .setSmartContractPayload(contractName, SIP_009_ABI)
             .build()
         )
         .build()
