@@ -4,7 +4,7 @@ import { StacksEventStream, StacksEventStreamType } from '@hirosystems/salt-n-pe
 import { EventEmitter } from 'node:events';
 import { StacksCoreBlockSchema } from './schemas';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
-import { StacksCoreBlockProcessor } from './stacks-core-block-processor';
+import { decodeStacksCoreBlock, StacksCoreBlockProcessor } from './stacks-core-block-processor';
 import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
 
 const SnpBlockCType = TypeCompiler.Compile(StacksCoreBlockSchema);
@@ -64,7 +64,8 @@ export class SnpEventStreamHandler {
       throw new Error(`Failed to parse SNP block body: ${body}`);
     }
     try {
-      await this.blockProcessor.process(body);
+      const decodedBlock = decodeStacksCoreBlock(body);
+      await this.blockProcessor.processBlock(decodedBlock);
       this.events.emit('processedMessage', { msgId: messageId });
     } catch (error) {
       this.logger.error(error, `Failed to process block`);

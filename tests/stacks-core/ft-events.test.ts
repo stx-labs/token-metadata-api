@@ -6,16 +6,20 @@ import {
   insertAndEnqueueTestContractWithTokens,
   getTokenCount,
   markAllJobsAsDone,
-  TestChainhookPayloadBuilder,
+  TestTransactionBuilder,
+  TestBlockBuilder,
 } from '../helpers';
+import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
 
 describe('FT events', () => {
   let db: PgStore;
+  let processor: StacksCoreBlockProcessor;
 
   beforeEach(async () => {
     ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
+    processor = new StacksCoreBlockProcessor({ db: db.core });
   });
 
   afterEach(async () => {
@@ -40,20 +44,13 @@ describe('FT events', () => {
     let token = await db.getToken({ id: 1 });
     expect(token?.total_supply).toBe('10000');
 
-    await db.chainhook.processPayload(
-      new TestChainhookPayloadBuilder()
-        .apply()
-        .block({ height: 100 })
-        .transaction({ hash: '0x01', sender: address })
-        .event({
-          type: 'FTMintEvent',
-          position: { index: 0 },
-          data: {
-            asset_identifier: `${contractId}::usdc`,
-            recipient: address,
-            amount: '2000',
-          },
-        })
+    await processor.processBlock(
+      new TestBlockBuilder({ block_height: 100 })
+        .addTransaction(
+          new TestTransactionBuilder({ tx_id: '0x01', sender: address })
+            .addFtMintEvent(`${contractId}::usdc`, address, '2000')
+            .build()
+        )
         .build()
     );
 
@@ -67,20 +64,13 @@ describe('FT events', () => {
     await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip010, 1n);
     await markAllJobsAsDone(db);
 
-    await db.chainhook.processPayload(
-      new TestChainhookPayloadBuilder()
-        .apply()
-        .block({ height: 100 })
-        .transaction({ hash: '0x01', sender: address })
-        .event({
-          type: 'FTMintEvent',
-          position: { index: 0 },
-          data: {
-            asset_identifier: `${contractId}::usdc`,
-            recipient: address,
-            amount: '2000',
-          },
-        })
+    await processor.processBlock(
+      new TestBlockBuilder({ block_height: 100 })
+        .addTransaction(
+          new TestTransactionBuilder({ tx_id: '0x01', sender: address })
+            .addFtMintEvent(`${contractId}::usdc`, address, '2000')
+            .build()
+        )
         .build()
     );
 
@@ -107,20 +97,13 @@ describe('FT events', () => {
     let token = await db.getToken({ id: 1 });
     expect(token?.total_supply).toBe('10000');
 
-    await db.chainhook.processPayload(
-      new TestChainhookPayloadBuilder()
-        .apply()
-        .block({ height: 100 })
-        .transaction({ hash: '0x01', sender: address })
-        .event({
-          type: 'FTBurnEvent',
-          position: { index: 0 },
-          data: {
-            asset_identifier: `${contractId}::usdc`,
-            sender: address,
-            amount: '2000',
-          },
-        })
+    await processor.processBlock(
+      new TestBlockBuilder({ block_height: 100 })
+        .addTransaction(
+          new TestTransactionBuilder({ tx_id: '0x01', sender: address })
+            .addFtBurnEvent(`${contractId}::usdc`, address, '2000')
+            .build()
+        )
         .build()
     );
 
@@ -134,20 +117,13 @@ describe('FT events', () => {
     await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip010, 1n);
     await markAllJobsAsDone(db);
 
-    await db.chainhook.processPayload(
-      new TestChainhookPayloadBuilder()
-        .apply()
-        .block({ height: 100 })
-        .transaction({ hash: '0x01', sender: address })
-        .event({
-          type: 'FTBurnEvent',
-          position: { index: 0 },
-          data: {
-            asset_identifier: `${contractId}::usdc`,
-            sender: address,
-            amount: '2000',
-          },
-        })
+    await processor.processBlock(
+      new TestBlockBuilder({ block_height: 100 })
+        .addTransaction(
+          new TestTransactionBuilder({ tx_id: '0x01', sender: address })
+            .addFtBurnEvent(`${contractId}::usdc`, address, '2000')
+            .build()
+        )
         .build()
     );
 

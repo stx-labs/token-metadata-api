@@ -20,7 +20,7 @@
     "test": "jest --runInBand",
     "test:admin": "npm run test -- ./tests/admin/",
     "test:api": "npm run test -- ./tests/api/",
-    "test:chainhook": "npm run test -- ./tests/chainhook/",
+    "test:stacks-core": "npm run test -- ./tests/stacks-core/",
     "test:token-queue": "npm run test -- ./tests/token-queue/",
     "testenv:run": "docker compose -f docker/docker-compose.dev.postgres.yml up",
     "testenv:stop": "docker compose -f docker/docker-compose.dev.postgres.yml down -v -t 0",
