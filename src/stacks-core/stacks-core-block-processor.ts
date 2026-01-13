@@ -92,7 +92,10 @@ export class StacksCoreBlockProcessor {
             block.block_height - 1
           } ${block.parent_index_block_hash}`
         );
-        await this.db.revertToChainTip(sql, chainTip);
+        await this.db.revertToChainTip(sql, {
+          block_height: block.block_height - 1,
+          index_block_hash: block.parent_index_block_hash,
+        });
       }
 
       const contracts: SmartContractDeployment[] = [];

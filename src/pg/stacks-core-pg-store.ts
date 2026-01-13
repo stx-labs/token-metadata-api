@@ -83,8 +83,8 @@ export class StacksCorePgStore extends BasePgStoreModule {
         updated_at = NOW()
       WHERE id IN (SELECT token_id FROM ft_supply_deltas)
     `;
-    // Finally, delete all blocks with a height greater than the chain tip's block height. This will
-    // cascade delete all tokens, smart contracts, FT supply deltas, update notifications and jobs
+    // Delete all blocks with a height greater than the chain tip's block height. This will
+    // cascade delete all tokens, smart contracts, FT supply deltas, update notifications, and jobs
     // associated with those blocks.
     await sql`
       DELETE FROM blocks WHERE block_height > ${newChainTip.block_height}
