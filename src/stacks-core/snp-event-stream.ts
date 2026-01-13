@@ -55,8 +55,11 @@ export class SnpEventStreamHandler {
   }
 
   async handleMsg(messageId: string, _timestamp: string, path: string, body: any) {
-    this.logger.debug(`Received SNP stream event ${path}, msgId: ${messageId}`);
-    if (path !== '/new_block') {
+    this.logger.info(`Received SNP stream event ${path}, msgId: ${messageId}`);
+    if (path === '/new_burn_block') {
+      this.logger.info(`Ignoring new burn block event, msgId: ${messageId}`);
+      return;
+    } else if (path !== '/new_block') {
       this.logger.warn(`Unsupported SNP stream event ${path}, skipping...`);
       return;
     }

@@ -26,164 +26,178 @@ describe('SNP event stream', () => {
     await db.close();
   });
 
-  test('stub', () => {});
+  describe('chain tip', () => {
+    test('updates chain tip on chainhook event', async () => {
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 100,
+          index_block_hash: '0x000001',
+          parent_index_block_hash: '0x000000',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
+            }).build()
+          )
+          .build()
+      );
+      await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+        index_block_hash: '0x000001',
+        block_height: 100,
+      });
 
-  // describe('chain tip', () => {
-  //   test('updates chain tip on chainhook event', async () => {
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 100 })
-  //         .transaction({ hash: '0x01', sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60' })
-  //         .contractDeploy('SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft', {
-  //           maps: [],
-  //           functions: [],
-  //           variables: [],
-  //           fungible_tokens: [],
-  //           non_fungible_tokens: [],
-  //         })
-  //         .build()
-  //     );
-  //     await expect(db.getChainTipBlockHeight()).resolves.toBe(100);
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 101,
+          index_block_hash: '0x000002',
+          parent_index_block_hash: '0x000001',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
+            }).build()
+          )
+          .build()
+      );
+      await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+        index_block_hash: '0x000002',
+        block_height: 101,
+      });
+    });
 
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 101 })
-  //         .transaction({ hash: '0x01', sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60' })
-  //         .event({
-  //           type: 'SmartContractEvent',
-  //           position: { index: 0 },
-  //           data: {
-  //             contract_identifier: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
-  //             topic: 'print',
-  //             raw_value: cvToHex(stringUtf8CV('test')),
-  //           },
-  //         })
-  //         .build()
-  //     );
-  //     await expect(db.getChainTipBlockHeight()).resolves.toBe(101);
-  //   });
+    test('enqueues dynamic tokens for refresh with standard interval', async () => {
+      const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
+      const contractId = `${address}.friedger-pool-nft`;
+      ENV.METADATA_DYNAMIC_TOKEN_REFRESH_INTERVAL = 86400;
+      await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 1n);
+      // Mark as dynamic
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 90,
+          index_block_hash: '0x000003',
+          parent_index_block_hash: '0x000002',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: address,
+            })
+              .addContractEvent(
+                contractId,
+                cvToHex(
+                  tupleCV({
+                    notification: bufferCV(Buffer.from('token-metadata-update')),
+                    payload: tupleCV({
+                      'token-class': bufferCV(Buffer.from('nft')),
+                      'contract-id': bufferCV(Buffer.from(contractId)),
+                      'update-mode': bufferCV(Buffer.from('dynamic')),
+                    }),
+                  })
+                )
+              )
+              .build()
+          )
+          .build()
+      );
+      // Set updated_at for testing.
+      await db.sql`
+        UPDATE tokens
+        SET updated_at = NOW() - INTERVAL '2 days'
+        WHERE id = 1
+      `;
+      await markAllJobsAsDone(db);
 
-  //   test('enqueues dynamic tokens for refresh with standard interval', async () => {
-  //     const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
-  //     const contractId = `${address}.friedger-pool-nft`;
-  //     ENV.METADATA_DYNAMIC_TOKEN_REFRESH_INTERVAL = 86400;
-  //     await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 1n);
-  //     // Mark as dynamic
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 90 })
-  //         .transaction({ hash: '0x01', sender: address })
-  //         .event({
-  //           type: 'SmartContractEvent',
-  //           position: { index: 0 },
-  //           data: {
-  //             contract_identifier: contractId,
-  //             topic: 'print',
-  //             raw_value: cvToHex(
-  //               tupleCV({
-  //                 notification: bufferCV(Buffer.from('token-metadata-update')),
-  //                 payload: tupleCV({
-  //                   'token-class': bufferCV(Buffer.from('nft')),
-  //                   'contract-id': bufferCV(Buffer.from(contractId)),
-  //                   'update-mode': bufferCV(Buffer.from('dynamic')),
-  //                 }),
-  //               })
-  //             ),
-  //           },
-  //         })
-  //         .build()
-  //     );
-  //     // Set updated_at for testing.
-  //     await db.sql`
-  //       UPDATE tokens
-  //       SET updated_at = NOW() - INTERVAL '2 days'
-  //       WHERE id = 1
-  //     `;
-  //     await markAllJobsAsDone(db);
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 95,
+          index_block_hash: '0x000004',
+          parent_index_block_hash: '0x000003',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
+            })
+              .addContractEvent(
+                'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
+                cvToHex(stringUtf8CV('test'))
+              )
+              .build()
+          )
+          .build()
+      );
 
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 95 })
-  //         .transaction({ hash: '0x01', sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60' })
-  //         .event({
-  //           type: 'SmartContractEvent',
-  //           position: { index: 0 },
-  //           data: {
-  //             contract_identifier: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
-  //             topic: 'print',
-  //             raw_value: cvToHex(stringUtf8CV('test')),
-  //           },
-  //         })
-  //         .build()
-  //     );
+      const job = await db.getJob({ id: 2 });
+      expect(job?.status).toBe('pending');
+    });
 
-  //     const job = await db.getJob({ id: 2 });
-  //     expect(job?.status).toBe('pending');
-  //   });
+    test('enqueues dynamic tokens for refresh with ttl', async () => {
+      const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
+      const contractId = `${address}.friedger-pool-nft`;
+      ENV.METADATA_DYNAMIC_TOKEN_REFRESH_INTERVAL = 99999;
+      await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 1n);
+      // Mark as dynamic
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 90,
+          index_block_hash: '0x000003',
+          parent_index_block_hash: '0x000002',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: address,
+            })
+              .addContractEvent(
+                contractId,
+                cvToHex(
+                  tupleCV({
+                    notification: bufferCV(Buffer.from('token-metadata-update')),
+                    payload: tupleCV({
+                      'token-class': bufferCV(Buffer.from('nft')),
+                      'contract-id': bufferCV(Buffer.from(contractId)),
+                      'update-mode': bufferCV(Buffer.from('dynamic')),
+                      ttl: uintCV(3600),
+                    }),
+                  })
+                )
+              )
+              .build()
+          )
+          .build()
+      );
+      // Set updated_at for testing
+      await db.sql`
+        UPDATE tokens
+        SET updated_at = NOW() - INTERVAL '2 hours'
+        WHERE id = 1
+      `;
+      await markAllJobsAsDone(db);
 
-  //   test('enqueues dynamic tokens for refresh with ttl', async () => {
-  //     const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
-  //     const contractId = `${address}.friedger-pool-nft`;
-  //     ENV.METADATA_DYNAMIC_TOKEN_REFRESH_INTERVAL = 99999;
-  //     await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 1n);
-  //     // Mark as dynamic
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 90 })
-  //         .transaction({ hash: '0x01', sender: address })
-  //         .event({
-  //           type: 'SmartContractEvent',
-  //           position: { index: 0 },
-  //           data: {
-  //             contract_identifier: contractId,
-  //             topic: 'print',
-  //             raw_value: cvToHex(
-  //               tupleCV({
-  //                 notification: bufferCV(Buffer.from('token-metadata-update')),
-  //                 payload: tupleCV({
-  //                   'token-class': bufferCV(Buffer.from('nft')),
-  //                   'contract-id': bufferCV(Buffer.from(contractId)),
-  //                   'update-mode': bufferCV(Buffer.from('dynamic')),
-  //                   ttl: uintCV(3600),
-  //                 }),
-  //               })
-  //             ),
-  //           },
-  //         })
-  //         .build()
-  //     );
-  //     // Set updated_at for testing
-  //     await db.sql`
-  //       UPDATE tokens
-  //       SET updated_at = NOW() - INTERVAL '2 hours'
-  //       WHERE id = 1
-  //     `;
-  //     await markAllJobsAsDone(db);
+      await processor.processBlock(
+        new TestBlockBuilder({
+          block_height: 95,
+          index_block_hash: '0x000004',
+          parent_index_block_hash: '0x000003',
+        })
+          .addTransaction(
+            new TestTransactionBuilder({
+              tx_id: '0x01',
+              sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
+            })
+              .addContractEvent(
+                'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
+                cvToHex(stringUtf8CV('test'))
+              )
+              .build()
+          )
+          .build()
+      );
 
-  //     await db.chainhook.processPayload(
-  //       new TestChainhookPayloadBuilder()
-  //         .apply()
-  //         .block({ height: 95 })
-  //         .transaction({ hash: '0x01', sender: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60' })
-  //         .event({
-  //           type: 'SmartContractEvent',
-  //           position: { index: 0 },
-  //           data: {
-  //             contract_identifier: 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft',
-  //             topic: 'print',
-  //             raw_value: cvToHex(stringUtf8CV('test')),
-  //           },
-  //         })
-  //         .build()
-  //     );
-
-  //     const job = await db.getJob({ id: 2 });
-  //     expect(job?.status).toBe('pending');
-  //   });
-  // });
+      const job = await db.getJob({ id: 2 });
+      expect(job?.status).toBe('pending');
+    });
+  });
 });
