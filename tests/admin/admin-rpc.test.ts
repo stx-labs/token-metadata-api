@@ -21,7 +21,7 @@ describe('Admin RPC', () => {
   beforeEach(async () => {
     ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
-    jobQueue = new JobQueue({ db });
+    jobQueue = new JobQueue({ db, network: 'mainnet' });
     fastify = await buildAdminRpcServer({ db, jobQueue });
     await cycleMigrations(MIGRATIONS_DIR);
   });

@@ -50,7 +50,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       index_block_hash: block.index_block_hash,
       parent_index_block_hash: block.parent_index_block_hash,
     };
-    await sql`INSERT INTO blocks ${sql(values)}`;
+    await sql`INSERT INTO blocks ${sql(values)} ON CONFLICT (index_block_hash) DO NOTHING`;
   }
 
   async getChainTip(sql: PgSqlClient): Promise<DbChainTip | null> {

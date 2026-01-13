@@ -1290,10 +1290,12 @@ export async function insertAndEnqueueTestContract(
   tx_id?: string
 ): Promise<DbJob> {
   return await db.sqlWriteTransaction(async sql => {
-    const block = {
+    const block: DecodedStacksBlock = {
       block_height: 1,
       index_block_hash: '0x000001',
-    } as DecodedStacksBlock;
+      parent_index_block_hash: '0x000000',
+      transactions: [],
+    };
     const deploy: SmartContractDeployment = {
       principal,
       sip,
@@ -1301,6 +1303,7 @@ export async function insertAndEnqueueTestContract(
       tx_id: tx_id ?? '0x123456',
       tx_index: 0,
     };
+    await db.core.insertBlock(sql, block);
     await db.core.applyContractDeployment(sql, deploy, block);
     const smart_contract = (await db.getSmartContract({ principal })) as DbSmartContract;
 
