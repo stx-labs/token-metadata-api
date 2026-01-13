@@ -11,7 +11,7 @@ import {
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
 
-describe('SNP event stream', () => {
+describe('Block processor', () => {
   let db: PgStore;
   let processor: StacksCoreBlockProcessor;
 
