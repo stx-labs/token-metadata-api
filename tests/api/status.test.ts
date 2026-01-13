@@ -38,21 +38,11 @@ describe('Status routes', () => {
   });
 
   test('returns status when a block has been processed', async () => {
-    await insertAndEnqueueTestContractWithTokens(
-      db,
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
-      DbSipNumber.sip009,
-      4n
-    );
     await db.core.insertBlock(db.sql, {
-      blockHeight: 1,
-      indexBlockHash: '0x123',
-      transactions: new Map(),
-      contracts: [],
-      notifications: [],
-      sftMints: [],
-      nftMints: [],
-      ftSupplyDelta: new Map(),
+      block_height: 1,
+      index_block_hash: '0x123',
+      parent_index_block_hash: '0x000000',
+      transactions: [],
     });
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
