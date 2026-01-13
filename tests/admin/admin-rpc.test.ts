@@ -401,6 +401,12 @@ describe('Admin RPC', () => {
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
       await fastify.listen({ host: ENV.API_HOST, port: ENV.API_PORT });
 
+      await db.core.insertBlock(db.sql, {
+        block_height: 5,
+        index_block_hash: '0x242424',
+        parent_index_block_hash: '0x000000',
+        transactions: [],
+      });
       nock('https://api.mainnet.hiro.so')
         .get(`/extended/v1/contract/${principal}`)
         .reply(
