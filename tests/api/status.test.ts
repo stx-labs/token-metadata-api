@@ -30,48 +30,28 @@ describe('Status routes', () => {
     expect(json).toStrictEqual({
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
-      chain_tip: {
-        block_height: 1,
-      },
+      chain_tip: null,
     });
     const noVersionResponse = await fastify.inject({ method: 'GET', url: '/metadata/' });
     expect(response.statusCode).toEqual(noVersionResponse.statusCode);
     expect(json).toStrictEqual(noVersionResponse.json());
   });
 
-  test('returns status counts', async () => {
-    await insertAndEnqueueTestContractWithTokens(
-      db,
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
-      DbSipNumber.sip009,
-      4n
-    );
-    await db.chainhook.updateChainTipBlockHeight(100);
-    await db.sql`UPDATE jobs SET status = 'failed' WHERE id = 2`;
-    await db.sql`UPDATE jobs SET status = 'invalid' WHERE id = 3`;
-    await db.sql`UPDATE jobs SET status = 'queued' WHERE id = 4`;
-    await db.sql`UPDATE jobs SET status = 'done' WHERE id = 5`;
-
+  test('returns status when a block has been processed', async () => {
+    await db.core.insertBlock(db.sql, {
+      block_height: 1,
+      index_block_hash: '0x123',
+      parent_index_block_hash: '0x000000',
+      transactions: [],
+    });
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
     expect(json).toStrictEqual({
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
       chain_tip: {
-        block_height: 100,
-      },
-      job_queue: {
-        pending: 1,
-        failed: 1,
-        invalid: 1,
-        queued: 1,
-        done: 1,
-      },
-      token_contracts: {
-        'sip-009': 1,
-      },
-      tokens: {
-        nft: 4,
+        block_height: 1,
+        index_block_hash: '0x123',
       },
     });
   });

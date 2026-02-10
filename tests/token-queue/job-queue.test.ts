@@ -4,9 +4,10 @@ import { DbJob, DbJobStatus, DbSipNumber } from '../../src/pg/types';
 import { JobQueue } from '../../src/token-processor/queue/job-queue';
 import { insertAndEnqueueTestContract } from '../helpers';
 import { cycleMigrations, timeout } from '@hirosystems/api-toolkit';
+import { StacksNetworkName } from '@stacks/network';
 
 class TestJobQueue extends JobQueue {
-  constructor(args: { db: PgStore }) {
+  constructor(args: { db: PgStore; network: StacksNetworkName }) {
     super(args);
     this['_isRunning'] = true; // Simulate a running queue.
   }
@@ -26,7 +27,7 @@ describe('JobQueue', () => {
     ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
-    queue = new TestJobQueue({ db });
+    queue = new TestJobQueue({ db, network: 'mainnet' });
   });
 
   afterEach(async () => {
@@ -81,7 +82,7 @@ describe('JobQueue', () => {
 
   test('pg connection errors are not re-thrown', async () => {
     await insertAndEnqueueTestContract(db, 'ABCD.test-ft', DbSipNumber.sip010);
-    const queue = new JobQueue({ db });
+    const queue = new JobQueue({ db, network: 'mainnet' });
     // Close DB and start the queue. If the error is not handled correctly, the test will fail.
     await db.close();
     queue.start();

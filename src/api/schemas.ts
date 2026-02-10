@@ -1,5 +1,5 @@
 import { SwaggerOptions } from '@fastify/swagger';
-import { SERVER_VERSION } from '@hirosystems/api-toolkit';
+import { Nullable, SERVER_VERSION } from '@hirosystems/api-toolkit';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
@@ -333,40 +333,13 @@ export const ApiStatusResponse = Type.Object(
   {
     server_version: Type.String({ examples: ['token-metadata-api v0.0.1 (master:a1b2c3)'] }),
     status: Type.String({ examples: ['ready'] }),
-    chain_tip: Type.Object({
-      block_height: Type.Integer({ examples: [163541] }),
-    }),
-    tokens: Type.Optional(
-      Type.Object(
-        {
-          ft: Type.Optional(Type.Integer({ examples: [512] })),
-          nft: Type.Optional(Type.Integer({ examples: [493452] })),
-          sft: Type.Optional(Type.Integer({ examples: [44] })),
-        },
-        { title: 'Api Token Count' }
-      )
-    ),
-    token_contracts: Type.Optional(
-      Type.Object(
-        {
-          'sip-009': Type.Optional(Type.Integer({ examples: [3101] })),
-          'sip-010': Type.Optional(Type.Integer({ examples: [512] })),
-          'sip-013': Type.Optional(Type.Integer({ examples: [11] })),
-        },
-        { title: 'Api Token Contract Count' }
-      )
-    ),
-    job_queue: Type.Optional(
-      Type.Object(
-        {
-          pending: Type.Optional(Type.Integer({ examples: [430562] })),
-          queued: Type.Optional(Type.Integer({ examples: [512] })),
-          done: Type.Optional(Type.Integer({ examples: [12532] })),
-          failed: Type.Optional(Type.Integer({ examples: [11] })),
-          invalid: Type.Optional(Type.Integer({ examples: [20] })),
-        },
-        { title: 'Api Job Count' }
-      )
+    chain_tip: Nullable(
+      Type.Object({
+        block_height: Type.Integer({ examples: [163541] }),
+        index_block_hash: Type.String({
+          examples: ['0x1234567890abcdef1234567890abcdef1234567890abcdef'],
+        }),
+      })
     ),
   },
   { title: 'Api Status Response' }

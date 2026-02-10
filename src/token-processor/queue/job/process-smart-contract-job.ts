@@ -2,7 +2,6 @@ import { ENV } from '../../../env';
 import { DbSipNumber, DbSmartContract } from '../../../pg/types';
 import { Job } from './job';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { dbSipNumberToDbTokenType } from '../../util/helpers';
 import { logger } from '@hirosystems/api-toolkit';
 
 /**
@@ -51,6 +50,7 @@ export class ProcessSmartContractJob extends Job {
   private async getNftContractLastTokenId(contract: DbSmartContract): Promise<bigint | undefined> {
     const client = StacksNodeRpcClient.create({
       contractPrincipal: contract.principal,
+      network: this.network,
     });
     return await client.readUIntFromContract('get-last-token-id');
   }
@@ -74,7 +74,7 @@ export class ProcessSmartContractJob extends Job {
         `ProcessSmartContractJob enqueueing ${tokenCount} tokens for ${this.description()}`
       );
       await this.db.updateSmartContractTokenCount({ id: contract.id, count: tokenCount });
-      await this.db.chainhook.insertAndEnqueueSequentialTokens(sql, {
+      await this.db.core.insertAndEnqueueSequentialTokens(sql, {
         smart_contract: contract,
         token_count: tokenCount,
       });

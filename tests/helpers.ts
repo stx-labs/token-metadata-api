@@ -4,16 +4,21 @@ import { buildApiServer } from '../src/api/init';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import {
-  StacksEvent,
-  StacksPayload,
-  StacksTransaction,
-  StacksTransactionEvent,
-} from '@hirosystems/chainhook-client';
-import { BlockCache, CachedEvent } from '../src/pg/chainhook/block-cache';
 import { SmartContractDeployment } from '../src/token-processor/util/sip-validation';
 import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types';
 import { waiter } from '@hirosystems/api-toolkit';
+import {
+  DecodedStacksBlock,
+  DecodedStacksTransaction,
+} from '../src/stacks-core/stacks-core-block-processor';
+import {
+  AnchorModeID,
+  DecodedTxResult,
+  PostConditionModeID,
+  TransactionVersion,
+  TxPayloadTypeID,
+} from '@hirosystems/stacks-encoding-native-js';
+import { ClarityAbi } from '@stacks/transactions';
 
 export type TestFastifyServer = FastifyInstance<
   Server,
@@ -68,7 +73,7 @@ export async function closeTestServer(server: http.Server) {
   await serverDone;
 }
 
-export const SIP_009_ABI = {
+export const SIP_009_ABI: ClarityAbi = {
   maps: [
     {
       key: {
@@ -454,7 +459,7 @@ export const SIP_009_ABI = {
   non_fungible_tokens: [{ name: 'crashpunks-v2', type: 'uint128' }],
 };
 
-export const SIP_010_ABI = {
+export const SIP_010_ABI: ClarityAbi = {
   maps: [],
   functions: [
     {
@@ -768,7 +773,7 @@ export const SIP_010_ABI = {
   non_fungible_tokens: [],
 };
 
-export const SIP_013_ABI = {
+export const SIP_013_ABI: ClarityAbi = {
   maps: [
     { key: 'principal', name: 'approved-contracts', value: 'bool' },
     {
@@ -1278,135 +1283,6 @@ export const SIP_013_ABI = {
   non_fungible_tokens: [],
 };
 
-export class TestChainhookPayloadBuilder {
-  private payload: StacksPayload = {
-    apply: [],
-    rollback: [],
-    chainhook: {
-      uuid: 'test',
-      predicate: {
-        scope: 'block_height',
-        higher_than: 0,
-      },
-      is_streaming_blocks: true,
-    },
-    events: [],
-  };
-  private action: 'apply' | 'rollback' = 'apply';
-  private get lastBlock(): StacksEvent {
-    return this.payload[this.action][this.payload[this.action].length - 1] as StacksEvent;
-  }
-  private get lastBlockTx(): StacksTransaction {
-    return this.lastBlock.transactions[this.lastBlock.transactions.length - 1];
-  }
-
-  streamingBlocks(streaming: boolean): this {
-    this.payload.chainhook.is_streaming_blocks = streaming;
-    return this;
-  }
-
-  apply(): this {
-    this.action = 'apply';
-    return this;
-  }
-
-  rollback(): this {
-    this.action = 'rollback';
-    return this;
-  }
-
-  block(args: { height: number; hash?: string; timestamp?: number }): this {
-    this.payload[this.action].push({
-      block_identifier: {
-        hash: args.hash ?? '0x9430a78c5e166000980136a22764af72ff0f734b2108e33cfe5f9e3d4430adda',
-        index: args.height,
-      },
-      metadata: {
-        bitcoin_anchor_block_identifier: {
-          hash: '0x0000000000000000000bb26339f877f36e92d5a11d75fc2e34aed3f7623937fe',
-          index: 705573,
-        },
-        confirm_microblock_identifier: null,
-        pox_cycle_index: 18,
-        pox_cycle_length: 2100,
-        pox_cycle_position: 1722,
-        stacks_block_hash: '0xbccf63ec2438cf497786ce617ec7e64e2b27ee023a28a0927ee36b81870115d2',
-        tenure_height: null,
-        block_time: null,
-        signer_bitvec: null,
-        signer_signature: null,
-        signer_public_keys: null,
-        cycle_number: null,
-        reward_set: null,
-      },
-      parent_block_identifier: {
-        hash: '0xca71af03f9a3012491af2f59f3244ecb241551803d641f8c8306ffa1187938b4',
-        index: args.height - 1,
-      },
-      timestamp: 1634572508,
-      transactions: [],
-    });
-    return this;
-  }
-
-  transaction(args: { hash: string; sender?: string; success?: boolean }): this {
-    this.lastBlock.transactions.push({
-      metadata: {
-        contract_abi: null,
-        description: 'description',
-        execution_cost: {
-          read_count: 5,
-          read_length: 5526,
-          runtime: 6430000,
-          write_count: 2,
-          write_length: 1,
-        },
-        fee: 2574302,
-        kind: { type: 'Coinbase' },
-        nonce: 8665,
-        position: { index: 1 },
-        proof: null,
-        raw_tx: '0x00',
-        receipt: {
-          contract_calls_stack: [],
-          events: [],
-          mutated_assets_radius: [],
-          mutated_contracts_radius: ['SP466FNC0P7JWTNM2R9T199QRZN1MYEDTAR0KP27.miamicoin-token'],
-        },
-        result: '(ok true)',
-        sender: args.sender ?? 'SP3HXJJMJQ06GNAZ8XWDN1QM48JEDC6PP6W3YZPZJ',
-        success: args.success ?? true,
-      },
-      operations: [],
-      transaction_identifier: {
-        hash: args.hash,
-      },
-    });
-    return this;
-  }
-
-  event(args: StacksTransactionEvent): this {
-    this.lastBlockTx.metadata.receipt.events.push(args);
-    return this;
-  }
-
-  contractDeploy(contract_identifier: string, abi: any): this {
-    this.lastBlockTx.metadata.kind = {
-      data: {
-        code: 'code',
-        contract_identifier,
-      },
-      type: 'ContractDeployment',
-    };
-    this.lastBlockTx.metadata.contract_abi = abi;
-    return this;
-  }
-
-  build(): StacksPayload {
-    return this.payload;
-  }
-}
-
 export async function insertAndEnqueueTestContract(
   db: PgStore,
   principal: string,
@@ -1414,17 +1290,21 @@ export async function insertAndEnqueueTestContract(
   tx_id?: string
 ): Promise<DbJob> {
   return await db.sqlWriteTransaction(async sql => {
-    const cache = new BlockCache({ hash: '0x000001', index: 1 });
-    const deploy: CachedEvent<SmartContractDeployment> = {
-      event: {
-        principal,
-        sip,
-        fungible_token_name: sip == DbSipNumber.sip010 ? 'ft-token' : undefined,
-      },
+    const block: DecodedStacksBlock = {
+      block_height: 1,
+      index_block_hash: '0x000001',
+      parent_index_block_hash: '0x000000',
+      transactions: [],
+    };
+    const deploy: SmartContractDeployment = {
+      principal,
+      sip,
+      fungible_token_name: sip == DbSipNumber.sip010 ? 'ft-token' : undefined,
       tx_id: tx_id ?? '0x123456',
       tx_index: 0,
     };
-    await db.chainhook.applyContractDeployment(sql, deploy, cache);
+    await db.core.insertBlock(sql, block);
+    await db.core.applyContractDeployment(sql, deploy, block);
     const smart_contract = (await db.getSmartContract({ principal })) as DbSmartContract;
 
     const jobs = await sql<DbJob[]>`
@@ -1444,7 +1324,7 @@ export async function insertAndEnqueueTestContractWithTokens(
   return await db.sqlWriteTransaction(async sql => {
     await insertAndEnqueueTestContract(db, principal, sip, tx_id);
     const smart_contract = (await db.getSmartContract({ principal })) as DbSmartContract;
-    await db.chainhook.insertAndEnqueueSequentialTokens(sql, {
+    await db.core.insertAndEnqueueSequentialTokens(sql, {
       smart_contract,
       token_count,
     });
@@ -1502,4 +1382,155 @@ export async function getLatestContractTokenNotifications(
     WHERE token_id IN (SELECT id FROM token_ids)
     ORDER BY token_id, block_height DESC, tx_index DESC, event_index DESC
   `;
+}
+
+export type TestTransactionArgs = {
+  tx_id?: string;
+  tx_index?: number;
+  sender?: string;
+  status?: 'success' | 'abort_by_response' | 'abort_by_post_condition';
+  contract_interface?: string;
+};
+
+export class TestTransactionBuilder {
+  private readonly transaction: DecodedStacksTransaction;
+
+  constructor(args: TestTransactionArgs) {
+    this.transaction = {
+      tx: {
+        txid: args.tx_id ?? '0x01',
+        tx_index: args.tx_index ?? 0,
+        raw_tx: '',
+        status: args.status ?? 'success',
+        contract_interface: args.contract_interface ?? null,
+      },
+      decoded: {
+        auth: {
+          origin_condition: {
+            signer: {
+              address: args.sender ?? 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60',
+            },
+          },
+        } as DecodedTxResult['auth'],
+        tx_id: args.tx_id ?? '0x01',
+        version: TransactionVersion.Mainnet,
+        chain_id: 1,
+        anchor_mode: AnchorModeID.Any,
+        post_condition_mode: PostConditionModeID.Deny,
+        post_conditions: [],
+        post_conditions_buffer: '',
+        payload: {
+          type_id: TxPayloadTypeID.Coinbase,
+          payload_buffer: '',
+        },
+      },
+      events: [],
+    };
+  }
+
+  setSmartContractPayload(contract_name: string, abi: ClarityAbi): TestTransactionBuilder {
+    this.transaction.decoded.payload = {
+      type_id: TxPayloadTypeID.SmartContract,
+      contract_name,
+      code_body: 'some-code-body',
+    };
+    this.transaction.tx.contract_interface = JSON.stringify(abi);
+    return this;
+  }
+
+  addFtMintEvent(
+    asset_identifier: string,
+    recipient: string,
+    amount: string
+  ): TestTransactionBuilder {
+    this.transaction.events.push({
+      type: 'ft_mint_event',
+      ft_mint_event: {
+        asset_identifier,
+        recipient,
+        amount,
+      },
+      event_index: this.transaction.events.length,
+      txid: this.transaction.tx.txid,
+    });
+    return this;
+  }
+
+  addFtBurnEvent(asset_identifier: string, sender: string, amount: string): TestTransactionBuilder {
+    this.transaction.events.push({
+      type: 'ft_burn_event',
+      ft_burn_event: {
+        asset_identifier,
+        sender,
+        amount,
+      },
+      event_index: this.transaction.events.length,
+      txid: this.transaction.tx.txid,
+    });
+    return this;
+  }
+
+  addNftMintEvent(
+    asset_identifier: string,
+    recipient: string,
+    raw_value: string
+  ): TestTransactionBuilder {
+    this.transaction.events.push({
+      type: 'nft_mint_event',
+      nft_mint_event: {
+        asset_identifier,
+        recipient,
+        raw_value,
+      },
+      event_index: this.transaction.events.length,
+      txid: this.transaction.tx.txid,
+    });
+    return this;
+  }
+
+  addContractEvent(contract_identifier: string, raw_value: string): TestTransactionBuilder {
+    this.transaction.events.push({
+      type: 'contract_event',
+      contract_event: {
+        contract_identifier,
+        topic: 'print',
+        raw_value,
+      },
+      event_index: this.transaction.events.length,
+      txid: this.transaction.tx.txid,
+    });
+    return this;
+  }
+
+  build(): DecodedStacksTransaction {
+    return this.transaction;
+  }
+}
+
+export type TestBlockArgs = {
+  block_height?: number;
+  index_block_hash?: string;
+  parent_index_block_hash?: string;
+};
+
+export class TestBlockBuilder {
+  private readonly block: DecodedStacksBlock;
+
+  constructor(args: TestBlockArgs) {
+    this.block = {
+      block_height: args.block_height ?? 1,
+      index_block_hash: args.index_block_hash ?? '0x000001',
+      parent_index_block_hash: args.parent_index_block_hash ?? '0x000000',
+      transactions: [],
+    };
+  }
+
+  addTransaction(transaction: DecodedStacksTransaction): TestBlockBuilder {
+    this.block.transactions.push(transaction);
+    return this;
+  }
+
+  build(): DecodedStacksBlock {
+    return this.block;
+  }
 }

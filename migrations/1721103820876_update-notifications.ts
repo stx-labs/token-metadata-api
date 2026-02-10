@@ -27,6 +27,8 @@ export function up(pgm: MigrationBuilder): void {
     index_block_hash: {
       type: 'text',
       notNull: true,
+      references: 'blocks',
+      onDelete: 'CASCADE',
     },
     tx_id: {
       type: 'text',

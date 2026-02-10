@@ -25,13 +25,20 @@ describe('ETag cache', () => {
   });
 
   test('chain tip cache control', async () => {
+    await db.core.insertBlock(db.sql, {
+      block_height: 99,
+      index_block_hash: '0x99',
+      parent_index_block_hash: '0x000000',
+      transactions: [],
+    });
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
     expect(json).toStrictEqual({
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
       chain_tip: {
-        block_height: 1,
+        block_height: 99,
+        index_block_hash: '0x99',
       },
     });
     expect(response.headers.etag).not.toBeUndefined();
@@ -44,7 +51,12 @@ describe('ETag cache', () => {
     });
     expect(cached.statusCode).toBe(304);
 
-    await db.chainhook.updateChainTipBlockHeight(100);
+    await db.core.insertBlock(db.sql, {
+      block_height: 100,
+      index_block_hash: '0x100',
+      parent_index_block_hash: '0x99',
+      transactions: [],
+    });
     const cached2 = await fastify.inject({
       method: 'GET',
       url: '/metadata/v1/',

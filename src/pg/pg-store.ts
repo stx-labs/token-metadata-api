@@ -42,7 +42,7 @@ import {
   runMigrations,
 } from '@hirosystems/api-toolkit';
 import * as path from 'path';
-import { ChainhookPgStore } from './chainhook/chainhook-pg-store';
+import { StacksCorePgStore } from './stacks-core-pg-store';
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
@@ -50,7 +50,7 @@ export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
  * Connects and queries the Token Metadata Service's local postgres DB.
  */
 export class PgStore extends BasePgStore {
-  readonly chainhook: ChainhookPgStore;
+  readonly core: StacksCorePgStore;
 
   static async connect(opts?: { skipMigrations: boolean }): Promise<PgStore> {
     const pgConfig = {
@@ -77,7 +77,7 @@ export class PgStore extends BasePgStore {
 
   constructor(sql: PgSqlClient) {
     super(sql);
-    this.chainhook = new ChainhookPgStore(this);
+    this.core = new StacksCorePgStore(this);
   }
 
   async getSmartContract(
@@ -285,11 +285,6 @@ export class PgStore extends BasePgStore {
     if (result.count) {
       return result[0];
     }
-  }
-
-  async getChainTipBlockHeight(): Promise<number> {
-    const result = await this.sql<{ block_height: number }[]>`SELECT block_height FROM chain_tip`;
-    return result[0].block_height;
   }
 
   /**

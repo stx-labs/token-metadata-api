@@ -35,6 +35,8 @@ export function up(pgm: MigrationBuilder): void {
     index_block_hash: {
       type: 'text',
       notNull: true,
+      references: 'blocks',
+      onDelete: 'CASCADE',
     },
     tx_id: {
       type: 'text',
@@ -54,4 +56,5 @@ export function up(pgm: MigrationBuilder): void {
     },
   });
   pgm.createIndex('smart_contracts', [{ name: 'block_height', sort: 'DESC' }]);
+  pgm.createIndex('smart_contracts', ['index_block_hash']);
 }
