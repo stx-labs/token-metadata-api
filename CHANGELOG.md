@@ -1,3 +1,13 @@
+## [2.0.0-next.3](https://github.com/hirosystems/token-metadata-api/compare/v2.0.0-next.2...v2.0.0-next.3) (2026-02-10)
+
+### ⚠ BREAKING CHANGES
+
+* ingest stacks core events from SNP instead of chainhooks (#334)
+
+### Features
+
+* ingest stacks core events from SNP instead of chainhooks ([#334](https://github.com/hirosystems/token-metadata-api/issues/334)) ([645c8ad](https://github.com/hirosystems/token-metadata-api/commit/645c8adea937b53037ce571b1c2c49c8fcfcf1cd))
+
 ## [2.0.0-next.2](https://github.com/hirosystems/token-metadata-api/compare/v2.0.0-next.1...v2.0.0-next.2) (2026-01-06)
 
 ### Bug Fixes
