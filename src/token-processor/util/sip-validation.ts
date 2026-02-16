@@ -9,8 +9,8 @@ import {
   TxPayloadTypeID,
 } from '@hirosystems/stacks-encoding-native-js';
 import { DbSipNumber } from '../../pg/types';
-import { StacksCoreContractEvent } from '../../stacks-core/schemas';
 import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor';
+import { NewBlockContractEvent } from '@stacks/node-publisher-client';
 
 const FtTraitFunctions: ClarityAbiFunction[] = [
   {
@@ -325,7 +325,7 @@ export type SftMintEvent = NftMintEvent & {
  */
 export function getContractLogMetadataUpdateNotification(
   transaction: DecodedStacksTransaction,
-  event: StacksCoreContractEvent
+  event: NewBlockContractEvent
 ): TokenMetadataUpdateNotification | undefined {
   const log = event.contract_event;
   const sender = transaction.decoded.auth.origin_condition.signer.address;
@@ -394,7 +394,7 @@ export function getContractLogMetadataUpdateNotification(
 
 export function getContractLogSftMintEvent(
   transaction: DecodedStacksTransaction,
-  event: StacksCoreContractEvent
+  event: NewBlockContractEvent
 ): SftMintEvent | undefined {
   const log = event.contract_event;
   try {
@@ -428,7 +428,7 @@ export function getSmartContractDeployment(
   if (transaction.tx.contract_interface == null) return;
 
   // Parse the included ABI to check if it's a token contract.
-  const abi = JSON.parse(transaction.tx.contract_interface) as ClarityAbi;
+  const abi = transaction.tx.contract_interface;
   const sip = getSmartContractSip(abi);
   if (!sip) return;
 
