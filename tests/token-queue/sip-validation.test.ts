@@ -9,8 +9,8 @@ import {
   uintCV,
 } from '@stacks/transactions';
 import { getContractLogMetadataUpdateNotification } from '../../src/token-processor/util/sip-validation';
-import { StacksCoreContractEvent } from '../../src/stacks-core/schemas';
 import { TestTransactionBuilder } from '../helpers';
+import { NewBlockContractEvent, NewBlockEventType } from '@stacks/node-publisher-client';
 
 describe('SIP Validation', () => {
   test('SIP-019 FT notification', () => {
@@ -30,7 +30,7 @@ describe('SIP Validation', () => {
       .build();
     const notification1 = getContractLogMetadataUpdateNotification(
       tx,
-      tx.events[0] as StacksCoreContractEvent
+      tx.events[0] as NewBlockContractEvent
     );
     expect(notification1).not.toBeUndefined();
     expect(notification1?.contract_id).toBe(contractId);
@@ -60,7 +60,7 @@ describe('SIP Validation', () => {
       .build();
     const notification2 = getContractLogMetadataUpdateNotification(
       tx2,
-      tx2.events[0] as StacksCoreContractEvent
+      tx2.events[0] as NewBlockContractEvent
     );
     expect(notification2).toBeUndefined();
 
@@ -70,7 +70,7 @@ describe('SIP Validation', () => {
       .build();
     const notification3 = getContractLogMetadataUpdateNotification(
       tx3,
-      tx3.events[0] as StacksCoreContractEvent
+      tx3.events[0] as NewBlockContractEvent
     );
     expect(notification3).not.toBeUndefined();
     expect(notification3?.contract_id).toBe(contractId);
@@ -86,7 +86,7 @@ describe('SIP Validation', () => {
       .build();
     const notification4 = getContractLogMetadataUpdateNotification(
       tx4,
-      tx4.events[0] as StacksCoreContractEvent
+      tx4.events[0] as NewBlockContractEvent
     );
     expect(notification4).not.toBeUndefined();
     expect(notification4?.contract_id).toBe(contractId);
@@ -107,7 +107,7 @@ describe('SIP Validation', () => {
       .build();
     const notification1 = getContractLogMetadataUpdateNotification(
       tx1,
-      tx1.events[0] as StacksCoreContractEvent
+      tx1.events[0] as NewBlockContractEvent
     );
     expect(notification1).not.toBeUndefined();
     expect(notification1?.contract_id).toBe(contractId);
@@ -123,15 +123,17 @@ describe('SIP Validation', () => {
         'token-ids': listCV([intCV(1), intCV(2)]),
       }),
     });
-    const event2: StacksCoreContractEvent = {
+    const event2: NewBlockContractEvent = {
       txid: '0x123',
       event_index: 0,
-      type: 'contract_event',
+      type: NewBlockEventType.Contract,
       contract_event: {
         contract_identifier: contractId,
         topic: 'print',
         raw_value: cvToHex(tuple2),
+        value: cvToHex(tuple2),
       },
+      committed: true,
     };
     const notification2 = getContractLogMetadataUpdateNotification(tx1, event2);
     expect(notification2).not.toBeUndefined();
@@ -164,7 +166,7 @@ describe('SIP Validation', () => {
       .build();
     const notification = getContractLogMetadataUpdateNotification(
       tx,
-      tx.events[0] as StacksCoreContractEvent
+      tx.events[0] as NewBlockContractEvent
     );
     expect(notification).not.toBeUndefined();
     expect(notification?.contract_id).toBe(contractId);

@@ -64,11 +64,6 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: postgres
       PGDATABASE: postgres
-      BLOCKCHAIN_API_PGHOST: 127.0.0.1
-      BLOCKCHAIN_API_PGPORT: 5432
-      BLOCKCHAIN_API_PGUSER: postgres
-      BLOCKCHAIN_API_PGPASSWORD: postgres
-      BLOCKCHAIN_API_PGDATABASE: postgres
       STACKS_NODE_RPC_HOST: 127.0.0.1
       STACKS_NODE_RPC_PORT: 24440
     steps:
