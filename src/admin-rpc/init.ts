@@ -180,7 +180,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
 
       // Enqueue contract for processing.
       await fastify.db.sqlWriteTransaction(async sql => {
-        await fastify.db.chainhook.enqueueContract(sql, {
+        await fastify.db.core.enqueueContract(sql, {
           block_height: contract.block_height,
           index_block_hash: block.index_block_hash,
           principal: contract.contract_id,

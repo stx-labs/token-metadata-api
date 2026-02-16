@@ -110,13 +110,13 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: Chainhook",
+      "name": "Jest: Stacks Core",
       "program": "${workspaceFolder}/node_modules/jest/bin/jest",
       "args": [
         "--testTimeout=3600000",
         "--runInBand",
         "--no-cache",
-        "${workspaceFolder}/tests/chainhook/",
+        "${workspaceFolder}/tests/stacks-core/",
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",

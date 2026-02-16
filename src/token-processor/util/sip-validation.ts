@@ -6,9 +6,11 @@ import {
   ClarityValueList,
   ClarityValueUInt,
   decodeClarityValue,
-} from 'stacks-encoding-native-js';
+  TxPayloadTypeID,
+} from '@hirosystems/stacks-encoding-native-js';
 import { DbSipNumber } from '../../pg/types';
-import { StacksTransactionSmartContractEvent } from '@hirosystems/chainhook-client';
+import { StacksCoreContractEvent } from '../../stacks-core/schemas';
+import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor';
 
 const FtTraitFunctions: ClarityAbiFunction[] = [
   {
@@ -284,16 +286,22 @@ export function tokenClassFromSipNumber(sip: DbSipNumber): TokenClass {
   }
 }
 
-type MetadataUpdateMode = 'standard' | 'frozen' | 'dynamic';
+export type SipEventContext = {
+  tx_id: string;
+  tx_index: number;
+  event_index?: number;
+};
 
-export type SmartContractDeployment = {
+export type SmartContractDeployment = SipEventContext & {
   principal: string;
   sip: DbSipNumber;
   fungible_token_name?: string;
   non_fungible_token_name?: string;
 };
 
-export type TokenMetadataUpdateNotification = {
+type MetadataUpdateMode = 'standard' | 'frozen' | 'dynamic';
+
+export type TokenMetadataUpdateNotification = SipEventContext & {
   token_class: TokenClass;
   contract_id: string;
   update_mode: MetadataUpdateMode;
@@ -301,15 +309,26 @@ export type TokenMetadataUpdateNotification = {
   ttl?: bigint;
 };
 
+export type NftMintEvent = SipEventContext & {
+  contractId: string;
+  tokenId: bigint;
+};
+
+export type SftMintEvent = NftMintEvent & {
+  amount: bigint;
+  recipient: string;
+};
+
 /**
  * Takes in a contract log entry and returns a metadata update notification object if valid.
  * @param log - Contract log entry
  */
 export function getContractLogMetadataUpdateNotification(
-  sender: string,
-  event: StacksTransactionSmartContractEvent
+  transaction: DecodedStacksTransaction,
+  event: StacksCoreContractEvent
 ): TokenMetadataUpdateNotification | undefined {
-  const log = event.data;
+  const log = event.contract_event;
+  const sender = transaction.decoded.auth.origin_condition.signer.address;
   try {
     // Validate that we have the correct SIP-019 payload structure.
     const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);
@@ -359,6 +378,9 @@ export function getContractLogMetadataUpdateNotification(
     }
 
     return {
+      tx_id: transaction.tx.txid,
+      tx_index: transaction.tx.tx_index,
+      event_index: event.event_index,
       token_class: tokenClass as TokenClass,
       contract_id: contractId,
       token_ids: tokenIds,
@@ -370,20 +392,11 @@ export function getContractLogMetadataUpdateNotification(
   }
 }
 
-export type NftMintEvent = {
-  contractId: string;
-  tokenId: bigint;
-};
-
-export type SftMintEvent = NftMintEvent & {
-  amount: bigint;
-  recipient: string;
-};
-
 export function getContractLogSftMintEvent(
-  event: StacksTransactionSmartContractEvent
+  transaction: DecodedStacksTransaction,
+  event: StacksCoreContractEvent
 ): SftMintEvent | undefined {
-  const log = event.data;
+  const log = event.contract_event;
   try {
     // Validate that we have the correct SIP-013 `sft_mint` payload structure.
     const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);
@@ -395,14 +408,44 @@ export function getContractLogSftMintEvent(
     const tokenId = (value.data['token-id'] as ClarityValueUInt).value;
     const amount = (value.data['amount'] as ClarityValueUInt).value;
 
-    const event: SftMintEvent = {
+    return {
+      tx_id: transaction.tx.txid,
+      tx_index: transaction.tx.tx_index,
+      event_index: event.event_index,
       contractId: log.contract_identifier,
       tokenId: BigInt(tokenId),
       amount: BigInt(amount),
       recipient: recipient,
     };
-    return event;
   } catch (error) {
     return;
+  }
+}
+
+export function getSmartContractDeployment(
+  transaction: DecodedStacksTransaction
+): SmartContractDeployment | undefined {
+  if (transaction.tx.contract_interface == null) return;
+
+  // Parse the included ABI to check if it's a token contract.
+  const abi = JSON.parse(transaction.tx.contract_interface) as ClarityAbi;
+  const sip = getSmartContractSip(abi);
+  if (!sip) return;
+
+  const sender = transaction.decoded.auth.origin_condition.signer.address;
+  const payload = transaction.decoded.payload;
+  if (
+    payload.type_id === TxPayloadTypeID.SmartContract ||
+    payload.type_id === TxPayloadTypeID.VersionedSmartContract
+  ) {
+    const principal = `${sender}.${payload.contract_name}`;
+    return {
+      tx_id: transaction.tx.txid,
+      tx_index: transaction.tx.tx_index,
+      principal,
+      sip,
+      fungible_token_name: abi.fungible_tokens[0]?.name,
+      non_fungible_token_name: abi.non_fungible_tokens[0]?.name,
+    };
   }
 }

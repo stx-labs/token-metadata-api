@@ -3,7 +3,6 @@ import {
   uintCV,
   getAddressFromPrivateKey,
   makeRandomPrivKey,
-  TransactionVersion,
   noneCV,
 } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
@@ -24,7 +23,7 @@ describe('StacksNodeRpcClient', () => {
 
   beforeEach(() => {
     const randomPrivKey = makeRandomPrivKey();
-    const senderAddress = getAddressFromPrivateKey(randomPrivKey.data, TransactionVersion.Mainnet);
+    const senderAddress = getAddressFromPrivateKey(randomPrivKey, 'mainnet');
     client = new StacksNodeRpcClient({
       contractPrincipal: contractPrincipal,
       senderAddress: senderAddress,

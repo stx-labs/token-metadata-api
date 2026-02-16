@@ -5,6 +5,7 @@ import { ENV } from '../../env';
 import { ProcessSmartContractJob } from './job/process-smart-contract-job';
 import { ProcessTokenJob } from './job/process-token-job';
 import { logger, timeout } from '@hirosystems/api-toolkit';
+import { StacksNetworkName } from '@stacks/network';
 
 /**
  * A priority queue that organizes all necessary work for contract ingestion and token metadata
@@ -33,12 +34,14 @@ import { logger, timeout } from '@hirosystems/api-toolkit';
 export class JobQueue {
   private readonly queue: PQueue;
   private readonly db: PgStore;
+  private readonly network: StacksNetworkName;
   /** IDs of jobs currently being processed by the queue. */
   private jobIds: Set<number>;
   private _isRunning = false;
 
-  constructor(args: { db: PgStore }) {
+  constructor(args: { db: PgStore; network: StacksNetworkName }) {
     this.db = args.db;
+    this.network = args.network;
     this.queue = new PQueue({
       concurrency: ENV.JOB_QUEUE_CONCURRENCY_LIMIT,
       autoStart: false,
@@ -91,9 +94,9 @@ export class JobQueue {
       try {
         if (this._isRunning) {
           if (job.token_id) {
-            await new ProcessTokenJob({ db: this.db, job }).work();
+            await new ProcessTokenJob({ db: this.db, job, network: this.network }).work();
           } else if (job.smart_contract_id) {
-            await new ProcessSmartContractJob({ db: this.db, job }).work();
+            await new ProcessSmartContractJob({ db: this.db, job, network: this.network }).work();
           }
         } else {
           logger.info(`JobQueue cancelling job ${job.id}, queue is now closed`);

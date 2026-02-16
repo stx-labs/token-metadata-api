@@ -1,3 +1,29 @@
+## [2.0.0-next.3](https://github.com/hirosystems/token-metadata-api/compare/v2.0.0-next.2...v2.0.0-next.3) (2026-02-10)
+
+### ⚠ BREAKING CHANGES
+
+* ingest stacks core events from SNP instead of chainhooks (#334)
+
+### Features
+
+* ingest stacks core events from SNP instead of chainhooks ([#334](https://github.com/hirosystems/token-metadata-api/issues/334)) ([645c8ad](https://github.com/hirosystems/token-metadata-api/commit/645c8adea937b53037ce571b1c2c49c8fcfcf1cd))
+
+## [2.0.0-next.2](https://github.com/hirosystems/token-metadata-api/compare/v2.0.0-next.1...v2.0.0-next.2) (2026-01-06)
+
+### Bug Fixes
+
+* add repo urls to package json ([#333](https://github.com/hirosystems/token-metadata-api/issues/333)) ([a37776e](https://github.com/hirosystems/token-metadata-api/commit/a37776ec1b5ffdefa41106d6f8e71009262a8993))
+
+## [2.0.0-next.1](https://github.com/hirosystems/token-metadata-api/compare/v1.3.2...v2.0.0-next.1) (2026-01-06)
+
+### ⚠ BREAKING CHANGES
+
+* consolidate migration files (#332)
+
+### Miscellaneous Chores
+
+* consolidate migration files ([#332](https://github.com/hirosystems/token-metadata-api/issues/332)) ([5a6a3c8](https://github.com/hirosystems/token-metadata-api/commit/5a6a3c8cbf6f41a0cddf15905166d5c4cd6a94a4))
+
 ## [1.3.2](https://github.com/hirosystems/token-metadata-api/compare/v1.3.1...v1.3.2) (2025-10-02)
 
 

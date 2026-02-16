@@ -6,7 +6,8 @@ import { ENV } from './env';
 import { buildAdminRpcServer } from './admin-rpc/init';
 import { isProdEnv } from './api/util/helpers';
 import { buildProfilerServer, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
-import { closeChainhookServer, startChainhookServer } from './chainhook/server';
+import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream';
+import { StacksNetworkName } from '@stacks/network';
 
 /**
  * Initializes background services. Only for `default` and `writeonly` run modes.
@@ -15,7 +16,7 @@ import { closeChainhookServer, startChainhookServer } from './chainhook/server';
 async function initBackgroundServices(db: PgStore) {
   logger.info('Initializing background services...');
 
-  const jobQueue = new JobQueue({ db });
+  const jobQueue = new JobQueue({ db, network: ENV.NETWORK as StacksNetworkName });
   registerShutdownConfig({
     name: 'Job Queue',
     forceKillable: false,
@@ -25,12 +26,16 @@ async function initBackgroundServices(db: PgStore) {
   });
   if (ENV.JOB_QUEUE_AUTO_START) jobQueue.start();
 
-  const server = await startChainhookServer({ db });
+  const snpEventStreamHandler = buildSnpEventStreamHandler({
+    redisUrl: ENV.SNP_REDIS_URL,
+    redisStreamPrefix: ENV.SNP_REDIS_STREAM_KEY_PREFIX,
+    db: db.core,
+  });
   registerShutdownConfig({
-    name: 'Chainhook Server',
+    name: 'SNP Event Stream Handler',
     forceKillable: false,
     handler: async () => {
-      await closeChainhookServer(server);
+      await snpEventStreamHandler.stop();
     },
   });
 

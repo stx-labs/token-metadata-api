@@ -17,7 +17,7 @@ export const StatusRoutes: FastifyPluginCallback<
       schema: {
         operationId: 'getApiStatus',
         summary: 'API Status',
-        description: 'Displays the status of the API and its current workload',
+        description: 'Displays the status of the API',
         tags: ['Status'],
         response: {
           200: ApiStatusResponse,
@@ -26,35 +26,18 @@ export const StatusRoutes: FastifyPluginCallback<
     },
     async (request, reply) => {
       const result = await fastify.db.sqlTransaction(async sql => {
-        const block_height = await fastify.db.getChainTipBlockHeight();
-
-        const smartContracts: Record<string, number> = {};
-        const contractCounts = await fastify.db.getSmartContractCounts();
-        for (const row of contractCounts) {
-          smartContracts[row.sip] = row.count;
+        let chain_tip = null;
+        const chainTipResult = await fastify.db.core.getChainTip(sql);
+        if (chainTipResult) {
+          chain_tip = {
+            block_height: chainTipResult.block_height,
+            index_block_hash: chainTipResult.index_block_hash,
+          };
         }
-
-        const tokens: Record<string, number> = {};
-        const tokenCounts = await fastify.db.getTokenCounts();
-        for (const row of tokenCounts) {
-          tokens[row.type] = row.count;
-        }
-
-        const queue: Record<string, number> = {};
-        const jobCounts = await fastify.db.getJobStatusCounts();
-        for (const row of jobCounts) {
-          queue[row.status] = row.count;
-        }
-
         return {
           server_version: `token-metadata-api ${SERVER_VERSION.tag} (${SERVER_VERSION.branch}:${SERVER_VERSION.commit})`,
           status: 'ready',
-          chain_tip: {
-            block_height,
-          },
-          tokens: tokenCounts.length ? tokens : undefined,
-          token_contracts: contractCounts.length ? smartContracts : undefined,
-          job_queue: jobCounts.length ? queue : undefined,
+          chain_tip: chain_tip,
         };
       });
       await reply.send(result);

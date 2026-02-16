@@ -12,9 +12,8 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
   let etag: string | undefined;
   switch (type) {
     case ETagType.chainTip:
-      // TODO: We should use the `index_block_hash` here instead of the `block_hash`, but we'll need
-      // a DB change for this.
-      etag = (await request.server.db.getChainTipBlockHeight()).toString();
+      const chainTip = await request.server.db.core.getChainTip(request.server.db.sql);
+      etag = chainTip?.index_block_hash;
       break;
     case ETagType.token:
       etag = await getTokenEtag(request);
@@ -37,9 +36,9 @@ export async function handleChainTipCache(request: FastifyRequest, reply: Fastif
   return handleCache(ETagType.chainTip, request, reply);
 }
 
-export function setReplyNonCacheable(reply: FastifyReply) {
-  reply.removeHeader('Cache-Control');
-  reply.removeHeader('Etag');
+export function setReplyNonCacheable(reply: FastifyReply): void {
+  void reply.removeHeader('Cache-Control');
+  void reply.removeHeader('Etag');
 }
 
 /**

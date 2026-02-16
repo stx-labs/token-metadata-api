@@ -1,6 +1,5 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from 'stacks-encoding-native-js';
-import { ENV } from '../../../env';
+import { ClarityValueUInt, decodeClarityValueToRepr } from '@hirosystems/stacks-encoding-native-js';
 import {
   DbMetadataLocaleInsertBundle,
   DbProcessedTokenUpdateBundle,
@@ -52,6 +51,7 @@ export class ProcessTokenJob extends Job {
 
     const client = StacksNodeRpcClient.create({
       contractPrincipal: contract.principal,
+      network: this.network,
     });
     logger.info(`ProcessTokenJob processing ${this.description()}`);
     switch (token.type) {

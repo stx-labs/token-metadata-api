@@ -36,6 +36,12 @@ export function up(pgm: MigrationBuilder): void {
     updated_at: {
       type: 'timestamptz',
     },
+    invalid_reason: {
+      type: 'int',
+    },
+    retry_after: {
+      type: 'timestamptz',
+    },
   });
   pgm.createConstraint(
     'jobs',
@@ -45,4 +51,11 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createIndex('jobs', ['status'], { where: "status = 'pending'" });
   pgm.createIndex('jobs', ['token_id'], { where: 'smart_contract_id IS NULL', unique: true });
   pgm.createIndex('jobs', ['smart_contract_id'], { where: 'token_id IS NULL', unique: true });
+
+  pgm.createIndex('jobs', ['token_id']);
+  pgm.createIndex('jobs', ['smart_contract_id']);
+  pgm.createIndex('jobs', ['status'], { name: 'jobs_status_all_index' });
+  pgm.createIndex('jobs', ['status', { name: 'updated_at', sort: 'ASC' }], {
+    where: "status = 'queued'",
+  });
 }
