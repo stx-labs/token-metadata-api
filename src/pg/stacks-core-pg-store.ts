@@ -11,7 +11,8 @@ import {
   DbTokenType,
   DbSmartContract,
   DbSipNumber,
-  DbChainTip,
+  DbTokenInsert,
+  DbBlock,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
@@ -49,16 +50,27 @@ export class StacksCorePgStore extends BasePgStoreModule {
       block_height: block.block_height,
       index_block_hash: block.index_block_hash,
       parent_index_block_hash: block.parent_index_block_hash,
+      canonical: true,
     };
     await sql`INSERT INTO blocks ${sql(values)} ON CONFLICT (index_block_hash) DO NOTHING`;
   }
 
-  async getChainTip(sql: PgSqlClient): Promise<DbChainTip | null> {
-    const result = await sql<DbChainTip[]>`
-      SELECT index_block_hash, block_height
+  async getChainTip(sql: PgSqlClient): Promise<DbBlock | null> {
+    const result = await sql<DbBlock[]>`
+      SELECT *
       FROM blocks
+      WHERE canonical = true
       ORDER BY block_height DESC
       LIMIT 1
+    `;
+    return result.count > 0 ? result[0] : null;
+  }
+
+  async getBlock(sql: PgSqlClient, indexBlockHash: string): Promise<DbBlock | null> {
+    const result = await sql<DbBlock[]>`
+      SELECT *
+      FROM blocks
+      WHERE index_block_hash = ${indexBlockHash}
     `;
     return result.count > 0 ? result[0] : null;
   }
@@ -66,29 +78,130 @@ export class StacksCorePgStore extends BasePgStoreModule {
   /**
    * Reverts the database to a new chain tip after a re-org.
    * @param sql - The SQL client to use.
-   * @param newChainTip - The new chain tip to revert to.
+   * @param newChainTipHash - The new chain tip hash to revert to.
    */
-  async revertToChainTip(sql: PgSqlClient, newChainTip: DbChainTip): Promise<void> {
-    // Before deleting blocks, we need to undo all FT supply deltas for the blocks we're about to
-    // delete.
-    await sql`
-      WITH ft_supply_deltas AS (
-        SELECT token_id, SUM(delta) AS delta
-        FROM ft_supply_deltas
-        WHERE block_height > ${newChainTip.block_height}
-        GROUP BY token_id
-      )
-      UPDATE tokens
-      SET total_supply = total_supply - (SELECT delta FROM ft_supply_deltas WHERE token_id = tokens.id),
-        updated_at = NOW()
-      WHERE id IN (SELECT token_id FROM ft_supply_deltas)
-    `;
-    // Delete all blocks with a height greater than the chain tip's block height. This will
-    // cascade delete all tokens, smart contracts, FT supply deltas, update notifications, and jobs
-    // associated with those blocks.
-    await sql`
-      DELETE FROM blocks WHERE block_height > ${newChainTip.block_height}
-    `;
+  async revertToChainTip(sql: PgSqlClient, newChainTipHash: string): Promise<boolean> {
+    const chainTip = await this.getChainTip(sql);
+    // Empty chainstate, reorg impossible.
+    if (!chainTip) return false;
+    // We're at the canonical chain tip, no reorg.
+    if (chainTip.index_block_hash === newChainTipHash) return false;
+
+    const newChainTipBlock = await this.getBlock(sql, newChainTipHash);
+    if (!newChainTipBlock) throw new Error(`Parent block ${newChainTipHash} not found`);
+
+    if (!newChainTipBlock.canonical) {
+      // We received a block that advances an existint non-canonical fork. Find the common ancestor
+      // so we can roll back to it and then apply the non-canonical chain that leads to the new
+      // chain tip.
+      const commonAncestor = await sql<DbBlock[]>`
+        WITH RECURSIVE chain_tip_ancestors AS (
+          SELECT index_block_hash, parent_index_block_hash, block_height, canonical
+          FROM blocks
+          WHERE index_block_hash = ${chainTip.index_block_hash}
+          UNION ALL
+          SELECT b.index_block_hash, b.parent_index_block_hash, b.block_height, b.canonical
+          FROM blocks b
+          INNER JOIN chain_tip_ancestors c ON c.parent_index_block_hash = b.index_block_hash
+        ),
+        new_tip_ancestors AS (
+          SELECT index_block_hash, parent_index_block_hash, block_height, canonical
+          FROM blocks
+          WHERE index_block_hash = ${newChainTipHash}
+          UNION ALL
+          SELECT b.index_block_hash, b.parent_index_block_hash, b.block_height, b.canonical
+          FROM blocks b
+          INNER JOIN new_tip_ancestors n ON n.parent_index_block_hash = b.index_block_hash
+        )
+        SELECT c.*
+        FROM chain_tip_ancestors c
+        INNER JOIN new_tip_ancestors n ON n.index_block_hash = c.index_block_hash
+        ORDER BY c.block_height DESC
+        LIMIT 1
+      `;
+      if (commonAncestor.count == 0)
+        throw new Error(
+          `No common ancestor found for blocks ${chainTip.index_block_hash} and ${newChainTipHash}`
+        );
+      const blocksToRollBack = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${commonAncestor[0].block_height} AND canonical = true
+        ORDER BY block_height DESC
+      `;
+      const blocksToApply = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${commonAncestor[0].block_height} AND canonical = false
+        ORDER BY block_height ASC
+      `;
+      await this.markEntitiesCanonical(sql, { canonical: false, blocks: blocksToRollBack });
+      await this.markEntitiesCanonical(sql, { canonical: true, blocks: blocksToApply });
+    } else {
+      // The new chain tip is part of our canonical chain. We just need to roll back to it so a new
+      // fork can be created.
+      const blocksToRollBack = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${newChainTipBlock.block_height} AND canonical = true
+        ORDER BY block_height DESC
+      `;
+      await this.markEntitiesCanonical(sql, { canonical: false, blocks: blocksToRollBack });
+    }
+
+    return true;
+  }
+
+  async markEntitiesCanonical(
+    sql: PgSqlClient,
+    args: { canonical: boolean; blocks: DbBlock[] }
+  ): Promise<void> {
+    for (const block of args.blocks) {
+      // Apply or undo FT supply deltas for the block.
+      await sql`
+        WITH ft_supply_deltas AS (
+          SELECT token_id, SUM(delta) AS delta
+          FROM ft_supply_deltas
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+          GROUP BY token_id
+        )
+        UPDATE tokens
+        SET total_supply = total_supply ${
+          args.canonical ? '+' : '-'
+        } (SELECT delta FROM ft_supply_deltas WHERE token_id = tokens.id),
+          updated_at = NOW()
+        WHERE id IN (SELECT token_id FROM ft_supply_deltas)
+      `;
+      // Mark the block's entities as canonical or non-canonical.
+      await sql`
+        WITH block_updates AS (
+          UPDATE blocks
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        ),
+        smart_contract_updates AS (
+          UPDATE smart_contracts
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        ),
+        token_updates AS (
+          UPDATE tokens
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        ),
+        update_notification_updates AS (
+          UPDATE update_notifications
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        ),
+        ft_supply_delta_updates AS (
+          UPDATE ft_supply_deltas
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        )
+        SELECT 1
+      `;
+    }
   }
 
   /**
@@ -102,7 +215,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       token_count: bigint;
     }
   ): Promise<void> {
-    const tokenValues = [];
+    const tokenValues: DbTokenInsert[] = [];
     for (let index = 1; index <= args.token_count; index++)
       tokenValues.push({
         smart_contract_id: args.smart_contract.id,
@@ -112,6 +225,12 @@ export class StacksCorePgStore extends BasePgStoreModule {
         index_block_hash: args.smart_contract.index_block_hash,
         tx_id: args.smart_contract.tx_id,
         tx_index: args.smart_contract.tx_index,
+        canonical: true,
+        name: null,
+        symbol: null,
+        decimals: null,
+        total_supply: null,
+        uri: null,
       });
     for await (const batch of batchIterate(tokenValues, 500)) {
       await sql`
@@ -173,6 +292,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       tx_index: contract.tx_index,
       fungible_token_name: contract.fungible_token_name,
       non_fungible_token_name: contract.non_fungible_token_name,
+      canonical: true,
     };
     await sql`
       WITH smart_contract_inserts AS (

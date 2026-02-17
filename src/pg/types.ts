@@ -1,9 +1,11 @@
 import { PgJsonb, PgNumeric, PgSqlQuery } from '@hirosystems/api-toolkit';
 import { FtOrderBy, Order } from '../api/schemas';
 
-export type DbChainTip = {
+export type DbBlock = {
   index_block_hash: string;
   block_height: number;
+  parent_index_block_hash: string;
+  canonical: boolean;
 };
 
 export enum DbSipNumber {
@@ -57,6 +59,7 @@ export type DbSmartContractInsert = {
   tx_index: number;
   fungible_token_name: string | null;
   non_fungible_token_name: string | null;
+  canonical: boolean;
 };
 
 export type DbSmartContract = {
@@ -128,22 +131,20 @@ export type DbRateLimitedHost = {
   retry_after: string;
 };
 
-export type DbFtInsert = {
+export type DbTokenInsert = {
+  smart_contract_id: number;
+  token_number: string;
+  type: DbTokenType;
+  block_height: number;
+  index_block_hash: string;
   name: string | null;
   symbol: string | null;
   decimals: number | null;
   total_supply: PgNumeric | null;
   uri: string | null;
-};
-
-export type DbNftInsert = {
-  uri: string | null;
-};
-
-export type DbSftInsert = {
-  decimals: number | null;
-  total_supply: PgNumeric | null;
-  uri: string | null;
+  tx_id: string;
+  tx_index: number;
+  canonical: boolean;
 };
 
 export type DbMetadataInsert = {
@@ -208,7 +209,7 @@ export type DbMetadataLocaleInsertBundle = {
 };
 
 export type DbProcessedTokenUpdateBundle = {
-  token: DbFtInsert | DbNftInsert | DbSftInsert;
+  token: DbTokenInsert;
   metadataLocales?: DbMetadataLocaleInsertBundle[];
 };
 

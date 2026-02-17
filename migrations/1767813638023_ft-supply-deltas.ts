@@ -20,6 +20,11 @@ export function up(pgm: MigrationBuilder): void {
       references: 'blocks',
       onDelete: 'CASCADE',
     },
+    canonical: {
+      type: 'boolean',
+      notNull: true,
+      default: true,
+    },
     delta: {
       type: 'numeric',
       notNull: true,

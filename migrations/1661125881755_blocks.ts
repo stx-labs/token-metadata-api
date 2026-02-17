@@ -17,5 +17,10 @@ export function up(pgm: MigrationBuilder): void {
       type: 'int',
       notNull: true,
     },
+    canonical: {
+      type: 'boolean',
+      notNull: true,
+      default: true,
+    },
   });
 }

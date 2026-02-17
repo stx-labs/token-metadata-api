@@ -84,18 +84,12 @@ export class StacksCoreBlockProcessor {
     );
 
     await this.db.sqlWriteTransaction(async sql => {
-      // Check if this block represents a re-org. Revert to its parent's chain tip if it does.
-      const chainTip = await this.db.getChainTip(sql);
-      if (chainTip && chainTip.index_block_hash !== block.parent_index_block_hash) {
+      // Revert to the parent block to handle re-orgs.
+      const reorg = await this.db.revertToChainTip(sql, block.parent_index_block_hash);
+      if (reorg) {
         logger.info(
-          `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${
-            block.block_height - 1
-          } ${block.parent_index_block_hash}`
+          `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${block.parent_index_block_hash}`
         );
-        await this.db.revertToChainTip(sql, {
-          block_height: block.block_height - 1,
-          index_block_hash: block.parent_index_block_hash,
-        });
       }
 
       const contracts: SmartContractDeployment[] = [];
