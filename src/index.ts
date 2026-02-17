@@ -19,7 +19,7 @@ async function initBackgroundServices(db: PgStore) {
   const jobQueue = new JobQueue({ db, network: ENV.NETWORK as StacksNetworkName });
   registerShutdownConfig({
     name: 'Job Queue',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await jobQueue.stop();
     },

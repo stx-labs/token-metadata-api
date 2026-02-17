@@ -94,6 +94,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     // We detected a re-org.
     const supplyRefreshIds: Set<number> = new Set();
     const tokenRefreshIds: Set<number> = new Set();
+    const contractRefreshIds: Set<number> = new Set();
     if (!newChainTipBlock.canonical) {
       // We received a block that advances an existent non-canonical fork. Find the common ancestor
       // so we can roll back to it and then apply the non-canonical chain that leads to the new
@@ -152,6 +153,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       });
       for (const ft of result2.ftSupplies) supplyRefreshIds.add(ft);
       for (const token of result2.tokens) tokenRefreshIds.add(token);
+      for (const contract of result2.contracts) contractRefreshIds.add(contract);
     } else {
       // The new chain tip is part of our canonical chain. We just need to roll back to it so a new
       // fork can be created.
@@ -169,7 +171,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       for (const ft of result.ftSupplies) supplyRefreshIds.add(ft);
     }
 
-    // Enqueue jobs for affected FT supplies and tokens.
+    // Enqueue jobs for affected FT supplies, tokens, and contracts.
     await sql`
       UPDATE jobs
       SET status = 'pending', updated_at = NOW()
@@ -180,6 +182,11 @@ export class StacksCorePgStore extends BasePgStoreModule {
       SET status = 'pending', updated_at = NOW()
       WHERE token_id IN ${sql(Array.from(tokenRefreshIds))}
     `;
+    await sql`
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE smart_contract_id IN ${sql(Array.from(contractRefreshIds))}
+    `;
 
     return true;
   }
@@ -187,9 +194,10 @@ export class StacksCorePgStore extends BasePgStoreModule {
   async markEntitiesCanonical(
     sql: PgSqlClient,
     args: { canonical: boolean; blocks: DbBlock[] }
-  ): Promise<{ ftSupplies: Set<number>; tokens: Set<number> }> {
+  ): Promise<{ ftSupplies: Set<number>; tokens: Set<number>; contracts: Set<number> }> {
     const ftSupplies: Set<number> = new Set();
     const tokens: Set<number> = new Set();
+    const contracts: Set<number> = new Set();
 
     for (const block of args.blocks) {
       // Mark FT supply deltas as canonical or non-canonical but record which tokens were affected
@@ -210,15 +218,18 @@ export class StacksCorePgStore extends BasePgStoreModule {
       `;
       for (const token of affectedTokens) tokens.add(token.id);
 
+      const affectedContracts = await sql<{ id: number }[]>`
+        UPDATE smart_contracts
+        SET canonical = ${args.canonical}
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING id
+      `;
+      for (const contract of affectedContracts) contracts.add(contract.id);
+
       // Mark the block's entities as canonical or non-canonical.
       await sql`
         WITH block_updates AS (
           UPDATE blocks
-          SET canonical = ${args.canonical}
-          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
-        ),
-        smart_contract_updates AS (
-          UPDATE smart_contracts
           SET canonical = ${args.canonical}
           WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
         ),
@@ -231,7 +242,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       `;
     }
 
-    return { ftSupplies, tokens };
+    return { ftSupplies, tokens, contracts };
   }
 
   /**
