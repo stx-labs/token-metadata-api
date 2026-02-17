@@ -10,13 +10,8 @@ import {
   DbMetadataAttribute,
   DbMetadataProperty,
   DbMetadataLocaleBundle,
-  TOKENS_COLUMNS,
-  METADATA_COLUMNS,
-  METADATA_ATTRIBUTES_COLUMNS,
-  METADATA_PROPERTIES_COLUMNS,
   DbRateLimitedHostInsert,
   DbRateLimitedHost,
-  RATE_LIMITED_HOSTS_COLUMNS,
   DbIndexPaging,
   DbFungibleTokenFilters,
   DbFungibleTokenMetadataItem,
@@ -107,7 +102,7 @@ export class PgStore extends BasePgStore {
 
   async getToken(args: { id: number }): Promise<DbToken | undefined> {
     const result = await this.sql<DbToken[]>`
-      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${args.id} AND canonical = true
+      SELECT * FROM tokens WHERE id = ${args.id} AND canonical = true
     `;
     if (result.count === 0) {
       return undefined;
@@ -350,14 +345,14 @@ export class PgStore extends BasePgStore {
       VALUES (${args.values.hostname}, DEFAULT, NOW() + INTERVAL '${this.sql(retryAfter)} seconds')
       ON CONFLICT ON CONSTRAINT rate_limited_hosts_hostname_key DO
         UPDATE SET retry_after = EXCLUDED.retry_after
-      RETURNING ${this.sql(RATE_LIMITED_HOSTS_COLUMNS)}
+      RETURNING *
     `;
     return results[0];
   }
 
   async getRateLimitedHost(args: { hostname: string }): Promise<DbRateLimitedHost | undefined> {
     const results = await this.sql<DbRateLimitedHost[]>`
-      SELECT ${this.sql(RATE_LIMITED_HOSTS_COLUMNS)}
+      SELECT *
       FROM rate_limited_hosts
       WHERE hostname = ${args.hostname}
     `;
@@ -488,7 +483,7 @@ export class PgStore extends BasePgStore {
     }
     // Get token
     const tokenRes = await this.sql<DbToken[]>`
-      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${tokenId} AND canonical = true
+      SELECT * FROM tokens WHERE id = ${tokenId} AND canonical = true
     `;
     const token = tokenRes[0];
     // Is it still waiting to be processed?
@@ -498,20 +493,16 @@ export class PgStore extends BasePgStore {
     // Get metadata
     let localeBundle: DbMetadataLocaleBundle | undefined;
     const metadataRes = await this.sql<DbMetadata[]>`
-      SELECT ${this.sql(METADATA_COLUMNS)} FROM metadata
+      SELECT * FROM metadata
       WHERE token_id = ${token.id}
       AND ${locale ? this.sql`l10n_locale = ${locale}` : this.sql`l10n_default = TRUE`}
     `;
     if (metadataRes.count > 0) {
       const attributes = await this.sql<DbMetadataAttribute[]>`
-        SELECT ${this.sql(
-          METADATA_ATTRIBUTES_COLUMNS
-        )} FROM metadata_attributes WHERE metadata_id = ${metadataRes[0].id}
+        SELECT * FROM metadata_attributes WHERE metadata_id = ${metadataRes[0].id}
       `;
       const properties = await this.sql<DbMetadataProperty[]>`
-        SELECT ${this.sql(
-          METADATA_PROPERTIES_COLUMNS
-        )} FROM metadata_properties WHERE metadata_id = ${metadataRes[0].id}
+        SELECT * FROM metadata_properties WHERE metadata_id = ${metadataRes[0].id}
       `;
       localeBundle = {
         metadata: metadataRes[0],
