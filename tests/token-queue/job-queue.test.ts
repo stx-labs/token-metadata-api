@@ -71,7 +71,7 @@ describe('JobQueue', () => {
     expect((await db.getJob({ id: job3.id }))?.status).toBe('pending');
 
     // All of the rest are taken.
-    await db.updateJobStatus({ id: job1.id, status: DbJobStatus.done });
+    await db.core.updateJobStatus({ id: job1.id, status: DbJobStatus.done });
     const added2 = await queue.testAddJobBatch();
     expect(added2).toBe(2);
     expect((await db.getJob({ id: job1.id }))?.status).toBe('done');

@@ -71,7 +71,7 @@ describe('nft events', () => {
         )
         .build()
     );
-    await db.updateSmartContractTokenCount({ id: 1, count: 0n });
+    await db.core.updateSmartContractTokenCount({ id: 1, count: 0n });
     await markAllJobsAsDone(db);
 
     await processor.processBlock(

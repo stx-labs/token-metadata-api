@@ -67,7 +67,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
       },
     },
     async (request, reply) => {
-      await fastify.db.retryAllFailedJobs();
+      await fastify.db.core.retryAllFailedJobs();
       logger.info(`AdminRPC retrying all failed and invalid jobs`);
       await reply.code(200).send();
     }

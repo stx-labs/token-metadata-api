@@ -39,7 +39,7 @@ describe('ft events', () => {
         uri: null,
       },
     };
-    await db.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
+    await db.core.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
     let jobs = await db.getPendingJobBatch({ limit: 1 });
     expect(jobs).toHaveLength(0);
 
@@ -78,7 +78,7 @@ describe('ft events', () => {
         uri: null,
       },
     };
-    await db.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
+    await db.core.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
     let jobs = await db.getPendingJobBatch({ limit: 1 });
     expect(jobs).toHaveLength(0);
 

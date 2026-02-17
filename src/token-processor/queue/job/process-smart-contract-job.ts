@@ -73,7 +73,7 @@ export class ProcessSmartContractJob extends Job {
       logger.info(
         `ProcessSmartContractJob enqueueing ${tokenCount} tokens for ${this.description()}`
       );
-      await this.db.updateSmartContractTokenCount({ id: contract.id, count: tokenCount });
+      await this.db.core.updateSmartContractTokenCount({ id: contract.id, count: tokenCount });
       await this.db.core.insertAndEnqueueSequentialTokens(sql, {
         smart_contract: contract,
         token_count: tokenCount,

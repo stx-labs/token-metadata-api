@@ -89,7 +89,7 @@ export class JobQueue {
     ) {
       return;
     }
-    await this.db.updateJobStatus({ id: job.id, status: DbJobStatus.queued });
+    await this.db.core.updateJobStatus({ id: job.id, status: DbJobStatus.queued });
     this.jobIds.add(job.id);
     void this.queue.add(async () => {
       try {

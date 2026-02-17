@@ -1,4 +1,4 @@
-import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@stacks/api-toolkit';
+import { BasePgStoreModule, PgSqlClient, batchIterate } from '@stacks/api-toolkit';
 import { ENV } from '../env';
 import {
   NftMintEvent,
@@ -13,6 +13,11 @@ import {
   DbSipNumber,
   DbTokenInsert,
   DbBlock,
+  DbJobStatus,
+  DbJobInvalidReason,
+  DbProcessedTokenUpdateBundle,
+  DbRateLimitedHost,
+  DbRateLimitedHostInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
@@ -212,7 +217,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
 
       const affectedTokens = await sql<{ id: number }[]>`
         UPDATE tokens
-        SET canonical = ${args.canonical}
+        SET canonical = ${args.canonical}, updated_at = NOW()
         WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
         RETURNING id
       `;
@@ -220,7 +225,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
 
       const affectedContracts = await sql<{ id: number }[]>`
         UPDATE smart_contracts
-        SET canonical = ${args.canonical}
+        SET canonical = ${args.canonical}, updated_at = NOW()
         WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
         RETURNING id
       `;
@@ -500,5 +505,146 @@ export class StacksCorePgStore extends BasePgStoreModule {
           UPDATE SET updated_at = NOW(), status = 'pending'
       `;
     }
+  }
+
+  async updateTokenSupply(args: { id: number; total_supply: string }): Promise<void> {
+    await this.sql`
+      UPDATE tokens SET
+        total_supply = ${args.total_supply},
+        updated_at = NOW()
+      WHERE id = ${args.id}
+    `;
+  }
+
+  async updateSmartContractTokenCount(args: { id: number; count: bigint }): Promise<void> {
+    await this.sql`
+      UPDATE smart_contracts SET token_count = ${args.count.toString()} WHERE id = ${args.id}
+    `;
+  }
+
+  /**
+   * Writes a full bundle of token info and metadata (including attributes and properties) into the
+   * db.
+   * @param id - token id
+   * @param values - update bundle values
+   */
+  async updateProcessedTokenWithMetadata(args: {
+    id: number;
+    values: DbProcessedTokenUpdateBundle;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Update token and clear old metadata (this will cascade into all properties and attributes)
+      const tokenUpdate = await sql`
+        UPDATE tokens SET ${sql(args.values.token)}, updated_at = NOW() WHERE id = ${args.id}
+      `;
+      if (tokenUpdate.count === 0) return;
+      await sql`DELETE FROM metadata WHERE token_id = ${args.id}`;
+      // Write new metadata
+      if (args.values.metadataLocales && args.values.metadataLocales.length > 0) {
+        for (const locale of args.values.metadataLocales) {
+          const metadataInsert = await sql<{ id: number }[]>`
+            INSERT INTO metadata ${sql(locale.metadata)} RETURNING id
+          `;
+          const metadataId = metadataInsert[0].id;
+          if (locale.attributes && locale.attributes.length > 0) {
+            const values = locale.attributes.map(attribute => ({
+              ...attribute,
+              metadata_id: metadataId,
+            }));
+            await sql`INSERT INTO metadata_attributes ${sql(values)}`;
+          }
+          if (locale.properties && locale.properties.length > 0) {
+            const values = locale.properties.map(property => ({
+              name: property.name,
+              value:
+                typeof property.value == 'boolean'
+                  ? sql`TO_JSONB(${property.value})`
+                  : property.value,
+              metadata_id: metadataId,
+            }));
+            await sql`INSERT INTO metadata_properties ${sql(values)}`;
+          }
+        }
+      }
+    });
+  }
+
+  async updateJobStatus(args: {
+    id: number;
+    status: DbJobStatus;
+    invalidReason?: DbJobInvalidReason;
+  }): Promise<void> {
+    await this.sql`
+      UPDATE jobs
+      SET status = ${args.status},
+        invalid_reason = ${
+          args.status == DbJobStatus.invalid && args.invalidReason
+            ? args.invalidReason
+            : this.sql`NULL`
+        },
+        ${
+          args.status != DbJobStatus.pending
+            ? this.sql`retry_count = 0, retry_after = NULL,`
+            : this.sql``
+        }
+        updated_at = NOW()
+      WHERE id = ${args.id}
+    `;
+  }
+
+  async retryAllFailedJobs(): Promise<void> {
+    await this.sql`
+      UPDATE jobs
+      SET status = ${DbJobStatus.pending}, retry_count = 0, updated_at = NOW(), retry_after = NULL
+      WHERE status IN (${DbJobStatus.failed}, ${DbJobStatus.invalid})
+    `;
+  }
+
+  async increaseJobRetryCount(args: { id: number; retry_after: number }): Promise<number> {
+    const retryAfter = args.retry_after.toString();
+    const result = await this.sql<{ retry_count: number }[]>`
+      UPDATE jobs
+      SET retry_count = retry_count + 1,
+        updated_at = NOW(),
+        retry_after = NOW() + INTERVAL '${this.sql(retryAfter)} ms'
+      WHERE id = ${args.id}
+      RETURNING retry_count
+    `;
+    return result[0].retry_count;
+  }
+
+  async insertRateLimitedHost(args: {
+    values: DbRateLimitedHostInsert;
+  }): Promise<DbRateLimitedHost> {
+    const retryAfter = args.values.retry_after.toString();
+    const results = await this.sql<DbRateLimitedHost[]>`
+      INSERT INTO rate_limited_hosts (hostname, created_at, retry_after)
+      VALUES (${args.values.hostname}, DEFAULT, NOW() + INTERVAL '${this.sql(retryAfter)} seconds')
+      ON CONFLICT ON CONSTRAINT rate_limited_hosts_hostname_key DO
+        UPDATE SET retry_after = EXCLUDED.retry_after
+      RETURNING *
+    `;
+    return results[0];
+  }
+
+  async deleteRateLimitedHost(args: { hostname: string }): Promise<void> {
+    await this.sql`
+      DELETE FROM rate_limited_hosts WHERE hostname = ${args.hostname}
+    `;
+  }
+
+  async updateTokenCachedImages(
+    tokenId: number,
+    cachedImage: string,
+    cachedThumbnailImage: string
+  ): Promise<void> {
+    await this.sql`
+      WITH token_date AS (
+        UPDATE tokens SET updated_at = NOW() WHERE id = ${tokenId}
+      )
+      UPDATE metadata
+      SET cached_image = ${cachedImage}, cached_thumbnail_image = ${cachedThumbnailImage}
+      WHERE token_id = ${tokenId}
+    `;
   }
 }

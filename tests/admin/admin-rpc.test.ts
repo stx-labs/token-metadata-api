@@ -132,7 +132,7 @@ describe('Admin RPC', () => {
       ENV.IMAGE_CACHE_PROCESSOR_ENABLED = true;
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
       await insertAndEnqueueTestContractWithTokens(db, principal, DbSipNumber.sip009, 1n);
-      await db.updateProcessedTokenWithMetadata({
+      await db.core.updateProcessedTokenWithMetadata({
         id: 1,
         values: {
           token: {
@@ -178,7 +178,7 @@ describe('Admin RPC', () => {
       ENV.IMAGE_CACHE_PROCESSOR_ENABLED = false;
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
       await insertAndEnqueueTestContractWithTokens(db, principal, DbSipNumber.sip009, 1n);
-      await db.updateProcessedTokenWithMetadata({
+      await db.core.updateProcessedTokenWithMetadata({
         id: 1,
         values: {
           token: {

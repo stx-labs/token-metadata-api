@@ -97,7 +97,7 @@ export class UpdateTokenSupplyJob extends Job {
       logger.warn(`UpdateTokenSupplyJob total supply not found for ${this.description()}`);
       return;
     }
-    await this.db.updateTokenSupply({ id: token.id, total_supply: fTotalSupply });
+    await this.db.core.updateTokenSupply({ id: token.id, total_supply: fTotalSupply });
   }
 
   private uIntCv(n: bigint): ClarityValueUInt {

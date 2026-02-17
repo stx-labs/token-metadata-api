@@ -102,7 +102,7 @@ describe('NFT routes', () => {
       DbSipNumber.sip009,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -145,7 +145,7 @@ describe('NFT routes', () => {
       DbSipNumber.sip009,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -172,7 +172,7 @@ describe('NFT routes', () => {
       DbSipNumber.sip009,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -270,5 +270,13 @@ describe('NFT routes', () => {
     });
     expect(response.statusCode).toEqual(noVersionResponse.statusCode);
     expect(response.json()).toStrictEqual(noVersionResponse.json());
+
+    // Test with canonical = false
+    await db.sql`UPDATE tokens SET canonical = false WHERE id = 1`;
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
+    });
+    expect(response2.statusCode).toBe(404);
   });
 });

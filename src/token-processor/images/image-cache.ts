@@ -185,7 +185,7 @@ export async function reprocessTokenImageCache(
           BigInt(token.token_number)
         );
         if (cached && thumbnail)
-          await db.updateTokenCachedImages(token.token_id, cached, thumbnail);
+          await db.core.updateTokenCachedImages(token.token_id, cached, thumbnail);
       } catch (error) {
         logger.error(error, `ImageCache unable to reprocess token image cache`);
       }
