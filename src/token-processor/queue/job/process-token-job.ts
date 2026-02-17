@@ -16,7 +16,7 @@ import {
 } from '../../util/metadata-helpers';
 import { RetryableJobError } from '../errors';
 import { Job } from './job';
-import { PgNumeric, logger } from '@hirosystems/api-toolkit';
+import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**
  * Downloads, parses and indexes metadata info for a single token in the Stacks blockchain by

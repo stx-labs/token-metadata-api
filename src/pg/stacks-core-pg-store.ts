@@ -1,4 +1,4 @@
-import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@stacks/api-toolkit';
 import { ENV } from '../env';
 import {
   NftMintEvent,

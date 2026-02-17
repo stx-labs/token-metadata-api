@@ -4,7 +4,7 @@ import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
 import { SmartContractClarityError } from '../../util/errors';
 import { Job } from './job';
-import { PgNumeric, logger } from '@hirosystems/api-toolkit';
+import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**
  * Updates the total supply of a token in the database by calling the `get-total-supply` function

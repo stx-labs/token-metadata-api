@@ -4,7 +4,7 @@ import { DbJob, DbJobStatus } from '../../pg/types';
 import { ENV } from '../../env';
 import { ProcessSmartContractJob } from './job/process-smart-contract-job';
 import { ProcessTokenJob } from './job/process-token-job';
-import { logger, timeout } from '@hirosystems/api-toolkit';
+import { logger, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
 import { UpdateTokenSupplyJob } from './job/update-token-supply-job';
 

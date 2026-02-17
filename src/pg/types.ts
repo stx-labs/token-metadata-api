@@ -1,4 +1,4 @@
-import { PgJsonb, PgNumeric, PgSqlQuery } from '@hirosystems/api-toolkit';
+import { PgJsonb, PgNumeric, PgSqlQuery } from '@stacks/api-toolkit';
 import { FtOrderBy, Order } from '../api/schemas';
 
 export type DbBlock = {

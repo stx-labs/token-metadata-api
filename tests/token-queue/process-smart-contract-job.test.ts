@@ -4,7 +4,7 @@ import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbSipNumber, DbToken, DbTokenType, TOKENS_COLUMNS } from '../../src/pg/types';
 import { ProcessSmartContractJob } from '../../src/token-processor/queue/job/process-smart-contract-job';
 import { ENV } from '../../src/env';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContract } from '../helpers';
 
 describe('ProcessSmartContractJob', () => {

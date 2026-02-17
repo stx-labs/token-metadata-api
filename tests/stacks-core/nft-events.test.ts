@@ -1,6 +1,6 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import {

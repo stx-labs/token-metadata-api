@@ -1,6 +1,6 @@
 import { cvToHex, tupleCV, bufferCV, uintCV, stringUtf8CV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import { TestTransactionBuilder, TestBlockBuilder, SIP_009_ABI, SIP_010_ABI } from '../helpers';

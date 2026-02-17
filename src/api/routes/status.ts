@@ -2,7 +2,7 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { ApiStatusResponse } from '../schemas';
-import { SERVER_VERSION } from '@hirosystems/api-toolkit';
+import { SERVER_VERSION } from '@stacks/api-toolkit';
 import { handleChainTipCache } from '../util/cache';
 
 export const StatusRoutes: FastifyPluginCallback<

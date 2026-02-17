@@ -1,6 +1,6 @@
 import { ENV } from '../../env';
 import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers';
-import { logger } from '@hirosystems/api-toolkit';
+import { logger } from '@stacks/api-toolkit';
 import { PgStore } from '../../pg/pg-store';
 import { Readable } from 'node:stream';
 import * as sharp from 'sharp';

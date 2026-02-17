@@ -13,7 +13,7 @@ import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-tok
 import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers';
 import { RetryableJobError } from '../../src/token-processor/queue/errors';
 import { TooManyRequestsHttpError } from '../../src/token-processor/util/errors';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens } from '../helpers';
 import { InvalidTokenError } from '../../src/pg/errors';
 

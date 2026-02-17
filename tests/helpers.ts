@@ -6,7 +6,7 @@ import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { SmartContractDeployment } from '../src/token-processor/util/sip-validation';
 import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types';
-import { waiter } from '@hirosystems/api-toolkit';
+import { waiter } from '@stacks/api-toolkit';
 import {
   DecodedStacksBlock,
   DecodedStacksTransaction,

@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbSipNumber } from '../../src/pg/types';

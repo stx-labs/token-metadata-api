@@ -3,7 +3,7 @@ import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbJob, DbJobStatus, DbSipNumber } from '../../src/pg/types';
 import { JobQueue } from '../../src/token-processor/queue/job-queue';
 import { insertAndEnqueueTestContract } from '../helpers';
-import { cycleMigrations, timeout } from '@hirosystems/api-toolkit';
+import { cycleMigrations, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
 
 class TestJobQueue extends JobQueue {

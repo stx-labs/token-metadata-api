@@ -1,4 +1,4 @@
-import { logger, resolveOrTimeout, stopwatch } from '@hirosystems/api-toolkit';
+import { logger, resolveOrTimeout, stopwatch } from '@stacks/api-toolkit';
 import { ENV } from '../../../env';
 import { PgStore } from '../../../pg/pg-store';
 import { DbJob, DbJobInvalidReason, DbJobStatus } from '../../../pg/types';

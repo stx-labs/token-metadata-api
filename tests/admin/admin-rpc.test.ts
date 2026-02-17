@@ -1,5 +1,5 @@
 import * as imageCache from '../../src/token-processor/images/image-cache';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { buildAdminRpcServer } from '../../src/admin-rpc/init';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';

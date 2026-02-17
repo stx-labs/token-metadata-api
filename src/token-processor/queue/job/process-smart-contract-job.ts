@@ -2,7 +2,7 @@ import { ENV } from '../../../env';
 import { DbSipNumber, DbSmartContract } from '../../../pg/types';
 import { Job } from './job';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { logger } from '@hirosystems/api-toolkit';
+import { logger } from '@stacks/api-toolkit';
 
 /**
  * Takes a token smart contract and enqueues all of its underlying tokens for metadata retrieval.

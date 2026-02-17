@@ -15,7 +15,7 @@ import {
   decodeTransaction,
 } from '@hirosystems/stacks-encoding-native-js';
 import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
-import { logger, stopwatch } from '@hirosystems/api-toolkit';
+import { logger, stopwatch } from '@stacks/api-toolkit';
 import {
   NewBlockContractEvent,
   NewBlockEvent,

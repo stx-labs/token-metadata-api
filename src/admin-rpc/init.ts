@@ -4,7 +4,7 @@ import { PgStore } from '../pg/pg-store';
 import { Server } from 'http';
 import { Type } from '@sinclair/typebox';
 import { SmartContractRegEx } from '../api/schemas';
-import { logger, PINO_LOGGER_CONFIG } from '@hirosystems/api-toolkit';
+import { logger, PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
 import { reprocessTokenImageCache } from '../token-processor/images/image-cache';
 import { ENV } from '../env';
 import { JobQueue } from '../token-processor/queue/job-queue';

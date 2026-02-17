@@ -35,7 +35,7 @@ import {
   PgSqlQuery,
   connectPostgres,
   runMigrations,
-} from '@hirosystems/api-toolkit';
+} from '@stacks/api-toolkit';
 import * as path from 'path';
 import { StacksCorePgStore } from './stacks-core-pg-store';
 
