@@ -72,7 +72,7 @@ export class JobQueue {
   }
 
   isRunning(): boolean {
-    return !this.abortController.signal.aborted;
+    return !this.queue.isPaused;
   }
 
   /**

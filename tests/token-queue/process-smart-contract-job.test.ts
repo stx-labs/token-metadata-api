@@ -1,7 +1,7 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbSipNumber, DbToken, DbTokenType, TOKENS_COLUMNS } from '../../src/pg/types';
+import { DbSipNumber, DbToken, DbTokenType } from '../../src/pg/types';
 import { ProcessSmartContractJob } from '../../src/token-processor/queue/job/process-smart-contract-job';
 import { ENV } from '../../src/env';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -29,7 +29,7 @@ describe('ProcessSmartContractJob', () => {
     });
     await processor.work();
 
-    const tokens = await db.sql<DbToken[]>`SELECT ${db.sql(TOKENS_COLUMNS)} FROM tokens`;
+    const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
     expect(tokens.count).toBe(1);
     expect(tokens[0].type).toBe(DbTokenType.ft);
     expect(tokens[0].smart_contract_id).toBe(1);
@@ -58,7 +58,7 @@ describe('ProcessSmartContractJob', () => {
     });
     await processor.work();
 
-    const tokens = await db.sql<DbToken[]>`SELECT ${db.sql(TOKENS_COLUMNS)} FROM tokens`;
+    const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
     expect(tokens.count).toBe(5);
     expect(tokens[0].type).toBe(DbTokenType.nft);
     expect(tokens[0].smart_contract_id).toBe(1);
@@ -87,7 +87,7 @@ describe('ProcessSmartContractJob', () => {
     });
     await processor.work();
 
-    const tokens = await db.sql<DbToken[]>`SELECT ${db.sql(TOKENS_COLUMNS)} FROM tokens`;
+    const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
     expect(tokens.count).toBe(0);
   });
 });

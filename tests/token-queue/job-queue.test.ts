@@ -9,7 +9,6 @@ import { StacksNetworkName } from '@stacks/network';
 class TestJobQueue extends JobQueue {
   constructor(args: { db: PgStore; network: StacksNetworkName }) {
     super(args);
-    this['_isRunning'] = true; // Simulate a running queue.
   }
   async testAdd(job: DbJob): Promise<void> {
     return this.add(job);

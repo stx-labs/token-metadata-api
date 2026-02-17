@@ -16,7 +16,7 @@ export class UpdateTokenSupplyJob extends Job {
   private contract?: DbSmartContract;
 
   async handler(): Promise<void> {
-    const tokenId = this.job.token_id;
+    const tokenId = this.job.token_supply_id;
     if (!tokenId) {
       return;
     }
