@@ -96,6 +96,41 @@ describe('Admin RPC', () => {
     });
   });
 
+  describe('/refresh-token-supply', () => {
+    test('refreshes single token supply', async () => {
+      await insertAndEnqueueTestContractWithTokens(
+        db,
+        'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+        DbSipNumber.sip009,
+        1n
+      );
+      await markAllJobsAsDone(db);
+
+      const response = await fastify.inject({
+        url: '/metadata/admin/refresh-token-supply',
+        method: 'POST',
+        payload: JSON.stringify({ tokenId: 1 }),
+        headers: { 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(200);
+
+      const jobs = await db.getPendingJobBatch({ limit: 2 });
+      expect(jobs.length).toBe(1);
+      expect(jobs[0].token_supply_id).toBe(1);
+    });
+
+    test('fails on non-existing token', async () => {
+      const response = await fastify.inject({
+        url: '/metadata/admin/refresh-token-supply',
+        method: 'POST',
+        payload: JSON.stringify({ tokenId: 1 }),
+        headers: { 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(422);
+      expect(JSON.parse(response.body).error).toMatch(/Token not found/);
+    });
+  });
+
   describe('/retry-failed', () => {
     test('retries failed and invalid jobs', async () => {
       await insertAndEnqueueTestContractWithTokens(
