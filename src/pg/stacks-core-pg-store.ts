@@ -92,7 +92,8 @@ export class StacksCorePgStore extends BasePgStoreModule {
     if (!newChainTipBlock) throw new Error(`Parent block ${newChainTipHash} not found`);
 
     // We detected a re-org.
-    const refreshTokenIds: Set<number> = new Set();
+    const supplyRefreshIds: Set<number> = new Set();
+    const tokenRefreshIds: Set<number> = new Set();
     if (!newChainTipBlock.canonical) {
       // We received a block that advances an existent non-canonical fork. Find the common ancestor
       // so we can roll back to it and then apply the non-canonical chain that leads to the new
@@ -138,18 +139,19 @@ export class StacksCorePgStore extends BasePgStoreModule {
         WHERE block_height > ${commonAncestor[0].block_height} AND canonical = false
         ORDER BY block_height ASC
       `;
+      // Roll back to the common ancestor. Enqueue supply refresh jobs for affected FT supplies.
       const result1 = await this.markEntitiesCanonical(sql, {
         canonical: false,
         blocks: blocksToRollBack,
       });
-      for (const ft of result1.ftSupplies) refreshTokenIds.add(ft);
-      for (const token of result1.tokens) refreshTokenIds.add(token);
+      for (const ft of result1.ftSupplies) supplyRefreshIds.add(ft);
+      // Apply the new fork. Enqueue token refresh jobs for newly-canonical tokens and FT supplies.
       const result2 = await this.markEntitiesCanonical(sql, {
         canonical: true,
         blocks: blocksToApply,
       });
-      for (const ft of result2.ftSupplies) refreshTokenIds.add(ft);
-      for (const token of result2.tokens) refreshTokenIds.add(token);
+      for (const ft of result2.ftSupplies) supplyRefreshIds.add(ft);
+      for (const token of result2.tokens) tokenRefreshIds.add(token);
     } else {
       // The new chain tip is part of our canonical chain. We just need to roll back to it so a new
       // fork can be created.
@@ -159,20 +161,24 @@ export class StacksCorePgStore extends BasePgStoreModule {
         WHERE block_height > ${newChainTipBlock.block_height} AND canonical = true
         ORDER BY block_height DESC
       `;
+      // Roll back and enqueue supply refresh jobs for affected FT supplies.
       const result = await this.markEntitiesCanonical(sql, {
         canonical: false,
         blocks: blocksToRollBack,
       });
-      for (const ft of result.ftSupplies) refreshTokenIds.add(ft);
-      for (const token of result.tokens) refreshTokenIds.add(token);
+      for (const ft of result.ftSupplies) supplyRefreshIds.add(ft);
     }
 
-    // Enqueue refresh jobs for affected tokens.
-    // TODO: We should only refresh supplies for affected FT supplies instead of the entire token.
+    // Enqueue jobs for affected FT supplies and tokens.
     await sql`
       UPDATE jobs
       SET status = 'pending', updated_at = NOW()
-      WHERE token_id IN ${sql(Array.from(refreshTokenIds))}
+      WHERE token_supply_id IN ${sql(Array.from(supplyRefreshIds))}
+    `;
+    await sql`
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE token_id IN ${sql(Array.from(tokenRefreshIds))}
     `;
 
     return true;
@@ -271,7 +277,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
           RETURNING id
         )
         INSERT INTO jobs (token_id) (SELECT id AS token_id FROM token_inserts)
-        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL DO
+        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL AND token_supply_id IS NULL DO
           UPDATE SET updated_at = NOW(), status = 'pending'
       `;
     }
@@ -326,7 +332,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       )
       INSERT INTO jobs (smart_contract_id)
         (SELECT id AS smart_contract_id FROM smart_contract_inserts)
-      ON CONFLICT (smart_contract_id) WHERE token_id IS NULL DO
+      ON CONFLICT (smart_contract_id) WHERE token_id IS NULL AND token_supply_id IS NULL DO
         UPDATE SET updated_at = NOW(), status = 'pending'
     `;
   }
@@ -396,9 +402,10 @@ export class StacksCorePgStore extends BasePgStoreModule {
           (SELECT id FROM token_id), ${block.block_height}, ${block.index_block_hash}, ${delta}
         )
       )
-      UPDATE jobs
-      SET status = 'pending', updated_at = NOW()
-        WHERE token_id = (SELECT id FROM token_id)
+      INSERT INTO jobs (token_supply_id)
+        (SELECT id AS token_supply_id FROM token_id)
+      ON CONFLICT (token_supply_id) WHERE smart_contract_id IS NULL AND token_id IS NULL DO
+        UPDATE SET updated_at = NOW(), status = 'pending'
     `;
   }
 
@@ -478,7 +485,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
           RETURNING id
         )
         INSERT INTO jobs (token_id) (SELECT id AS token_id FROM token_inserts)
-        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL DO
+        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL AND token_supply_id IS NULL DO
           UPDATE SET updated_at = NOW(), status = 'pending'
       `;
     }

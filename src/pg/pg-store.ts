@@ -211,6 +211,12 @@ export class PgStore extends BasePgStore {
     });
   }
 
+  async updateTokenSupply(args: { id: number; total_supply: string }): Promise<void> {
+    await this.sql`
+      UPDATE tokens SET total_supply = ${args.total_supply} WHERE id = ${args.id}
+    `;
+  }
+
   async updateJobStatus(args: {
     id: number;
     status: DbJobStatus;

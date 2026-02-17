@@ -94,12 +94,14 @@ export type DbToken = {
 export type DbJobInsert = {
   token_id?: number;
   smart_contract_id?: number;
+  token_supply_id?: number;
 };
 
 export type DbJob = {
   id: number;
   token_id?: number;
   smart_contract_id?: number;
+  token_supply_id?: number;
   status: DbJobStatus;
   retry_count: number;
   created_at: string;
