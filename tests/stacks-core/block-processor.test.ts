@@ -11,7 +11,7 @@ import {
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
 
-describe('Block processor', () => {
+describe('block processor', () => {
   let db: PgStore;
   let processor: StacksCoreBlockProcessor;
 
@@ -45,6 +45,8 @@ describe('Block processor', () => {
       await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
         index_block_hash: '0x000001',
         block_height: 100,
+        canonical: true,
+        parent_index_block_hash: '0x000000',
       });
 
       await processor.processBlock(
@@ -64,6 +66,8 @@ describe('Block processor', () => {
       await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
         index_block_hash: '0x000002',
         block_height: 101,
+        canonical: true,
+        parent_index_block_hash: '0x000001',
       });
     });
 
@@ -75,9 +79,9 @@ describe('Block processor', () => {
       // Mark as dynamic
       await processor.processBlock(
         new TestBlockBuilder({
-          block_height: 90,
-          index_block_hash: '0x000003',
-          parent_index_block_hash: '0x000002',
+          block_height: 2,
+          index_block_hash: '0x000002',
+          parent_index_block_hash: '0x000001',
         })
           .addTransaction(
             new TestTransactionBuilder({
@@ -111,9 +115,9 @@ describe('Block processor', () => {
 
       await processor.processBlock(
         new TestBlockBuilder({
-          block_height: 95,
-          index_block_hash: '0x000004',
-          parent_index_block_hash: '0x000003',
+          block_height: 3,
+          index_block_hash: '0x000003',
+          parent_index_block_hash: '0x000002',
         })
           .addTransaction(
             new TestTransactionBuilder({
@@ -141,9 +145,9 @@ describe('Block processor', () => {
       // Mark as dynamic
       await processor.processBlock(
         new TestBlockBuilder({
-          block_height: 90,
-          index_block_hash: '0x000003',
-          parent_index_block_hash: '0x000002',
+          block_height: 2,
+          index_block_hash: '0x000002',
+          parent_index_block_hash: '0x000001',
         })
           .addTransaction(
             new TestTransactionBuilder({
@@ -178,9 +182,9 @@ describe('Block processor', () => {
 
       await processor.processBlock(
         new TestBlockBuilder({
-          block_height: 95,
-          index_block_hash: '0x000004',
-          parent_index_block_hash: '0x000003',
+          block_height: 3,
+          index_block_hash: '0x000003',
+          parent_index_block_hash: '0x000002',
         })
           .addTransaction(
             new TestTransactionBuilder({

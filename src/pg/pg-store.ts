@@ -11,7 +11,6 @@ import {
   DbMetadataProperty,
   DbMetadataLocaleBundle,
   TOKENS_COLUMNS,
-  JOBS_COLUMNS,
   METADATA_COLUMNS,
   METADATA_ATTRIBUTES_COLUMNS,
   METADATA_PROPERTIES_COLUMNS,
@@ -268,7 +267,7 @@ export class PgStore extends BasePgStore {
    */
   async getPendingJobBatch(args: { limit: number }): Promise<DbJob[]> {
     return this.sql<DbJob[]>`
-      SELECT ${this.sql(JOBS_COLUMNS)} FROM jobs
+      SELECT * FROM jobs
       WHERE status = 'pending' AND (retry_after IS NULL OR retry_after < NOW())
       ORDER BY COALESCE(updated_at, created_at) ASC
       LIMIT ${args.limit}
@@ -281,7 +280,7 @@ export class PgStore extends BasePgStore {
    */
   async getQueuedJobs(args: { excludingIds: number[] }): Promise<DbJob[]> {
     return this.sql<DbJob[]>`
-      SELECT ${this.sql(JOBS_COLUMNS)} FROM jobs
+      SELECT * FROM jobs
       WHERE status = 'queued'
       ${
         args.excludingIds.length
@@ -294,7 +293,7 @@ export class PgStore extends BasePgStore {
 
   async getJob(args: { id: number }): Promise<DbJob | undefined> {
     const result = await this.sql<DbJob[]>`
-      SELECT ${this.sql(JOBS_COLUMNS)} FROM jobs WHERE id = ${args.id}
+      SELECT * FROM jobs WHERE id = ${args.id}
     `;
     if (result.count) {
       return result[0];

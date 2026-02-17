@@ -293,17 +293,6 @@ export const TOKENS_COLUMNS = [
   'updated_at',
 ];
 
-export const JOBS_COLUMNS = [
-  'id',
-  'token_id',
-  'smart_contract_id',
-  'status',
-  'retry_count',
-  'created_at',
-  'updated_at',
-  'retry_after',
-];
-
 export const METADATA_COLUMNS = [
   'id',
   'sip',

@@ -22,7 +22,11 @@ describe('contract deployments', () => {
 
   test('enqueues valid token contract', async () => {
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({
             tx_id: '0x01',
@@ -43,7 +47,11 @@ describe('contract deployments', () => {
 
   test('ignores token contract from a failed transaction', async () => {
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({
             tx_id: '0x01',
@@ -64,7 +72,11 @@ describe('contract deployments', () => {
 
   test('ignores non-token contract', async () => {
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({
             tx_id: '0x01',

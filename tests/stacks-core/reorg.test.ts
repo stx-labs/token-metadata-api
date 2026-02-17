@@ -6,7 +6,7 @@ import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import { TestTransactionBuilder, TestBlockBuilder, SIP_009_ABI, SIP_010_ABI } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
 
-describe('Re-org handling', () => {
+describe('re-org handling', () => {
   let db: PgStore;
   let processor: StacksCoreBlockProcessor;
 
