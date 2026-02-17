@@ -1305,7 +1305,7 @@ export async function insertAndEnqueueTestContract(
       tx_index: 0,
     };
     await db.core.insertBlock(sql, block);
-    await db.core.applyContractDeployment(sql, deploy, block);
+    await db.core.insertAndEnqueueSmartContract(sql, deploy, block);
     const smart_contract = (await db.getSmartContract({ principal })) as DbSmartContract;
 
     const jobs = await sql<DbJob[]>`

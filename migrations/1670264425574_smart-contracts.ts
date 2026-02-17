@@ -13,7 +13,6 @@ export function up(pgm: MigrationBuilder): void {
     principal: {
       type: 'text',
       notNull: true,
-      unique: true,
     },
     sip: {
       type: 'sip_number',
@@ -59,6 +58,9 @@ export function up(pgm: MigrationBuilder): void {
     updated_at: {
       type: 'timestamptz',
     },
+  });
+  pgm.createConstraint('smart_contracts', 'smart_contracts_principal_key', {
+    unique: ['principal', 'index_block_hash'],
   });
   pgm.createIndex('smart_contracts', [{ name: 'block_height', sort: 'DESC' }]);
   pgm.createIndex('smart_contracts', ['index_block_hash']);

@@ -45,7 +45,11 @@ describe('FT events', () => {
     expect(token?.total_supply).toBe('10000');
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addFtMintEvent(`${contractId}::usdc`, address, '2000')
@@ -65,7 +69,11 @@ describe('FT events', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addFtMintEvent(`${contractId}::usdc`, address, '2000')
@@ -98,7 +106,11 @@ describe('FT events', () => {
     expect(token?.total_supply).toBe('10000');
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addFtBurnEvent(`${contractId}::usdc`, address, '2000')
@@ -118,7 +130,11 @@ describe('FT events', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addFtBurnEvent(`${contractId}::usdc`, address, '2000')

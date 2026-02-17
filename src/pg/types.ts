@@ -131,20 +131,35 @@ export type DbRateLimitedHost = {
   retry_after: string;
 };
 
-export type DbTokenInsert = {
-  smart_contract_id: number;
-  token_number: string;
-  type: DbTokenType;
-  block_height: number;
-  index_block_hash: string;
+export type DbTokenInsert = DbFtUpdate &
+  DbNftUpdate &
+  DbSftUpdate & {
+    smart_contract_id: number;
+    token_number: string;
+    type: DbTokenType;
+    block_height: number;
+    index_block_hash: string;
+    tx_id: string;
+    tx_index: number;
+    canonical: boolean;
+  };
+
+export type DbFtUpdate = {
   name: string | null;
   symbol: string | null;
   decimals: number | null;
   total_supply: PgNumeric | null;
   uri: string | null;
-  tx_id: string;
-  tx_index: number;
-  canonical: boolean;
+};
+
+export type DbNftUpdate = {
+  uri: string | null;
+};
+
+export type DbSftUpdate = {
+  decimals: number | null;
+  total_supply: PgNumeric | null;
+  uri: string | null;
 };
 
 export type DbMetadataInsert = {
@@ -209,7 +224,7 @@ export type DbMetadataLocaleInsertBundle = {
 };
 
 export type DbProcessedTokenUpdateBundle = {
-  token: DbTokenInsert;
+  token: DbFtUpdate | DbNftUpdate | DbSftUpdate;
   metadataLocales?: DbMetadataLocaleInsertBundle[];
 };
 

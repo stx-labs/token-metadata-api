@@ -24,7 +24,7 @@ import {
   DbPaginatedResult,
   DbFungibleTokenOrder,
   DbJobInvalidReason,
-  DbChainTip,
+  DbBlock,
 } from './types';
 import {
   ContractNotFoundError,
@@ -81,7 +81,7 @@ export class PgStore extends BasePgStore {
     this.core = new StacksCorePgStore(this);
   }
 
-  async getChainTip(): Promise<DbChainTip | null> {
+  async getChainTip(): Promise<DbBlock | null> {
     return this.core.getChainTip(this.sql);
   }
 

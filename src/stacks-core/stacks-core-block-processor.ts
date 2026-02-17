@@ -84,8 +84,8 @@ export class StacksCoreBlockProcessor {
     );
 
     await this.db.sqlWriteTransaction(async sql => {
-      // Revert to the parent block to handle re-orgs.
-      const reorg = await this.db.revertToChainTip(sql, block.parent_index_block_hash);
+      // Handle the re-org if it exists. This will return all token IDs that were affected, if any.
+      const reorg = await this.db.handleReOrg(sql, block.parent_index_block_hash);
       if (reorg) {
         logger.info(
           `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${block.parent_index_block_hash}`
@@ -98,7 +98,7 @@ export class StacksCoreBlockProcessor {
       const nftMints: NftMintEvent[] = [];
       const ftSupplyDelta: Map<string, BigNumber> = new Map();
 
-      // Process each transaction in the block.
+      // Process each transaction in the new block.
       for (const transaction of block.transactions) {
         if (transaction.tx.status !== 'success') continue;
         this.processTransaction(transaction, contracts);

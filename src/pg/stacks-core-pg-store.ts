@@ -34,13 +34,13 @@ export class StacksCorePgStore extends BasePgStoreModule {
     await this.sqlWriteTransaction(async sql => {
       await this.insertBlock(sql, args.block);
       for (const contract of args.contracts)
-        await this.applyContractDeployment(sql, contract, args.block);
+        await this.insertAndEnqueueSmartContract(sql, contract, args.block);
       for (const notification of args.notifications)
-        await this.applyNotification(sql, notification, args.block);
-      await this.applyTokenMints(sql, args.nftMints, DbTokenType.nft, args.block);
-      await this.applyTokenMints(sql, args.sftMints, DbTokenType.sft, args.block);
+        await this.insertAndEnqueueNotification(sql, notification, args.block);
+      await this.insertAndEnqueueMintedTokens(sql, args.nftMints, DbTokenType.nft, args.block);
+      await this.insertAndEnqueueMintedTokens(sql, args.sftMints, DbTokenType.sft, args.block);
       for (const [contract, delta] of args.ftSupplyDelta)
-        await this.applyFtSupplyChange(sql, contract, delta, args.block);
+        await this.insertAndEnqueueFtSupplyChange(sql, contract, delta, args.block);
       await this.enqueueDynamicTokensDueForRefresh();
     });
   }
@@ -79,8 +79,9 @@ export class StacksCorePgStore extends BasePgStoreModule {
    * Reverts the database to a new chain tip after a re-org.
    * @param sql - The SQL client to use.
    * @param newChainTipHash - The new chain tip hash to revert to.
+   * @returns Whether a re-org was detected.
    */
-  async revertToChainTip(sql: PgSqlClient, newChainTipHash: string): Promise<boolean> {
+  async handleReOrg(sql: PgSqlClient, newChainTipHash: string): Promise<boolean> {
     const chainTip = await this.getChainTip(sql);
     // Empty chainstate, reorg impossible.
     if (!chainTip) return false;
@@ -90,8 +91,10 @@ export class StacksCorePgStore extends BasePgStoreModule {
     const newChainTipBlock = await this.getBlock(sql, newChainTipHash);
     if (!newChainTipBlock) throw new Error(`Parent block ${newChainTipHash} not found`);
 
+    // We detected a re-org.
+    const refreshTokenIds: Set<number> = new Set();
     if (!newChainTipBlock.canonical) {
-      // We received a block that advances an existint non-canonical fork. Find the common ancestor
+      // We received a block that advances an existent non-canonical fork. Find the common ancestor
       // so we can roll back to it and then apply the non-canonical chain that leads to the new
       // chain tip.
       const commonAncestor = await sql<DbBlock[]>`
@@ -135,8 +138,18 @@ export class StacksCorePgStore extends BasePgStoreModule {
         WHERE block_height > ${commonAncestor[0].block_height} AND canonical = false
         ORDER BY block_height ASC
       `;
-      await this.markEntitiesCanonical(sql, { canonical: false, blocks: blocksToRollBack });
-      await this.markEntitiesCanonical(sql, { canonical: true, blocks: blocksToApply });
+      const result1 = await this.markEntitiesCanonical(sql, {
+        canonical: false,
+        blocks: blocksToRollBack,
+      });
+      for (const ft of result1.ftSupplies) refreshTokenIds.add(ft);
+      for (const token of result1.tokens) refreshTokenIds.add(token);
+      const result2 = await this.markEntitiesCanonical(sql, {
+        canonical: true,
+        blocks: blocksToApply,
+      });
+      for (const ft of result2.ftSupplies) refreshTokenIds.add(ft);
+      for (const token of result2.tokens) refreshTokenIds.add(token);
     } else {
       // The new chain tip is part of our canonical chain. We just need to roll back to it so a new
       // fork can be created.
@@ -146,8 +159,21 @@ export class StacksCorePgStore extends BasePgStoreModule {
         WHERE block_height > ${newChainTipBlock.block_height} AND canonical = true
         ORDER BY block_height DESC
       `;
-      await this.markEntitiesCanonical(sql, { canonical: false, blocks: blocksToRollBack });
+      const result = await this.markEntitiesCanonical(sql, {
+        canonical: false,
+        blocks: blocksToRollBack,
+      });
+      for (const ft of result.ftSupplies) refreshTokenIds.add(ft);
+      for (const token of result.tokens) refreshTokenIds.add(token);
     }
+
+    // Enqueue refresh jobs for affected tokens.
+    // TODO: We should only refresh supplies for affected FT supplies instead of the entire token.
+    await sql`
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE token_id IN ${sql(Array.from(refreshTokenIds))}
+    `;
 
     return true;
   }
@@ -155,23 +181,29 @@ export class StacksCorePgStore extends BasePgStoreModule {
   async markEntitiesCanonical(
     sql: PgSqlClient,
     args: { canonical: boolean; blocks: DbBlock[] }
-  ): Promise<void> {
+  ): Promise<{ ftSupplies: Set<number>; tokens: Set<number> }> {
+    const ftSupplies: Set<number> = new Set();
+    const tokens: Set<number> = new Set();
+
     for (const block of args.blocks) {
-      // Apply or undo FT supply deltas for the block.
-      await sql`
-        WITH ft_supply_deltas AS (
-          SELECT token_id, SUM(delta) AS delta
-          FROM ft_supply_deltas
-          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
-          GROUP BY token_id
-        )
-        UPDATE tokens
-        SET total_supply = total_supply ${
-          args.canonical ? '+' : '-'
-        } (SELECT delta FROM ft_supply_deltas WHERE token_id = tokens.id),
-          updated_at = NOW()
-        WHERE id IN (SELECT token_id FROM ft_supply_deltas)
+      // Mark FT supply deltas as canonical or non-canonical but record which tokens were affected
+      // so we can refresh their total supplies.
+      const affectedFts = await sql<{ token_id: number }[]>`
+        UPDATE ft_supply_deltas
+        SET canonical = ${args.canonical}
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING token_id
       `;
+      for (const ft of affectedFts) ftSupplies.add(ft.token_id);
+
+      const affectedTokens = await sql<{ id: number }[]>`
+        UPDATE tokens
+        SET canonical = ${args.canonical}
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING id
+      `;
+      for (const token of affectedTokens) tokens.add(token.id);
+
       // Mark the block's entities as canonical or non-canonical.
       await sql`
         WITH block_updates AS (
@@ -184,24 +216,16 @@ export class StacksCorePgStore extends BasePgStoreModule {
           SET canonical = ${args.canonical}
           WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
         ),
-        token_updates AS (
-          UPDATE tokens
-          SET canonical = ${args.canonical}
-          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
-        ),
         update_notification_updates AS (
           UPDATE update_notifications
-          SET canonical = ${args.canonical}
-          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
-        ),
-        ft_supply_delta_updates AS (
-          UPDATE ft_supply_deltas
           SET canonical = ${args.canonical}
           WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
         )
         SELECT 1
       `;
     }
+
+    return { ftSupplies, tokens };
   }
 
   /**
@@ -253,7 +277,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     }
   }
 
-  async applyContractDeployment(
+  async insertAndEnqueueSmartContract(
     sql: PgSqlClient,
     contract: SmartContractDeployment,
     block: DecodedStacksBlock
@@ -307,7 +331,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  private async applyNotification(
+  private async insertAndEnqueueNotification(
     sql: PgSqlClient,
     event: TokenMetadataUpdateNotification,
     block: DecodedStacksBlock
@@ -350,7 +374,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  private async applyFtSupplyChange(
+  private async insertAndEnqueueFtSupplyChange(
     sql: PgSqlClient,
     contract: string,
     delta: BigNumber,
@@ -372,9 +396,9 @@ export class StacksCorePgStore extends BasePgStoreModule {
           (SELECT id FROM token_id), ${block.block_height}, ${block.index_block_hash}, ${delta}
         )
       )
-      UPDATE tokens
-      SET total_supply = total_supply + ${delta}, updated_at = NOW()
-        WHERE id = (SELECT id FROM token_id)
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+        WHERE token_id = (SELECT id FROM token_id)
     `;
   }
 
@@ -407,9 +431,9 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  private async applyTokenMints(
+  private async insertAndEnqueueMintedTokens(
     sql: PgSqlClient,
-    mints: NftMintEvent[],
+    mints: NftMintEvent[] | SftMintEvent[],
     tokenType: DbTokenType,
     block: DecodedStacksBlock
   ): Promise<void> {
