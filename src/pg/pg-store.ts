@@ -92,6 +92,7 @@ export class PgStore extends BasePgStore {
       SELECT *
       FROM smart_contracts
       WHERE ${'id' in args ? this.sql`id = ${args.id}` : this.sql`principal = ${args.principal}`}
+        AND canonical = true
     `;
     if (result.count === 0) {
       return undefined;
@@ -107,7 +108,7 @@ export class PgStore extends BasePgStore {
 
   async getToken(args: { id: number }): Promise<DbToken | undefined> {
     const result = await this.sql<DbToken[]>`
-      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${args.id}
+      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${args.id} AND canonical = true
     `;
     if (result.count === 0) {
       return undefined;
@@ -129,6 +130,7 @@ export class PgStore extends BasePgStore {
         FROM jobs
         INNER JOIN smart_contracts ON jobs.smart_contract_id = smart_contracts.id
         WHERE smart_contracts.principal = ${args.contractPrincipal}
+          AND smart_contracts.canonical = true
       `;
       if (contractJobStatus.count === 0) {
         throw new ContractNotFoundError();
@@ -143,6 +145,7 @@ export class PgStore extends BasePgStore {
         INNER JOIN smart_contracts ON tokens.smart_contract_id = smart_contracts.id
         WHERE smart_contracts.principal = ${args.contractPrincipal}
           AND tokens.token_number = ${args.tokenNumber}
+          AND tokens.canonical = true
       `;
       if (tokenIdRes.count === 0) {
         throw new TokenNotFoundError();
@@ -323,13 +326,13 @@ export class PgStore extends BasePgStore {
 
   async getSmartContractCounts(): Promise<{ count: number; sip: string }[]> {
     return this.sql<{ count: number; sip: string }[]>`
-      SELECT COUNT(*)::int, sip FROM smart_contracts GROUP BY sip
+      SELECT COUNT(*)::int, sip FROM smart_contracts WHERE canonical = true GROUP BY sip
     `;
   }
 
   async getTokenCounts(): Promise<{ count: number; type: string }[]> {
     return this.sql<{ count: number; type: string }[]>`
-      SELECT COUNT(*)::int, type FROM tokens GROUP BY type
+      SELECT COUNT(*)::int, type FROM tokens WHERE canonical = true GROUP BY type
     `;
   }
 
@@ -400,7 +403,7 @@ export class PgStore extends BasePgStore {
         FROM tokens AS t
         ${validMetadataOnly ? sql`INNER` : sql`LEFT`} JOIN metadata AS m ON t.id = m.token_id
         INNER JOIN smart_contracts AS s ON t.smart_contract_id = s.id
-        WHERE t.type = 'ft'
+        WHERE t.type = 'ft' AND canonical = true
           ${
             args.filters?.name
               ? sql`AND LOWER(t.name) LIKE '%' || LOWER(${args.filters.name}) || '%'`
@@ -480,7 +483,7 @@ export class PgStore extends BasePgStore {
     }
     // Get token
     const tokenRes = await this.sql<DbToken[]>`
-      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${tokenId}
+      SELECT ${this.sql(TOKENS_COLUMNS)} FROM tokens WHERE id = ${tokenId} AND canonical = true
     `;
     const token = tokenRes[0];
     // Is it still waiting to be processed?

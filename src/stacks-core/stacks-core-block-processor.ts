@@ -84,7 +84,8 @@ export class StacksCoreBlockProcessor {
     );
 
     await this.db.sqlWriteTransaction(async sql => {
-      // Handle the re-org if it exists. This will return all token IDs that were affected, if any.
+      // Handle the re-org if it exists. This will re-enqueue refresh jobs for all token IDs that
+      // were affected, if any.
       const reorg = await this.db.handleReOrg(sql, block.parent_index_block_hash);
       if (reorg) {
         logger.info(
