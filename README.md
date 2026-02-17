@@ -49,7 +49,7 @@ See the [Token Metadata API Reference](https://docs.hiro.so/metadata/) for more 
 ## Client library
 
 A TypeScript client library is available for consuming the API. See [the official
-package](https://www.npmjs.com/package/@hirosystems/token-metadata-api-client) for more information.
+package](https://www.npmjs.com/package/@stacks/token-metadata-api-client) for more information.
 
 ## Quick start
 

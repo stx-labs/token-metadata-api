@@ -1,17 +1,17 @@
-## @hirosystems/token-metadata-api-client
+## @stacks/token-metadata-api-client
 
 This is a client library for the [Token Metadata API](https://github.com/hirosystems/token-metadata-api).
 
 ### Installation
 
 ```
-npm install @hirosystems/token-metadata-api-client
+npm install @stacks/token-metadata-api-client
 ```
 
 ### Example
 
 ```typescript
-import { createClient } from '@hirosystems/token-metadata-api-client';
+import { createClient } from '@stacks/token-metadata-api-client';
 
 const client = createClient({ baseUrl: 'https://api.mainnet.hiro.so' });
 const metadata = await client.GET('/metadata/v1/ft/{principal}', {
