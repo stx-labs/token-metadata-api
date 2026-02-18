@@ -23,7 +23,7 @@ export class SnpEventStreamHandler {
 
   constructor(opts: {
     redisUrl: string;
-    redisStreamPrefix: string;
+    redisStreamPrefix: string | undefined;
     db: PgStore;
     blockProcessor: StacksCoreBlockProcessor;
   }) {
@@ -93,7 +93,7 @@ export class SnpEventStreamHandler {
 
 export function buildSnpEventStreamHandler(opts: {
   redisUrl: string;
-  redisStreamPrefix: string;
+  redisStreamPrefix: string | undefined;
   db: PgStore;
 }) {
   const blockProcessor = new StacksCoreBlockProcessor({ db: opts.db.core });
