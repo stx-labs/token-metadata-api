@@ -24,7 +24,13 @@ async function initBackgroundServices(db: PgStore) {
       await jobQueue.stop();
     },
   });
-  if (ENV.JOB_QUEUE_AUTO_START) jobQueue.start();
+  if (ENV.JOB_QUEUE_AUTO_START) {
+    jobQueue.start();
+  } else {
+    logger.info(
+      'Job queue auto start is disabled, use the /metadata/admin/job-queue/start AdminRPC endpoint to start the job queue'
+    );
+  }
 
   const snpEventStreamHandler = buildSnpEventStreamHandler({
     redisUrl: ENV.SNP_REDIS_URL,
