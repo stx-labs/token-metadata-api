@@ -11,7 +11,7 @@ import { PgStore } from '../pg/pg-store';
  */
 export class SnpEventStreamHandler {
   private readonly blockProcessor: StacksCoreBlockProcessor;
-  private readonly logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
+  private readonly logger = defaultLogger.child({ module: 'SnpEventStreamHandler' });
   private readonly snpClientStream: StacksMessageStream;
   private readonly redisUrl: string;
   private readonly redisStreamPrefix: string | undefined;

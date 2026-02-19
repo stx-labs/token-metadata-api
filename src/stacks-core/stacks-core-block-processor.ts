@@ -45,18 +45,23 @@ export type DecodedStacksBlock = {
  * @returns The decoded Stacks Core block.
  */
 export function decodeStacksCoreBlock(block: NewBlockMessage): DecodedStacksBlock {
-  // Group events by transaction ID.
+  // Group events by `txid`.
   const events: Map<string, NewBlockEvent[]> = new Map();
   for (const event of block.events) {
     events.set(event.txid, [...(events.get(event.txid) || []), event]);
   }
-  // Decode transactions and sort their events by event index.
-  const transactions = block.transactions.map(tx => ({
-    tx: tx,
-    decoded: decodeTransaction(tx.raw_tx.substring(2)),
-    events: (events.get(tx.txid) || []).sort((a, b) => a.event_index - b.event_index),
-  }));
-  // Sort transactions by transaction index.
+  // Decode transactions and sort their events by `event_index`.
+  const transactions: DecodedStacksTransaction[] = [];
+  for (const tx of block.transactions) {
+    // Skip burnchain op transactions, they are irrelevant to this API.
+    if (tx.burnchain_op) continue;
+    transactions.push({
+      tx,
+      decoded: decodeTransaction(tx.raw_tx.substring(2)),
+      events: (events.get(tx.txid) || []).sort((a, b) => a.event_index - b.event_index),
+    });
+  }
+  // Sort transactions by `tx_index`.
   const decodedBlock: DecodedStacksBlock = {
     block_height: block.block_height,
     index_block_hash: block.index_block_hash,
