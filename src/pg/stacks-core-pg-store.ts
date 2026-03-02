@@ -405,12 +405,15 @@ export class StacksCorePgStore extends BasePgStoreModule {
     await sql`
       WITH smart_contract_id AS (
         SELECT id FROM smart_contracts
-        WHERE principal = ${contract}
+        WHERE principal = ${contract} AND canonical = true
+        LIMIT 1
       ),
       token_id AS (
         SELECT id FROM tokens
         WHERE smart_contract_id = (SELECT id FROM smart_contract_id)
+          AND canonical = true
           AND token_number = 1
+          LIMIT 1
       ),
       delta_insert AS (
         INSERT INTO ft_supply_deltas (token_id, block_height, index_block_hash, delta)
