@@ -388,6 +388,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
           FROM previous_modes
           WHERE update_mode <> 'frozen'
         )
+        ON CONFLICT (token_id, index_block_hash, tx_index, event_index) DO NOTHING
         RETURNING token_id
       )
       UPDATE jobs
