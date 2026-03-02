@@ -17,7 +17,7 @@ import {
   PostConditionModeID,
   TransactionVersion,
   TxPayloadTypeID,
-} from '@hirosystems/stacks-encoding-native-js';
+} from '@stacks/codec';
 import { ClarityAbi } from '@stacks/transactions';
 import { NewBlockEventType } from '@stacks/node-publisher-client';
 

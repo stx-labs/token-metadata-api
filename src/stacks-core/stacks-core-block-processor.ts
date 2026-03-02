@@ -13,7 +13,7 @@ import {
   decodeClarityValue,
   DecodedTxResult,
   decodeTransaction,
-} from '@hirosystems/stacks-encoding-native-js';
+} from '@stacks/codec';
 import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
 import { logger, stopwatch } from '@stacks/api-toolkit';
 import {

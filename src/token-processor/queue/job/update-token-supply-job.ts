@@ -1,5 +1,5 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from '@hirosystems/stacks-encoding-native-js';
+import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
 import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
 import { SmartContractClarityError } from '../../util/errors';

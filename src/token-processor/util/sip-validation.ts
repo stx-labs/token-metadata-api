@@ -7,7 +7,7 @@ import {
   ClarityValueUInt,
   decodeClarityValue,
   TxPayloadTypeID,
-} from '@hirosystems/stacks-encoding-native-js';
+} from '@stacks/codec';
 import { DbSipNumber } from '../../pg/types';
 import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor';
 import { NewBlockContractEvent } from '@stacks/node-publisher-client';
