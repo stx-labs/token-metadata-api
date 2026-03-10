@@ -129,6 +129,7 @@ export async function fetchAllMetadataLocalesFromBaseUri(
       if (
         error instanceof MetadataSizeExceededError ||
         error instanceof MetadataHttpError ||
+        error instanceof MetadataParseError ||
         fetchImmediateRetryCount >= ENV.METADATA_MAX_IMMEDIATE_URI_RETRIES
       ) {
         throw error;
