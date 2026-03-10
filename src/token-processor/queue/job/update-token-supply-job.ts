@@ -60,11 +60,11 @@ export class UpdateTokenSupplyJob extends Job {
     }
     switch (this.token.type) {
       case DbTokenType.ft:
-        return `FT ${this.contract.principal} (id=${this.token.id})`;
+        return `FT SUPPLY ${this.contract.principal} (id=${this.token.id})`;
       case DbTokenType.nft:
         throw new Error(`UpdateTokenSupplyJob does not support NFTs`);
       case DbTokenType.sft:
-        return `SFT ${this.contract.principal}#${this.token.token_number} (id=${this.token.id})`;
+        return `SFT SUPPLY ${this.contract.principal}#${this.token.token_number} (id=${this.token.id})`;
     }
   }
 
