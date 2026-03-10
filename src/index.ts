@@ -44,7 +44,7 @@ async function initBackgroundServices(db: PgStore) {
       await snpEventStreamHandler.stop();
     },
   });
-  // await snpEventStreamHandler.start();
+  await snpEventStreamHandler.start();
 
   const adminRpcServer = await buildAdminRpcServer({ db, jobQueue });
   registerShutdownConfig({
