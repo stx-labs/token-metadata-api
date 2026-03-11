@@ -5,7 +5,7 @@ import { TokenProcessorMetrics } from './token-processor/token-processor-metrics
 import { ENV } from './env';
 import { buildAdminRpcServer } from './admin-rpc/init';
 import { isProdEnv } from './api/util/helpers';
-import { buildProfilerServer, logger, registerShutdownConfig } from '@hirosystems/api-toolkit';
+import { buildProfilerServer, logger, registerShutdownConfig } from '@stacks/api-toolkit';
 import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream';
 import { StacksNetworkName } from '@stacks/network';
 
@@ -19,30 +19,37 @@ async function initBackgroundServices(db: PgStore) {
   const jobQueue = new JobQueue({ db, network: ENV.NETWORK as StacksNetworkName });
   registerShutdownConfig({
     name: 'Job Queue',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await jobQueue.stop();
     },
   });
-  if (ENV.JOB_QUEUE_AUTO_START) jobQueue.start();
+  if (ENV.JOB_QUEUE_AUTO_START) {
+    jobQueue.start();
+  } else {
+    logger.info(
+      'Job queue auto start is disabled, use the /metadata/admin/job-queue/start AdminRPC endpoint to start the job queue'
+    );
+  }
 
   const snpEventStreamHandler = buildSnpEventStreamHandler({
     redisUrl: ENV.SNP_REDIS_URL,
     redisStreamPrefix: ENV.SNP_REDIS_STREAM_KEY_PREFIX,
-    db: db.core,
+    db,
   });
   registerShutdownConfig({
     name: 'SNP Event Stream Handler',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await snpEventStreamHandler.stop();
     },
   });
+  await snpEventStreamHandler.start();
 
   const adminRpcServer = await buildAdminRpcServer({ db, jobQueue });
   registerShutdownConfig({
     name: 'Admin RPC Server',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await adminRpcServer.close();
     },
@@ -59,7 +66,7 @@ async function initApiService(db: PgStore) {
   const apiServer = await buildApiServer({ db });
   registerShutdownConfig({
     name: 'API Server',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await apiServer.close();
     },
@@ -71,7 +78,7 @@ async function initApiService(db: PgStore) {
     const promServer = await buildPromServer({ metrics: apiServer.metrics });
     registerShutdownConfig({
       name: 'Prometheus Server',
-      forceKillable: false,
+      forceKillable: true,
       handler: async () => {
         await promServer.close();
       },
@@ -96,7 +103,7 @@ async function initApp() {
   const profilerServer = await buildProfilerServer();
   registerShutdownConfig({
     name: 'Profiler Server',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await profilerServer.close();
     },
@@ -105,7 +112,7 @@ async function initApp() {
 
   registerShutdownConfig({
     name: 'DB',
-    forceKillable: false,
+    forceKillable: true,
     handler: async () => {
       await db.close({ timeout: ENV.PG_CLOSE_TIMEOUT });
     },

@@ -49,6 +49,11 @@ export function up(pgm: MigrationBuilder): void {
       references: 'blocks',
       onDelete: 'CASCADE',
     },
+    canonical: {
+      type: 'boolean',
+      notNull: true,
+      default: true,
+    },
     tx_id: {
       type: 'text',
       notNull: true,

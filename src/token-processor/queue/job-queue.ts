@@ -4,8 +4,9 @@ import { DbJob, DbJobStatus } from '../../pg/types';
 import { ENV } from '../../env';
 import { ProcessSmartContractJob } from './job/process-smart-contract-job';
 import { ProcessTokenJob } from './job/process-token-job';
-import { logger, timeout } from '@hirosystems/api-toolkit';
+import { logger, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
+import { UpdateTokenSupplyJob } from './job/update-token-supply-job';
 
 /**
  * A priority queue that organizes all necessary work for contract ingestion and token metadata
@@ -37,7 +38,7 @@ export class JobQueue {
   private readonly network: StacksNetworkName;
   /** IDs of jobs currently being processed by the queue. */
   private jobIds: Set<number>;
-  private _isRunning = false;
+  private abortController = new AbortController();
 
   constructor(args: { db: PgStore; network: StacksNetworkName }) {
     this.db = args.db;
@@ -55,7 +56,7 @@ export class JobQueue {
    */
   start() {
     logger.info(`JobQueue starting queue...`);
-    this._isRunning = true;
+    this.abortController = new AbortController();
     this.queue.start();
     void this.runQueueLoop();
   }
@@ -65,13 +66,13 @@ export class JobQueue {
    */
   async stop() {
     logger.info(`JobQueue stopping, waiting on ${this.queue.pending} pending jobs...`);
-    this._isRunning = false;
+    this.abortController.abort();
     await this.queue.onIdle();
     this.queue.pause();
   }
 
   isRunning(): boolean {
-    return this._isRunning;
+    return !this.queue.isPaused;
   }
 
   /**
@@ -82,21 +83,25 @@ export class JobQueue {
    */
   protected async add(job: DbJob): Promise<void> {
     if (
-      !this._isRunning ||
+      this.abortController.signal.aborted ||
       this.jobIds.has(job.id) ||
       this.queue.size + this.queue.pending >= ENV.JOB_QUEUE_SIZE_LIMIT
     ) {
       return;
     }
-    await this.db.updateJobStatus({ id: job.id, status: DbJobStatus.queued });
+    await this.db.core.updateJobStatus({ id: job.id, status: DbJobStatus.queued });
     this.jobIds.add(job.id);
     void this.queue.add(async () => {
       try {
-        if (this._isRunning) {
+        if (!this.abortController.signal.aborted) {
           if (job.token_id) {
             await new ProcessTokenJob({ db: this.db, job, network: this.network }).work();
           } else if (job.smart_contract_id) {
             await new ProcessSmartContractJob({ db: this.db, job, network: this.network }).work();
+          } else if (job.token_supply_id) {
+            await new UpdateTokenSupplyJob({ db: this.db, job, network: this.network }).work();
+          } else {
+            throw new Error(`JobQueue invalid job type: ${job.id}`);
           }
         } else {
           logger.info(`JobQueue cancelling job ${job.id}, queue is now closed`);
@@ -139,7 +144,7 @@ export class JobQueue {
    * processing, repeating this cycle until the jobs table is completely processed.
    */
   private async runQueueLoop() {
-    while (this._isRunning) {
+    while (!this.abortController.signal.aborted) {
       try {
         const loadedJobs = await this.addJobBatch();
         if (loadedJobs === 0) {

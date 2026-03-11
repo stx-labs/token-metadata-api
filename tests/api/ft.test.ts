@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbFungibleTokenMetadataItem, DbSipNumber } from '../../src/pg/types';
@@ -102,7 +102,7 @@ describe('FT routes', () => {
       DbSipNumber.sip010,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -145,7 +145,7 @@ describe('FT routes', () => {
       DbSipNumber.sip010,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -181,7 +181,7 @@ describe('FT routes', () => {
       DbSipNumber.sip010,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -280,6 +280,14 @@ describe('FT routes', () => {
     });
     expect(response.statusCode).toEqual(noVersionResponse.statusCode);
     expect(response.json()).toStrictEqual(noVersionResponse.json());
+
+    // Test with canonical = false
+    await db.sql`UPDATE tokens SET canonical = false WHERE id = 1`;
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+    });
+    expect(response2.statusCode).toBe(404);
   });
 
   describe('index', () => {
@@ -291,7 +299,7 @@ describe('FT routes', () => {
         1n,
         item.tx_id
       );
-      await db.updateProcessedTokenWithMetadata({
+      await db.core.updateProcessedTokenWithMetadata({
         id: tokenJob.token_id ?? 0,
         values: {
           token: {

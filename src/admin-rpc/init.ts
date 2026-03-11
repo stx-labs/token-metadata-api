@@ -4,7 +4,7 @@ import { PgStore } from '../pg/pg-store';
 import { Server } from 'http';
 import { Type } from '@sinclair/typebox';
 import { SmartContractRegEx } from '../api/schemas';
-import { logger, PINO_LOGGER_CONFIG } from '@hirosystems/api-toolkit';
+import { logger, PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
 import { reprocessTokenImageCache } from '../token-processor/images/image-cache';
 import { ENV } from '../env';
 import { JobQueue } from '../token-processor/queue/job-queue';
@@ -60,6 +60,35 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
   );
 
   fastify.post(
+    '/refresh-token-supply',
+    {
+      schema: {
+        description:
+          'Enqueue a token supply refresh. This ignores any token refresh modes configured by a SIP-019 notification.',
+        body: Type.Object({
+          tokenId: Type.Integer(),
+        }),
+      },
+    },
+    async (request, reply) => {
+      await fastify.db.sqlWriteTransaction(async sql => {
+        const token = await fastify.db.getToken({ id: request.body.tokenId });
+        if (!token) {
+          await reply.code(422).send({ error: 'Token not found' });
+          return;
+        }
+        await sql`
+          INSERT INTO jobs (token_supply_id) VALUES (${token.id})
+          ON CONFLICT (token_supply_id) WHERE smart_contract_id IS NULL AND token_id IS NULL DO
+            UPDATE SET updated_at = NOW(), status = 'pending'
+        `;
+        logger.info(`AdminRPC refreshing token supply for token: ${token.id}`);
+        await reply.code(200).send();
+      });
+    }
+  );
+
+  fastify.post(
     '/retry-failed',
     {
       schema: {
@@ -67,7 +96,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
       },
     },
     async (request, reply) => {
-      await fastify.db.retryAllFailedJobs();
+      await fastify.db.core.retryAllFailedJobs();
       logger.info(`AdminRPC retrying all failed and invalid jobs`);
       await reply.code(200).send();
     }

@@ -41,6 +41,10 @@ echo ""
 echo "Updating root package.json..."
 npm version "$VERSION" --no-git-tag-version
 
+# Update client package.json and package-lock.json
+echo "Updating client/package.json..."
+npm version "$VERSION" --no-git-tag-version --prefix client
+
 echo ""
 echo "Done! Version ${VERSION} updated in all package files."
 echo "Next steps:"

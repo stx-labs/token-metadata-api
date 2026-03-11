@@ -1,5 +1,5 @@
 import * as imageCache from '../../src/token-processor/images/image-cache';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { buildAdminRpcServer } from '../../src/admin-rpc/init';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -96,6 +96,41 @@ describe('Admin RPC', () => {
     });
   });
 
+  describe('/refresh-token-supply', () => {
+    test('refreshes single token supply', async () => {
+      await insertAndEnqueueTestContractWithTokens(
+        db,
+        'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+        DbSipNumber.sip009,
+        1n
+      );
+      await markAllJobsAsDone(db);
+
+      const response = await fastify.inject({
+        url: '/metadata/admin/refresh-token-supply',
+        method: 'POST',
+        payload: JSON.stringify({ tokenId: 1 }),
+        headers: { 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(200);
+
+      const jobs = await db.getPendingJobBatch({ limit: 2 });
+      expect(jobs.length).toBe(1);
+      expect(jobs[0].token_supply_id).toBe(1);
+    });
+
+    test('fails on non-existing token', async () => {
+      const response = await fastify.inject({
+        url: '/metadata/admin/refresh-token-supply',
+        method: 'POST',
+        payload: JSON.stringify({ tokenId: 1 }),
+        headers: { 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(422);
+      expect(JSON.parse(response.body).error).toMatch(/Token not found/);
+    });
+  });
+
   describe('/retry-failed', () => {
     test('retries failed and invalid jobs', async () => {
       await insertAndEnqueueTestContractWithTokens(
@@ -132,7 +167,7 @@ describe('Admin RPC', () => {
       ENV.IMAGE_CACHE_PROCESSOR_ENABLED = true;
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
       await insertAndEnqueueTestContractWithTokens(db, principal, DbSipNumber.sip009, 1n);
-      await db.updateProcessedTokenWithMetadata({
+      await db.core.updateProcessedTokenWithMetadata({
         id: 1,
         values: {
           token: {
@@ -178,7 +213,7 @@ describe('Admin RPC', () => {
       ENV.IMAGE_CACHE_PROCESSOR_ENABLED = false;
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
       await insertAndEnqueueTestContractWithTokens(db, principal, DbSipNumber.sip009, 1n);
-      await db.updateProcessedTokenWithMetadata({
+      await db.core.updateProcessedTokenWithMetadata({
         id: 1,
         values: {
           token: {

@@ -93,7 +93,7 @@ export interface paths {
         };
         /**
          * API Status
-         * @description Displays the status of the API and its current workload
+         * @description Displays the status of the API
          */
         get: operations["getApiStatus"];
         put?: never;
@@ -712,40 +712,9 @@ export interface operations {
                         /** @example ready */
                         status: string;
                         chain_tip: {
-                            /** @example 163541 */
                             block_height: number;
-                        };
-                        /** Api Token Count */
-                        tokens?: {
-                            /** @example 512 */
-                            ft?: number;
-                            /** @example 493452 */
-                            nft?: number;
-                            /** @example 44 */
-                            sft?: number;
-                        };
-                        /** Api Token Contract Count */
-                        token_contracts?: {
-                            /** @example 3101 */
-                            "sip-009"?: number;
-                            /** @example 512 */
-                            "sip-010"?: number;
-                            /** @example 11 */
-                            "sip-013"?: number;
-                        };
-                        /** Api Job Count */
-                        job_queue?: {
-                            /** @example 430562 */
-                            pending?: number;
-                            /** @example 512 */
-                            queued?: number;
-                            /** @example 12532 */
-                            done?: number;
-                            /** @example 11 */
-                            failed?: number;
-                            /** @example 20 */
-                            invalid?: number;
-                        };
+                            index_block_hash: string;
+                        } | null;
                     };
                 };
             };

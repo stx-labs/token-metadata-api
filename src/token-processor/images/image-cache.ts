@@ -1,6 +1,6 @@
 import { ENV } from '../../env';
 import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers';
-import { logger } from '@hirosystems/api-toolkit';
+import { logger } from '@stacks/api-toolkit';
 import { PgStore } from '../../pg/pg-store';
 import { Readable } from 'node:stream';
 import * as sharp from 'sharp';
@@ -185,7 +185,7 @@ export async function reprocessTokenImageCache(
           BigInt(token.token_number)
         );
         if (cached && thumbnail)
-          await db.updateTokenCachedImages(token.token_id, cached, thumbnail);
+          await db.core.updateTokenCachedImages(token.token_id, cached, thumbnail);
       } catch (error) {
         logger.error(error, `ImageCache unable to reprocess token image cache`);
       }

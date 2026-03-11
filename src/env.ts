@@ -29,7 +29,7 @@ const schema = Type.Object({
   PROFILER_PORT: Type.Number({ default: 9119 }),
 
   SNP_REDIS_URL: Type.String(),
-  SNP_REDIS_STREAM_KEY_PREFIX: Type.String(),
+  SNP_REDIS_STREAM_KEY_PREFIX: Type.Optional(Type.String()),
 
   PGHOST: Type.String(),
   PGPORT: Type.Number({ default: 5432, minimum: 0, maximum: 65535 }),

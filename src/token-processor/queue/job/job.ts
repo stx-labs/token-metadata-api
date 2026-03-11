@@ -1,4 +1,4 @@
-import { logger, resolveOrTimeout, stopwatch } from '@hirosystems/api-toolkit';
+import { logger, resolveOrTimeout, stopwatch } from '@stacks/api-toolkit';
 import { ENV } from '../../../env';
 import { PgStore } from '../../../pg/pg-store';
 import { DbJob, DbJobInvalidReason, DbJobStatus } from '../../../pg/types';
@@ -64,7 +64,7 @@ export abstract class Job {
             retry_after = error.cause.retryAfter * 1_000;
           }
         }
-        const retries = await this.db.increaseJobRetryCount({ id: this.job.id, retry_after });
+        const retries = await this.db.core.increaseJobRetryCount({ id: this.job.id, retry_after });
         if (
           getJobQueueProcessingMode() === JobQueueProcessingMode.strict ||
           retries <= ENV.JOB_QUEUE_MAX_RETRIES
@@ -100,7 +100,7 @@ export abstract class Job {
     invalidReason?: DbJobInvalidReason
   ): Promise<boolean> {
     try {
-      await this.db.updateJobStatus({ id: this.job.id, status, invalidReason });
+      await this.db.core.updateJobStatus({ id: this.job.id, status, invalidReason });
       return true;
     } catch (error) {
       logger.error(`Job ${this.description()} could not update status to ${status}: ${error}`);
@@ -112,6 +112,6 @@ export abstract class Job {
     const hostname = error.url.hostname;
     const retryAfter = error.retryAfter ?? ENV.METADATA_RATE_LIMITED_HOST_RETRY_AFTER;
     logger.info(`Job saving rate limited host ${hostname}, retry after ${retryAfter}s`);
-    await this.db.insertRateLimitedHost({ values: { hostname, retry_after: retryAfter } });
+    await this.db.core.insertRateLimitedHost({ values: { hostname, retry_after: retryAfter } });
   }
 }

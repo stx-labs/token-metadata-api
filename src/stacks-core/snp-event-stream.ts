@@ -1,13 +1,9 @@
-import { SERVER_VERSION } from '@hirosystems/api-toolkit';
-import { logger as defaultLogger } from '@hirosystems/api-toolkit';
-import { StacksEventStream, StacksEventStreamType } from '@hirosystems/salt-n-pepper-client';
+import { SERVER_VERSION } from '@stacks/api-toolkit';
+import { logger as defaultLogger } from '@stacks/api-toolkit';
 import { EventEmitter } from 'node:events';
-import { StacksCoreBlockSchema } from './schemas';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { decodeStacksCoreBlock, StacksCoreBlockProcessor } from './stacks-core-block-processor';
-import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
-
-const SnpBlockCType = TypeCompiler.Compile(StacksCoreBlockSchema);
+import { StacksMessageStream, MessagePath, Message } from '@stacks/node-publisher-client';
+import { PgStore } from '../pg/pg-store';
 
 /**
  * Handles the SNP event stream and processes Stacks Core blocks.
@@ -15,10 +11,11 @@ const SnpBlockCType = TypeCompiler.Compile(StacksCoreBlockSchema);
  */
 export class SnpEventStreamHandler {
   private readonly blockProcessor: StacksCoreBlockProcessor;
-  private readonly logger = defaultLogger.child({ name: 'SnpEventStreamHandler' });
-  private readonly snpClientStream: StacksEventStream;
+  private readonly logger = defaultLogger.child({ module: 'SnpEventStreamHandler' });
+  private readonly snpClientStream: StacksMessageStream;
   private readonly redisUrl: string;
   private readonly redisStreamPrefix: string | undefined;
+  private readonly db: PgStore;
 
   readonly events = new EventEmitter<{
     processedMessage: [{ msgId: string }];
@@ -26,48 +23,61 @@ export class SnpEventStreamHandler {
 
   constructor(opts: {
     redisUrl: string;
-    redisStreamPrefix: string;
-    lastMessageId: string;
+    redisStreamPrefix: string | undefined;
+    db: PgStore;
     blockProcessor: StacksCoreBlockProcessor;
   }) {
     this.blockProcessor = opts.blockProcessor;
     this.redisUrl = opts.redisUrl;
     this.redisStreamPrefix = opts.redisStreamPrefix;
+    this.db = opts.db;
 
-    this.logger.info(`SNP streaming enabled, lastMsgId: ${opts.lastMessageId}`);
+    this.logger.info(`SNP streaming enabled`);
     const appName = `token-metadata-api ${SERVER_VERSION.tag} (${SERVER_VERSION.branch}:${SERVER_VERSION.commit})`;
 
-    this.snpClientStream = new StacksEventStream({
+    this.snpClientStream = new StacksMessageStream({
+      appName,
       redisUrl: this.redisUrl,
       redisStreamPrefix: this.redisStreamPrefix,
-      eventStreamType: StacksEventStreamType.confirmedChainEvents,
-      lastMessageId: opts.lastMessageId,
-      appName,
+      options: {
+        selectedMessagePaths: [MessagePath.NewBlock],
+      },
     });
   }
 
   async start() {
     this.logger.info(`Connecting to SNP event stream at ${this.redisUrl} ...`);
     await this.snpClientStream.connect({ waitForReady: true });
-    this.snpClientStream.start(async (messageId, timestamp, path, body) => {
-      return this.handleMsg(messageId, timestamp, path, body);
-    });
+    this.snpClientStream.start(
+      async () => {
+        const chainTip = await this.db.getChainTip();
+        if (chainTip) {
+          this.logger.info(
+            `Starting SNP event stream at block ${chainTip.block_height} ${chainTip.index_block_hash}`
+          );
+          return {
+            indexBlockHash: chainTip.index_block_hash,
+            blockHeight: chainTip.block_height,
+          };
+        } else {
+          this.logger.info(`No chain tip found, starting SNP event stream at genesis`);
+          return null;
+        }
+      },
+      async (messageId, timestamp, message) => {
+        return this.handleMsg(messageId, timestamp, message);
+      }
+    );
   }
 
-  async handleMsg(messageId: string, _timestamp: string, path: string, body: any) {
-    this.logger.info(`Received SNP stream event ${path}, msgId: ${messageId}`);
-    if (path === '/new_burn_block') {
-      this.logger.info(`Ignoring new burn block event, msgId: ${messageId}`);
+  async handleMsg(messageId: string, _timestamp: string, message: Message) {
+    this.logger.info(`Received SNP stream event ${message.path}, msgId: ${messageId}`);
+    if (message.path !== MessagePath.NewBlock) {
+      this.logger.warn(`Unsupported SNP stream event ${message.path}, skipping...`);
       return;
-    } else if (path !== '/new_block') {
-      this.logger.warn(`Unsupported SNP stream event ${path}, skipping...`);
-      return;
-    }
-    if (!SnpBlockCType.Check(body)) {
-      throw new Error(`Failed to parse SNP block body: ${body}`);
     }
     try {
-      const decodedBlock = decodeStacksCoreBlock(body);
+      const decodedBlock = decodeStacksCoreBlock(message.payload);
       await this.blockProcessor.processBlock(decodedBlock);
       this.events.emit('processedMessage', { msgId: messageId });
     } catch (error) {
@@ -83,14 +93,14 @@ export class SnpEventStreamHandler {
 
 export function buildSnpEventStreamHandler(opts: {
   redisUrl: string;
-  redisStreamPrefix: string;
-  db: StacksCorePgStore;
+  redisStreamPrefix: string | undefined;
+  db: PgStore;
 }) {
-  const blockProcessor = new StacksCoreBlockProcessor({ db: opts.db });
+  const blockProcessor = new StacksCoreBlockProcessor({ db: opts.db.core });
   return new SnpEventStreamHandler({
     redisUrl: opts.redisUrl,
     redisStreamPrefix: opts.redisStreamPrefix,
-    lastMessageId: '0',
+    db: opts.db,
     blockProcessor,
   });
 }

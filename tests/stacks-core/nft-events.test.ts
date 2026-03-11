@@ -1,6 +1,6 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import {
@@ -12,7 +12,7 @@ import {
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
 
-describe('NFT events', () => {
+describe('nft events', () => {
   let db: PgStore;
   let processor: StacksCoreBlockProcessor;
 
@@ -35,7 +35,11 @@ describe('NFT events', () => {
 
     // Get 4th token via mint
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addNftMintEvent(`${contractId}::friedger-nft`, address, cvToHex(uintCV(4)))
@@ -55,7 +59,11 @@ describe('NFT events', () => {
     const contractName = 'friedger-pool-nft';
     const contractId = `${address}.${contractName}`;
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 90 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .setSmartContractPayload(contractName, SIP_009_ABI)
@@ -63,11 +71,15 @@ describe('NFT events', () => {
         )
         .build()
     );
-    await db.updateSmartContractTokenCount({ id: 1, count: 0n });
+    await db.core.updateSmartContractTokenCount({ id: 1, count: 0n });
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 3,
+        index_block_hash: '0x000003',
+        parent_index_block_hash: '0x000002',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addNftMintEvent(`${contractId}::crashpunks-v2`, address, cvToHex(uintCV(1)))
@@ -87,7 +99,11 @@ describe('NFT events', () => {
     const contractId = `${address}.friedger-pool-nft`;
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addNftMintEvent(`${contractId}::crashpunks-v2`, address, cvToHex(uintCV(1)))

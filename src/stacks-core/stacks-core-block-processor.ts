@@ -1,14 +1,5 @@
 import BigNumber from 'bignumber.js';
 import {
-  StacksCoreBlock,
-  StacksCoreFtBurnEvent,
-  StacksCoreFtMintEvent,
-  StacksCoreNftMintEvent,
-  StacksCoreContractEvent,
-  StacksCoreTransaction,
-  StacksCoreEvent,
-} from './schemas';
-import {
   getContractLogMetadataUpdateNotification,
   getContractLogSftMintEvent,
   getSmartContractDeployment,
@@ -22,14 +13,23 @@ import {
   decodeClarityValue,
   DecodedTxResult,
   decodeTransaction,
-} from '@hirosystems/stacks-encoding-native-js';
+} from '@stacks/codec';
 import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
-import { logger, stopwatch } from '@hirosystems/api-toolkit';
+import { logger, stopwatch } from '@stacks/api-toolkit';
+import {
+  NewBlockContractEvent,
+  NewBlockEvent,
+  NewBlockFtBurnEvent,
+  NewBlockFtMintEvent,
+  NewBlockMessage,
+  NewBlockNftMintEvent,
+  NewBlockTransaction,
+} from '@stacks/node-publisher-client';
 
 export type DecodedStacksTransaction = {
-  tx: StacksCoreTransaction;
+  tx: NewBlockTransaction;
   decoded: DecodedTxResult;
-  events: StacksCoreEvent[];
+  events: NewBlockEvent[];
 };
 
 export type DecodedStacksBlock = {
@@ -44,19 +44,24 @@ export type DecodedStacksBlock = {
  * @param block - The Stacks Core block message to decode.
  * @returns The decoded Stacks Core block.
  */
-export function decodeStacksCoreBlock(block: StacksCoreBlock): DecodedStacksBlock {
-  // Group events by transaction ID.
-  const events: Map<string, StacksCoreEvent[]> = new Map();
+export function decodeStacksCoreBlock(block: NewBlockMessage): DecodedStacksBlock {
+  // Group events by `txid`.
+  const events: Map<string, NewBlockEvent[]> = new Map();
   for (const event of block.events) {
     events.set(event.txid, [...(events.get(event.txid) || []), event]);
   }
-  // Decode transactions and sort their events by event index.
-  const transactions = block.transactions.map(tx => ({
-    tx: tx,
-    decoded: decodeTransaction(tx.raw_tx.substring(2)),
-    events: (events.get(tx.txid) || []).sort((a, b) => a.event_index - b.event_index),
-  }));
-  // Sort transactions by transaction index.
+  // Decode transactions and sort their events by `event_index`.
+  const transactions: DecodedStacksTransaction[] = [];
+  for (const tx of block.transactions) {
+    // Skip burnchain op transactions, they are irrelevant to this API.
+    if (tx.burnchain_op) continue;
+    transactions.push({
+      tx,
+      decoded: decodeTransaction(tx.raw_tx.substring(2)),
+      events: (events.get(tx.txid) || []).sort((a, b) => a.event_index - b.event_index),
+    });
+  }
+  // Sort transactions by `tx_index`.
   const decodedBlock: DecodedStacksBlock = {
     block_height: block.block_height,
     index_block_hash: block.index_block_hash,
@@ -84,18 +89,13 @@ export class StacksCoreBlockProcessor {
     );
 
     await this.db.sqlWriteTransaction(async sql => {
-      // Check if this block represents a re-org. Revert to its parent's chain tip if it does.
-      const chainTip = await this.db.getChainTip(sql);
-      if (chainTip && chainTip.index_block_hash !== block.parent_index_block_hash) {
+      // Handle the re-org if it exists. This will re-enqueue refresh jobs for all tokens and
+      // contracts that were affected, if any.
+      const reorg = await this.db.handleReOrg(sql, block.parent_index_block_hash);
+      if (reorg) {
         logger.info(
-          `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${
-            block.block_height - 1
-          } ${block.parent_index_block_hash}`
+          `${this.constructor.name} detected re-org, reverting to chain tip at parent block ${block.parent_index_block_hash}`
         );
-        await this.db.revertToChainTip(sql, {
-          block_height: block.block_height - 1,
-          index_block_hash: block.parent_index_block_hash,
-        });
       }
 
       const contracts: SmartContractDeployment[] = [];
@@ -104,7 +104,7 @@ export class StacksCoreBlockProcessor {
       const nftMints: NftMintEvent[] = [];
       const ftSupplyDelta: Map<string, BigNumber> = new Map();
 
-      // Process each transaction in the block.
+      // Process each transaction in the new block.
       for (const transaction of block.transactions) {
         if (transaction.tx.status !== 'success') continue;
         this.processTransaction(transaction, contracts);
@@ -166,7 +166,7 @@ export class StacksCoreBlockProcessor {
 
   private processContractEvent(
     transaction: DecodedStacksTransaction,
-    event: StacksCoreContractEvent,
+    event: NewBlockContractEvent,
     notifications: TokenMetadataUpdateNotification[],
     sftMints: SftMintEvent[]
   ) {
@@ -197,7 +197,7 @@ export class StacksCoreBlockProcessor {
     }
   }
 
-  private processFtMintEvent(event: StacksCoreFtMintEvent, ftSupplyDelta: Map<string, BigNumber>) {
+  private processFtMintEvent(event: NewBlockFtMintEvent, ftSupplyDelta: Map<string, BigNumber>) {
     const principal = event.ft_mint_event.asset_identifier.split('::')[0];
     const previous = ftSupplyDelta.get(principal) ?? BigNumber(0);
     const amount = BigNumber(event.ft_mint_event.amount);
@@ -212,7 +212,7 @@ export class StacksCoreBlockProcessor {
     );
   }
 
-  private processFtBurnEvent(event: StacksCoreFtBurnEvent, ftSupplyDelta: Map<string, BigNumber>) {
+  private processFtBurnEvent(event: NewBlockFtBurnEvent, ftSupplyDelta: Map<string, BigNumber>) {
     const principal = event.ft_burn_event.asset_identifier.split('::')[0];
     const previous = ftSupplyDelta.get(principal) ?? BigNumber(0);
     const amount = BigNumber(event.ft_burn_event.amount);
@@ -229,7 +229,7 @@ export class StacksCoreBlockProcessor {
 
   private processNftMintEvent(
     transaction: DecodedStacksTransaction,
-    event: StacksCoreNftMintEvent,
+    event: NewBlockNftMintEvent,
     nftMints: NftMintEvent[]
   ) {
     const value = decodeClarityValue(event.nft_mint_event.raw_value);

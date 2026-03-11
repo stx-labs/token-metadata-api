@@ -6,7 +6,7 @@ import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { SmartContractDeployment } from '../src/token-processor/util/sip-validation';
 import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types';
-import { waiter } from '@hirosystems/api-toolkit';
+import { waiter } from '@stacks/api-toolkit';
 import {
   DecodedStacksBlock,
   DecodedStacksTransaction,
@@ -17,8 +17,9 @@ import {
   PostConditionModeID,
   TransactionVersion,
   TxPayloadTypeID,
-} from '@hirosystems/stacks-encoding-native-js';
+} from '@stacks/codec';
 import { ClarityAbi } from '@stacks/transactions';
+import { NewBlockEventType } from '@stacks/node-publisher-client';
 
 export type TestFastifyServer = FastifyInstance<
   Server,
@@ -1304,7 +1305,7 @@ export async function insertAndEnqueueTestContract(
       tx_index: 0,
     };
     await db.core.insertBlock(sql, block);
-    await db.core.applyContractDeployment(sql, deploy, block);
+    await db.core.insertAndEnqueueSmartContract(sql, deploy, block);
     const smart_contract = (await db.getSmartContract({ principal })) as DbSmartContract;
 
     const jobs = await sql<DbJob[]>`
@@ -1389,7 +1390,7 @@ export type TestTransactionArgs = {
   tx_index?: number;
   sender?: string;
   status?: 'success' | 'abort_by_response' | 'abort_by_post_condition';
-  contract_interface?: string;
+  contract_interface?: ClarityAbi;
 };
 
 export class TestTransactionBuilder {
@@ -1403,6 +1404,17 @@ export class TestTransactionBuilder {
         raw_tx: '',
         status: args.status ?? 'success',
         contract_interface: args.contract_interface ?? null,
+        raw_result: '',
+        execution_cost: {
+          read_count: 0,
+          read_length: 0,
+          runtime: 0,
+          write_count: 0,
+          write_length: 0,
+        },
+        microblock_sequence: null,
+        microblock_hash: null,
+        microblock_parent_hash: null,
       },
       decoded: {
         auth: {
@@ -1434,7 +1446,7 @@ export class TestTransactionBuilder {
       contract_name,
       code_body: 'some-code-body',
     };
-    this.transaction.tx.contract_interface = JSON.stringify(abi);
+    this.transaction.tx.contract_interface = abi;
     return this;
   }
 
@@ -1444,7 +1456,7 @@ export class TestTransactionBuilder {
     amount: string
   ): TestTransactionBuilder {
     this.transaction.events.push({
-      type: 'ft_mint_event',
+      type: NewBlockEventType.FtMint,
       ft_mint_event: {
         asset_identifier,
         recipient,
@@ -1452,13 +1464,14 @@ export class TestTransactionBuilder {
       },
       event_index: this.transaction.events.length,
       txid: this.transaction.tx.txid,
+      committed: true,
     });
     return this;
   }
 
   addFtBurnEvent(asset_identifier: string, sender: string, amount: string): TestTransactionBuilder {
     this.transaction.events.push({
-      type: 'ft_burn_event',
+      type: NewBlockEventType.FtBurn,
       ft_burn_event: {
         asset_identifier,
         sender,
@@ -1466,6 +1479,7 @@ export class TestTransactionBuilder {
       },
       event_index: this.transaction.events.length,
       txid: this.transaction.tx.txid,
+      committed: true,
     });
     return this;
   }
@@ -1476,28 +1490,32 @@ export class TestTransactionBuilder {
     raw_value: string
   ): TestTransactionBuilder {
     this.transaction.events.push({
-      type: 'nft_mint_event',
+      type: NewBlockEventType.NftMint,
       nft_mint_event: {
         asset_identifier,
         recipient,
         raw_value,
+        value: raw_value,
       },
       event_index: this.transaction.events.length,
       txid: this.transaction.tx.txid,
+      committed: true,
     });
     return this;
   }
 
   addContractEvent(contract_identifier: string, raw_value: string): TestTransactionBuilder {
     this.transaction.events.push({
-      type: 'contract_event',
+      type: NewBlockEventType.Contract,
       contract_event: {
         contract_identifier,
         topic: 'print',
         raw_value,
+        value: raw_value,
       },
       event_index: this.transaction.events.length,
       txid: this.transaction.tx.txid,
+      committed: true,
     });
     return this;
   }

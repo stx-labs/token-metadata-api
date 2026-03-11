@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbSipNumber } from '../../src/pg/types';
@@ -102,7 +102,7 @@ describe('SFT routes', () => {
       DbSipNumber.sip013,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -145,7 +145,7 @@ describe('SFT routes', () => {
       DbSipNumber.sip013,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -176,7 +176,7 @@ describe('SFT routes', () => {
       DbSipNumber.sip013,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -266,5 +266,13 @@ describe('SFT routes', () => {
     });
     expect(response.statusCode).toEqual(noVersionResponse.statusCode);
     expect(response.json()).toStrictEqual(noVersionResponse.json());
+
+    // Test with canonical = false
+    await db.sql`UPDATE tokens SET canonical = false WHERE id = 1`;
+    const response2 = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/sft/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1/1',
+    });
+    expect(response2.statusCode).toBe(404);
   });
 });

@@ -1,9 +1,11 @@
-import { PgJsonb, PgNumeric, PgSqlQuery } from '@hirosystems/api-toolkit';
+import { PgJsonb, PgNumeric, PgSqlQuery } from '@stacks/api-toolkit';
 import { FtOrderBy, Order } from '../api/schemas';
 
-export type DbChainTip = {
+export type DbBlock = {
   index_block_hash: string;
   block_height: number;
+  parent_index_block_hash: string;
+  canonical: boolean;
 };
 
 export enum DbSipNumber {
@@ -57,6 +59,7 @@ export type DbSmartContractInsert = {
   tx_index: number;
   fungible_token_name: string | null;
   non_fungible_token_name: string | null;
+  canonical: boolean;
 };
 
 export type DbSmartContract = {
@@ -91,12 +94,14 @@ export type DbToken = {
 export type DbJobInsert = {
   token_id?: number;
   smart_contract_id?: number;
+  token_supply_id?: number;
 };
 
 export type DbJob = {
   id: number;
   token_id?: number;
   smart_contract_id?: number;
+  token_supply_id?: number;
   status: DbJobStatus;
   retry_count: number;
   created_at: string;
@@ -128,7 +133,20 @@ export type DbRateLimitedHost = {
   retry_after: string;
 };
 
-export type DbFtInsert = {
+export type DbTokenInsert = DbFtUpdate &
+  DbNftUpdate &
+  DbSftUpdate & {
+    smart_contract_id: number;
+    token_number: string;
+    type: DbTokenType;
+    block_height: number;
+    index_block_hash: string;
+    tx_id: string;
+    tx_index: number;
+    canonical: boolean;
+  };
+
+export type DbFtUpdate = {
   name: string | null;
   symbol: string | null;
   decimals: number | null;
@@ -136,11 +154,11 @@ export type DbFtInsert = {
   uri: string | null;
 };
 
-export type DbNftInsert = {
+export type DbNftUpdate = {
   uri: string | null;
 };
 
-export type DbSftInsert = {
+export type DbSftUpdate = {
   decimals: number | null;
   total_supply: PgNumeric | null;
   uri: string | null;
@@ -208,7 +226,7 @@ export type DbMetadataLocaleInsertBundle = {
 };
 
 export type DbProcessedTokenUpdateBundle = {
-  token: DbFtInsert | DbNftInsert | DbSftInsert;
+  token: DbFtUpdate | DbNftUpdate | DbSftUpdate;
   metadataLocales?: DbMetadataLocaleInsertBundle[];
 };
 
@@ -260,54 +278,3 @@ export type DbFungibleTokenMetadataItem = {
   cached_image?: string;
   cached_thumbnail_image?: string;
 };
-
-export const TOKENS_COLUMNS = [
-  'id',
-  'smart_contract_id',
-  'type',
-  'token_number',
-  'uri',
-  'name',
-  'decimals',
-  'total_supply',
-  'symbol',
-  'created_at',
-  'updated_at',
-];
-
-export const JOBS_COLUMNS = [
-  'id',
-  'token_id',
-  'smart_contract_id',
-  'status',
-  'retry_count',
-  'created_at',
-  'updated_at',
-  'retry_after',
-];
-
-export const METADATA_COLUMNS = [
-  'id',
-  'sip',
-  'token_id',
-  'name',
-  'l10n_locale',
-  'l10n_uri',
-  'l10n_default',
-  'description',
-  'image',
-  'cached_image',
-  'cached_thumbnail_image',
-];
-
-export const METADATA_ATTRIBUTES_COLUMNS = [
-  'id',
-  'metadata_id',
-  'trait_type',
-  'value',
-  'display_type',
-];
-
-export const METADATA_PROPERTIES_COLUMNS = ['id', 'metadata_id', 'name', 'value'];
-
-export const RATE_LIMITED_HOSTS_COLUMNS = ['id', 'hostname', 'created_at', 'retry_after'];

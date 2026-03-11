@@ -1,5 +1,5 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from '@hirosystems/stacks-encoding-native-js';
+import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
 import {
   DbMetadataLocaleInsertBundle,
   DbProcessedTokenUpdateBundle,
@@ -8,7 +8,7 @@ import {
   DbTokenType,
 } from '../../../pg/types';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { SmartContractClarityError, TooManyRequestsHttpError } from '../../util/errors';
+import { SmartContractClarityError } from '../../util/errors';
 import {
   fetchAllMetadataLocalesFromBaseUri,
   getFetchableMetadataUrl,
@@ -16,7 +16,7 @@ import {
 } from '../../util/metadata-helpers';
 import { RetryableJobError } from '../errors';
 import { Job } from './job';
-import { PgNumeric, logger } from '@hirosystems/api-toolkit';
+import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**
  * Downloads, parses and indexes metadata info for a single token in the Stacks blockchain by
@@ -131,7 +131,7 @@ export class ProcessTokenJob extends Job {
       },
       metadataLocales: metadataLocales,
     };
-    await this.db.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
+    await this.db.core.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
   }
 
   private async handleNft(client: StacksNodeRpcClient, token: DbToken, contract: DbSmartContract) {
@@ -147,7 +147,7 @@ export class ProcessTokenJob extends Job {
       },
       metadataLocales: metadataLocales,
     };
-    await this.db.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
+    await this.db.core.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
   }
 
   private async handleSft(client: StacksNodeRpcClient, token: DbToken, contract: DbSmartContract) {
@@ -179,7 +179,7 @@ export class ProcessTokenJob extends Job {
       },
       metadataLocales: metadataLocales,
     };
-    await this.db.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
+    await this.db.core.updateProcessedTokenWithMetadata({ id: token.id, values: tokenValues });
   }
 
   private async getTokenUri(
@@ -201,7 +201,7 @@ export class ProcessTokenJob extends Job {
       const now = Date.now();
       if (retryAfter <= now) {
         // Retry-After has passed, we can proceed.
-        await this.db.deleteRateLimitedHost({ hostname: fetchable.hostname });
+        await this.db.core.deleteRateLimitedHost({ hostname: fetchable.hostname });
         logger.info(
           `ProcessTokenJob Retry-After has passed for rate limited hostname ${fetchable.hostname}, resuming fetches`
         );

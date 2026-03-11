@@ -1,4 +1,4 @@
-import { BasePgStoreModule, PgSqlClient, batchIterate, logger } from '@hirosystems/api-toolkit';
+import { BasePgStoreModule, PgSqlClient, batchIterate } from '@stacks/api-toolkit';
 import { ENV } from '../env';
 import {
   NftMintEvent,
@@ -11,7 +11,14 @@ import {
   DbTokenType,
   DbSmartContract,
   DbSipNumber,
-  DbChainTip,
+  DbTokenInsert,
+  DbBlock,
+  DbJobStatus,
+  DbJobInvalidReason,
+  DbProcessedTokenUpdateBundle,
+  DbRateLimitedHost,
+  DbRateLimitedHostInsert,
+  DbMetadataAttributeInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import BigNumber from 'bignumber.js';
@@ -33,13 +40,13 @@ export class StacksCorePgStore extends BasePgStoreModule {
     await this.sqlWriteTransaction(async sql => {
       await this.insertBlock(sql, args.block);
       for (const contract of args.contracts)
-        await this.applyContractDeployment(sql, contract, args.block);
+        await this.insertAndEnqueueSmartContract(sql, contract, args.block);
       for (const notification of args.notifications)
-        await this.applyNotification(sql, notification, args.block);
-      await this.applyTokenMints(sql, args.nftMints, DbTokenType.nft, args.block);
-      await this.applyTokenMints(sql, args.sftMints, DbTokenType.sft, args.block);
+        await this.insertAndEnqueueNotification(sql, notification, args.block);
+      await this.insertAndEnqueueMintedTokens(sql, args.nftMints, DbTokenType.nft, args.block);
+      await this.insertAndEnqueueMintedTokens(sql, args.sftMints, DbTokenType.sft, args.block);
       for (const [contract, delta] of args.ftSupplyDelta)
-        await this.applyFtSupplyChange(sql, contract, delta, args.block);
+        await this.insertAndEnqueueFtSupplyChange(sql, contract, delta, args.block);
       await this.enqueueDynamicTokensDueForRefresh();
     });
   }
@@ -49,16 +56,27 @@ export class StacksCorePgStore extends BasePgStoreModule {
       block_height: block.block_height,
       index_block_hash: block.index_block_hash,
       parent_index_block_hash: block.parent_index_block_hash,
+      canonical: true,
     };
     await sql`INSERT INTO blocks ${sql(values)} ON CONFLICT (index_block_hash) DO NOTHING`;
   }
 
-  async getChainTip(sql: PgSqlClient): Promise<DbChainTip | null> {
-    const result = await sql<DbChainTip[]>`
-      SELECT index_block_hash, block_height
+  async getChainTip(sql: PgSqlClient): Promise<DbBlock | null> {
+    const result = await sql<DbBlock[]>`
+      SELECT *
       FROM blocks
+      WHERE canonical = true
       ORDER BY block_height DESC
       LIMIT 1
+    `;
+    return result.count > 0 ? result[0] : null;
+  }
+
+  async getBlock(sql: PgSqlClient, indexBlockHash: string): Promise<DbBlock | null> {
+    const result = await sql<DbBlock[]>`
+      SELECT *
+      FROM blocks
+      WHERE index_block_hash = ${indexBlockHash}
     `;
     return result.count > 0 ? result[0] : null;
   }
@@ -66,29 +84,171 @@ export class StacksCorePgStore extends BasePgStoreModule {
   /**
    * Reverts the database to a new chain tip after a re-org.
    * @param sql - The SQL client to use.
-   * @param newChainTip - The new chain tip to revert to.
+   * @param newChainTipHash - The new chain tip hash to revert to.
+   * @returns Whether a re-org was detected.
    */
-  async revertToChainTip(sql: PgSqlClient, newChainTip: DbChainTip): Promise<void> {
-    // Before deleting blocks, we need to undo all FT supply deltas for the blocks we're about to
-    // delete.
+  async handleReOrg(sql: PgSqlClient, newChainTipHash: string): Promise<boolean> {
+    const chainTip = await this.getChainTip(sql);
+    // Empty chainstate, reorg impossible.
+    if (!chainTip) return false;
+    // We're at the canonical chain tip, no reorg.
+    if (chainTip.index_block_hash === newChainTipHash) return false;
+
+    const newChainTipBlock = await this.getBlock(sql, newChainTipHash);
+    if (!newChainTipBlock) throw new Error(`Parent block ${newChainTipHash} not found`);
+
+    // We detected a re-org.
+    const supplyRefreshIds: Set<number> = new Set();
+    const tokenRefreshIds: Set<number> = new Set();
+    const contractRefreshIds: Set<number> = new Set();
+    if (!newChainTipBlock.canonical) {
+      // We received a block that advances an existent non-canonical fork. Find the common ancestor
+      // so we can roll back to it and then apply the non-canonical chain that leads to the new
+      // chain tip.
+      const commonAncestor = await sql<DbBlock[]>`
+        WITH RECURSIVE chain_tip_ancestors AS (
+          SELECT index_block_hash, parent_index_block_hash, block_height, canonical
+          FROM blocks
+          WHERE index_block_hash = ${chainTip.index_block_hash}
+          UNION ALL
+          SELECT b.index_block_hash, b.parent_index_block_hash, b.block_height, b.canonical
+          FROM blocks b
+          INNER JOIN chain_tip_ancestors c ON c.parent_index_block_hash = b.index_block_hash
+        ),
+        new_tip_ancestors AS (
+          SELECT index_block_hash, parent_index_block_hash, block_height, canonical
+          FROM blocks
+          WHERE index_block_hash = ${newChainTipHash}
+          UNION ALL
+          SELECT b.index_block_hash, b.parent_index_block_hash, b.block_height, b.canonical
+          FROM blocks b
+          INNER JOIN new_tip_ancestors n ON n.parent_index_block_hash = b.index_block_hash
+        )
+        SELECT c.*
+        FROM chain_tip_ancestors c
+        INNER JOIN new_tip_ancestors n ON n.index_block_hash = c.index_block_hash
+        ORDER BY c.block_height DESC
+        LIMIT 1
+      `;
+      if (commonAncestor.count == 0)
+        throw new Error(
+          `No common ancestor found for blocks ${chainTip.index_block_hash} and ${newChainTipHash}`
+        );
+      const blocksToRollBack = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${commonAncestor[0].block_height} AND canonical = true
+        ORDER BY block_height DESC
+      `;
+      const blocksToApply = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${commonAncestor[0].block_height} AND canonical = false
+        ORDER BY block_height ASC
+      `;
+      // Roll back to the common ancestor. Enqueue supply refresh jobs for affected FT supplies.
+      const result1 = await this.markEntitiesCanonical(sql, {
+        canonical: false,
+        blocks: blocksToRollBack,
+      });
+      for (const ft of result1.ftSupplies) supplyRefreshIds.add(ft);
+      // Apply the new fork. Enqueue token refresh jobs for newly-canonical tokens and FT supplies.
+      const result2 = await this.markEntitiesCanonical(sql, {
+        canonical: true,
+        blocks: blocksToApply,
+      });
+      for (const ft of result2.ftSupplies) supplyRefreshIds.add(ft);
+      for (const token of result2.tokens) tokenRefreshIds.add(token);
+      for (const contract of result2.contracts) contractRefreshIds.add(contract);
+    } else {
+      // The new chain tip is part of our canonical chain. We just need to roll back to it so a new
+      // fork can be created.
+      const blocksToRollBack = await sql<DbBlock[]>`
+        SELECT *
+        FROM blocks
+        WHERE block_height > ${newChainTipBlock.block_height} AND canonical = true
+        ORDER BY block_height DESC
+      `;
+      // Roll back and enqueue supply refresh jobs for affected FT supplies.
+      const result = await this.markEntitiesCanonical(sql, {
+        canonical: false,
+        blocks: blocksToRollBack,
+      });
+      for (const ft of result.ftSupplies) supplyRefreshIds.add(ft);
+    }
+
+    // Enqueue jobs for affected FT supplies, tokens, and contracts.
     await sql`
-      WITH ft_supply_deltas AS (
-        SELECT token_id, SUM(delta) AS delta
-        FROM ft_supply_deltas
-        WHERE block_height > ${newChainTip.block_height}
-        GROUP BY token_id
-      )
-      UPDATE tokens
-      SET total_supply = total_supply - (SELECT delta FROM ft_supply_deltas WHERE token_id = tokens.id),
-        updated_at = NOW()
-      WHERE id IN (SELECT token_id FROM ft_supply_deltas)
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE token_supply_id IN ${sql(Array.from(supplyRefreshIds))}
     `;
-    // Delete all blocks with a height greater than the chain tip's block height. This will
-    // cascade delete all tokens, smart contracts, FT supply deltas, update notifications, and jobs
-    // associated with those blocks.
     await sql`
-      DELETE FROM blocks WHERE block_height > ${newChainTip.block_height}
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE token_id IN ${sql(Array.from(tokenRefreshIds))}
     `;
+    await sql`
+      UPDATE jobs
+      SET status = 'pending', updated_at = NOW()
+      WHERE smart_contract_id IN ${sql(Array.from(contractRefreshIds))}
+    `;
+
+    return true;
+  }
+
+  async markEntitiesCanonical(
+    sql: PgSqlClient,
+    args: { canonical: boolean; blocks: DbBlock[] }
+  ): Promise<{ ftSupplies: Set<number>; tokens: Set<number>; contracts: Set<number> }> {
+    const ftSupplies: Set<number> = new Set();
+    const tokens: Set<number> = new Set();
+    const contracts: Set<number> = new Set();
+
+    for (const block of args.blocks) {
+      // Mark FT supply deltas as canonical or non-canonical but record which tokens were affected
+      // so we can refresh their total supplies.
+      const affectedFts = await sql<{ token_id: number }[]>`
+        UPDATE ft_supply_deltas
+        SET canonical = ${args.canonical}
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING token_id
+      `;
+      for (const ft of affectedFts) ftSupplies.add(ft.token_id);
+
+      const affectedTokens = await sql<{ id: number }[]>`
+        UPDATE tokens
+        SET canonical = ${args.canonical}, updated_at = NOW()
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING id
+      `;
+      for (const token of affectedTokens) tokens.add(token.id);
+
+      const affectedContracts = await sql<{ id: number }[]>`
+        UPDATE smart_contracts
+        SET canonical = ${args.canonical}, updated_at = NOW()
+        WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        RETURNING id
+      `;
+      for (const contract of affectedContracts) contracts.add(contract.id);
+
+      // Mark the block's entities as canonical or non-canonical.
+      await sql`
+        WITH block_updates AS (
+          UPDATE blocks
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        ),
+        update_notification_updates AS (
+          UPDATE update_notifications
+          SET canonical = ${args.canonical}
+          WHERE index_block_hash = ${block.index_block_hash} AND canonical <> ${args.canonical}
+        )
+        SELECT 1
+      `;
+    }
+
+    return { ftSupplies, tokens, contracts };
   }
 
   /**
@@ -102,7 +262,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       token_count: bigint;
     }
   ): Promise<void> {
-    const tokenValues = [];
+    const tokenValues: DbTokenInsert[] = [];
     for (let index = 1; index <= args.token_count; index++)
       tokenValues.push({
         smart_contract_id: args.smart_contract.id,
@@ -112,6 +272,12 @@ export class StacksCorePgStore extends BasePgStoreModule {
         index_block_hash: args.smart_contract.index_block_hash,
         tx_id: args.smart_contract.tx_id,
         tx_index: args.smart_contract.tx_index,
+        canonical: true,
+        name: null,
+        symbol: null,
+        decimals: null,
+        total_supply: null,
+        uri: null,
       });
     for await (const batch of batchIterate(tokenValues, 500)) {
       await sql`
@@ -128,13 +294,13 @@ export class StacksCorePgStore extends BasePgStoreModule {
           RETURNING id
         )
         INSERT INTO jobs (token_id) (SELECT id AS token_id FROM token_inserts)
-        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL DO
+        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL AND token_supply_id IS NULL DO
           UPDATE SET updated_at = NOW(), status = 'pending'
       `;
     }
   }
 
-  async applyContractDeployment(
+  async insertAndEnqueueSmartContract(
     sql: PgSqlClient,
     contract: SmartContractDeployment,
     block: DecodedStacksBlock
@@ -173,6 +339,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
       tx_index: contract.tx_index,
       fungible_token_name: contract.fungible_token_name,
       non_fungible_token_name: contract.non_fungible_token_name,
+      canonical: true,
     };
     await sql`
       WITH smart_contract_inserts AS (
@@ -182,12 +349,12 @@ export class StacksCorePgStore extends BasePgStoreModule {
       )
       INSERT INTO jobs (smart_contract_id)
         (SELECT id AS smart_contract_id FROM smart_contract_inserts)
-      ON CONFLICT (smart_contract_id) WHERE token_id IS NULL DO
+      ON CONFLICT (smart_contract_id) WHERE token_id IS NULL AND token_supply_id IS NULL DO
         UPDATE SET updated_at = NOW(), status = 'pending'
     `;
   }
 
-  private async applyNotification(
+  private async insertAndEnqueueNotification(
     sql: PgSqlClient,
     event: TokenMetadataUpdateNotification,
     block: DecodedStacksBlock
@@ -222,6 +389,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
           FROM previous_modes
           WHERE update_mode <> 'frozen'
         )
+        ON CONFLICT (token_id, index_block_hash, tx_index, event_index) DO NOTHING
         RETURNING token_id
       )
       UPDATE jobs
@@ -230,7 +398,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  private async applyFtSupplyChange(
+  private async insertAndEnqueueFtSupplyChange(
     sql: PgSqlClient,
     contract: string,
     delta: BigNumber,
@@ -239,12 +407,15 @@ export class StacksCorePgStore extends BasePgStoreModule {
     await sql`
       WITH smart_contract_id AS (
         SELECT id FROM smart_contracts
-        WHERE principal = ${contract}
+        WHERE principal = ${contract} AND canonical = true
+        LIMIT 1
       ),
       token_id AS (
         SELECT id FROM tokens
         WHERE smart_contract_id = (SELECT id FROM smart_contract_id)
+          AND canonical = true
           AND token_number = 1
+          LIMIT 1
       ),
       delta_insert AS (
         INSERT INTO ft_supply_deltas (token_id, block_height, index_block_hash, delta)
@@ -252,9 +423,10 @@ export class StacksCorePgStore extends BasePgStoreModule {
           (SELECT id FROM token_id), ${block.block_height}, ${block.index_block_hash}, ${delta}
         )
       )
-      UPDATE tokens
-      SET total_supply = total_supply + ${delta}, updated_at = NOW()
-        WHERE id = (SELECT id FROM token_id)
+      INSERT INTO jobs (token_supply_id)
+        (SELECT id AS token_supply_id FROM token_id)
+      ON CONFLICT (token_supply_id) WHERE smart_contract_id IS NULL AND token_id IS NULL DO
+        UPDATE SET updated_at = NOW(), status = 'pending'
     `;
   }
 
@@ -287,9 +459,9 @@ export class StacksCorePgStore extends BasePgStoreModule {
     `;
   }
 
-  private async applyTokenMints(
+  private async insertAndEnqueueMintedTokens(
     sql: PgSqlClient,
-    mints: NftMintEvent[],
+    mints: NftMintEvent[] | SftMintEvent[],
     tokenType: DbTokenType,
     block: DecodedStacksBlock
   ): Promise<void> {
@@ -334,9 +506,153 @@ export class StacksCorePgStore extends BasePgStoreModule {
           RETURNING id
         )
         INSERT INTO jobs (token_id) (SELECT id AS token_id FROM token_inserts)
-        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL DO
+        ON CONFLICT (token_id) WHERE smart_contract_id IS NULL AND token_supply_id IS NULL DO
           UPDATE SET updated_at = NOW(), status = 'pending'
       `;
     }
+  }
+
+  async updateTokenSupply(args: { id: number; total_supply: string }): Promise<void> {
+    await this.sql`
+      UPDATE tokens SET
+        total_supply = ${args.total_supply},
+        updated_at = NOW()
+      WHERE id = ${args.id}
+    `;
+  }
+
+  async updateSmartContractTokenCount(args: { id: number; count: bigint }): Promise<void> {
+    await this.sql`
+      UPDATE smart_contracts SET token_count = ${args.count.toString()} WHERE id = ${args.id}
+    `;
+  }
+
+  /**
+   * Writes a full bundle of token info and metadata (including attributes and properties) into the
+   * db.
+   * @param id - token id
+   * @param values - update bundle values
+   */
+  async updateProcessedTokenWithMetadata(args: {
+    id: number;
+    values: DbProcessedTokenUpdateBundle;
+  }): Promise<void> {
+    await this.sqlWriteTransaction(async sql => {
+      // Update token and clear old metadata (this will cascade into all properties and attributes)
+      const tokenUpdate = await sql`
+        UPDATE tokens SET ${sql(args.values.token)}, updated_at = NOW() WHERE id = ${args.id}
+      `;
+      if (tokenUpdate.count === 0) return;
+      await sql`DELETE FROM metadata WHERE token_id = ${args.id}`;
+      // Write new metadata
+      if (args.values.metadataLocales && args.values.metadataLocales.length > 0) {
+        for (const locale of args.values.metadataLocales) {
+          delete (locale.metadata as Record<string, unknown>)['id'];
+          const metadataInsert = await sql<{ id: number }[]>`
+            INSERT INTO metadata ${sql(locale.metadata)} RETURNING id
+          `;
+          const metadataId = metadataInsert[0].id;
+          if (locale.attributes && locale.attributes.length > 0) {
+            const values: DbMetadataAttributeInsert[] = locale.attributes.map(attribute => ({
+              trait_type: attribute.trait_type,
+              value: attribute.value,
+              display_type: attribute.display_type,
+              metadata_id: metadataId,
+            }));
+            await sql`INSERT INTO metadata_attributes ${sql(values)}`;
+          }
+          if (locale.properties && locale.properties.length > 0) {
+            const values = locale.properties.map(property => ({
+              name: property.name,
+              value:
+                typeof property.value == 'boolean'
+                  ? sql`TO_JSONB(${property.value})`
+                  : property.value,
+              metadata_id: metadataId,
+            }));
+            await sql`INSERT INTO metadata_properties ${sql(values)}`;
+          }
+        }
+      }
+    });
+  }
+
+  async updateJobStatus(args: {
+    id: number;
+    status: DbJobStatus;
+    invalidReason?: DbJobInvalidReason;
+  }): Promise<void> {
+    await this.sql`
+      UPDATE jobs
+      SET status = ${args.status},
+        invalid_reason = ${
+          args.status == DbJobStatus.invalid && args.invalidReason
+            ? args.invalidReason
+            : this.sql`NULL`
+        },
+        ${
+          args.status != DbJobStatus.pending
+            ? this.sql`retry_count = 0, retry_after = NULL,`
+            : this.sql``
+        }
+        updated_at = NOW()
+      WHERE id = ${args.id}
+    `;
+  }
+
+  async retryAllFailedJobs(): Promise<void> {
+    await this.sql`
+      UPDATE jobs
+      SET status = ${DbJobStatus.pending}, retry_count = 0, updated_at = NOW(), retry_after = NULL
+      WHERE status IN (${DbJobStatus.failed}, ${DbJobStatus.invalid})
+    `;
+  }
+
+  async increaseJobRetryCount(args: { id: number; retry_after: number }): Promise<number> {
+    const retryAfter = args.retry_after.toString();
+    const result = await this.sql<{ retry_count: number }[]>`
+      UPDATE jobs
+      SET retry_count = retry_count + 1,
+        updated_at = NOW(),
+        retry_after = NOW() + INTERVAL '${this.sql(retryAfter)} ms'
+      WHERE id = ${args.id}
+      RETURNING retry_count
+    `;
+    return result[0].retry_count;
+  }
+
+  async insertRateLimitedHost(args: {
+    values: DbRateLimitedHostInsert;
+  }): Promise<DbRateLimitedHost> {
+    const retryAfter = args.values.retry_after.toString();
+    const results = await this.sql<DbRateLimitedHost[]>`
+      INSERT INTO rate_limited_hosts (hostname, created_at, retry_after)
+      VALUES (${args.values.hostname}, DEFAULT, NOW() + INTERVAL '${this.sql(retryAfter)} seconds')
+      ON CONFLICT ON CONSTRAINT rate_limited_hosts_hostname_key DO
+        UPDATE SET retry_after = EXCLUDED.retry_after
+      RETURNING *
+    `;
+    return results[0];
+  }
+
+  async deleteRateLimitedHost(args: { hostname: string }): Promise<void> {
+    await this.sql`
+      DELETE FROM rate_limited_hosts WHERE hostname = ${args.hostname}
+    `;
+  }
+
+  async updateTokenCachedImages(
+    tokenId: number,
+    cachedImage: string,
+    cachedThumbnailImage: string
+  ): Promise<void> {
+    await this.sql`
+      WITH token_date AS (
+        UPDATE tokens SET updated_at = NOW() WHERE id = ${tokenId}
+      )
+      UPDATE metadata
+      SET cached_image = ${cachedImage}, cached_thumbnail_image = ${cachedThumbnailImage}
+      WHERE token_id = ${tokenId}
+    `;
   }
 }

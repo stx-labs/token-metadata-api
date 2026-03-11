@@ -1,6 +1,6 @@
 import { cvToHex, tupleCV, bufferCV, listCV, uintCV, stringUtf8CV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import {
@@ -35,7 +35,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -60,7 +64,7 @@ describe('token metadata notifications', () => {
     expect(notifs).toHaveLength(3);
     expect(notifs[0].token_id).toBe(1);
     expect(notifs[0].update_mode).toBe('standard');
-    expect(notifs[0].block_height).toBe(100);
+    expect(notifs[0].block_height).toBe(2);
   });
 
   test('enqueues notification for specific tokens in contract', async () => {
@@ -70,7 +74,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -107,7 +115,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -141,7 +153,11 @@ describe('token metadata notifications', () => {
 
     // Mark as frozen
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 90 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -165,7 +181,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 3,
+        index_block_hash: '0x000003',
+        parent_index_block_hash: '0x000002',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -190,7 +210,7 @@ describe('token metadata notifications', () => {
     expect(jobs2.length).toBe(0); // No tokens queued.
     const notif = await getLatestTokenNotification(db, 1);
     expect(notif).not.toBeUndefined();
-    expect(notif?.block_height).toBe(90);
+    expect(notif?.block_height).toBe(2);
     expect(notif?.update_mode).toBe('frozen'); // Keeps the old frozen notif
   });
 
@@ -201,7 +221,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 90 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -226,12 +250,16 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
     const notif1 = await getLatestTokenNotification(db, 1);
     expect(notif1).not.toBeUndefined();
-    expect(notif1?.block_height).toBe(90);
+    expect(notif1?.block_height).toBe(2);
     expect(notif1?.update_mode).toBe('dynamic');
     expect(notif1?.ttl).toBe('3600');
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 3,
+        index_block_hash: '0x000003',
+        parent_index_block_hash: '0x000002',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -254,7 +282,7 @@ describe('token metadata notifications', () => {
 
     const notif2 = await getLatestTokenNotification(db, 1);
     expect(notif2).not.toBeUndefined();
-    expect(notif2?.block_height).toBe(100);
+    expect(notif2?.block_height).toBe(3);
     expect(notif2?.update_mode).toBe('standard');
     expect(notif2?.ttl).toBeNull();
   });
@@ -266,7 +294,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 90 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -289,10 +321,14 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
     const notif1 = await getLatestTokenNotification(db, 1);
     expect(notif1).not.toBeUndefined();
-    expect(notif1?.block_height).toBe(90);
+    expect(notif1?.block_height).toBe(2);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 3,
+        index_block_hash: '0x000003',
+        parent_index_block_hash: '0x000002',
+      })
         .addTransaction(
           new TestTransactionBuilder({ tx_id: '0x01', sender: address })
             .addContractEvent(
@@ -314,165 +350,16 @@ describe('token metadata notifications', () => {
 
     const notif2 = await getLatestTokenNotification(db, 1);
     expect(notif2).not.toBeUndefined();
-    expect(notif2?.block_height).toBe(100);
+    expect(notif2?.block_height).toBe(3);
   });
-
-  // test('rolls back notification', async () => {
-  //   const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
-  //   const contractId = `${address}.friedger-pool-nft`;
-  //   await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 3n);
-
-  //   await db.chainhook.processPayload(
-  //     new TestChainhookPayloadBuilder()
-  //       .apply()
-  //       .block({ height: 101 })
-  //       .transaction({ hash: '0x01', sender: address })
-  //       .event({
-  //         type: 'SmartContractEvent',
-  //         position: { index: 0 },
-  //         data: {
-  //           contract_identifier: contractId,
-  //           topic: 'print',
-  //           raw_value: cvToHex(
-  //             tupleCV({
-  //               notification: bufferCV(Buffer.from('token-metadata-update')),
-  //               payload: tupleCV({
-  //                 'token-class': bufferCV(Buffer.from('nft')),
-  //                 'contract-id': bufferCV(Buffer.from(contractId)),
-  //               }),
-  //             })
-  //           ),
-  //         },
-  //       })
-  //       .build()
-  //   );
-  //   await markAllJobsAsDone(db);
-  //   await expect(getLatestTokenNotification(db, 1)).resolves.not.toBeUndefined();
-  //   await db.chainhook.processPayload(
-  //     new TestChainhookPayloadBuilder()
-  //       .rollback()
-  //       .block({ height: 101 })
-  //       .transaction({ hash: '0x01', sender: address })
-  //       .event({
-  //         type: 'SmartContractEvent',
-  //         position: { index: 0 },
-  //         data: {
-  //           contract_identifier: contractId,
-  //           topic: 'print',
-  //           raw_value: cvToHex(
-  //             tupleCV({
-  //               notification: bufferCV(Buffer.from('token-metadata-update')),
-  //               payload: tupleCV({
-  //                 'token-class': bufferCV(Buffer.from('nft')),
-  //                 'contract-id': bufferCV(Buffer.from(contractId)),
-  //               }),
-  //             })
-  //           ),
-  //         },
-  //       })
-  //       .build()
-  //   );
-  //   await expect(getLatestTokenNotification(db, 1)).resolves.toBeUndefined();
-  // });
-
-  // test('second notification rollback restores pointer to the first notification', async () => {
-  //   const address = 'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60';
-  //   const contractId = `${address}.friedger-pool-nft`;
-  //   await insertAndEnqueueTestContractWithTokens(db, contractId, DbSipNumber.sip009, 3n);
-
-  //   // Write 2 notifications, test rollback changes ref to old notification.
-  //   await db.chainhook.processPayload(
-  //     new TestChainhookPayloadBuilder()
-  //       .apply()
-  //       .block({ height: 100 })
-  //       .transaction({ hash: '0x01', sender: address })
-  //       .event({
-  //         type: 'SmartContractEvent',
-  //         position: { index: 0 },
-  //         data: {
-  //           contract_identifier: contractId,
-  //           topic: 'print',
-  //           raw_value: cvToHex(
-  //             tupleCV({
-  //               notification: bufferCV(Buffer.from('token-metadata-update')),
-  //               payload: tupleCV({
-  //                 'token-class': bufferCV(Buffer.from('nft')),
-  //                 'contract-id': bufferCV(Buffer.from(contractId)),
-  //                 'token-ids': listCV([uintCV(1)]),
-  //               }),
-  //             })
-  //           ),
-  //         },
-  //       })
-  //       .build()
-  //   );
-  //   await db.chainhook.processPayload(
-  //     new TestChainhookPayloadBuilder()
-  //       .apply()
-  //       .block({ height: 101 })
-  //       .transaction({ hash: '0x01', sender: address })
-  //       .event({
-  //         type: 'SmartContractEvent',
-  //         position: { index: 0 },
-  //         data: {
-  //           contract_identifier: contractId,
-  //           topic: 'print',
-  //           raw_value: cvToHex(
-  //             tupleCV({
-  //               notification: bufferCV(Buffer.from('token-metadata-update')),
-  //               payload: tupleCV({
-  //                 'token-class': bufferCV(Buffer.from('nft')),
-  //                 'contract-id': bufferCV(Buffer.from(contractId)),
-  //                 'token-ids': listCV([uintCV(1)]),
-  //                 'update-mode': bufferCV(Buffer.from('frozen')),
-  //               }),
-  //             })
-  //           ),
-  //         },
-  //       })
-  //       .build()
-  //   );
-  //   await markAllJobsAsDone(db);
-  //   const notif2 = await getLatestTokenNotification(db, 1);
-  //   expect(notif2).not.toBeUndefined();
-  //   expect(notif2?.block_height).toBe(101);
-  //   expect(notif2?.update_mode).toBe('frozen');
-
-  //   await db.chainhook.processPayload(
-  //     new TestChainhookPayloadBuilder()
-  //       .rollback()
-  //       .block({ height: 101 })
-  //       .transaction({ hash: '0x01', sender: address })
-  //       .event({
-  //         type: 'SmartContractEvent',
-  //         position: { index: 0 },
-  //         data: {
-  //           contract_identifier: contractId,
-  //           topic: 'print',
-  //           raw_value: cvToHex(
-  //             tupleCV({
-  //               notification: bufferCV(Buffer.from('token-metadata-update')),
-  //               payload: tupleCV({
-  //                 'token-class': bufferCV(Buffer.from('nft')),
-  //                 'contract-id': bufferCV(Buffer.from(contractId)),
-  //                 'token-ids': listCV([uintCV(1)]),
-  //                 'update-mode': bufferCV(Buffer.from('frozen')),
-  //               }),
-  //             })
-  //           ),
-  //         },
-  //       })
-  //       .build()
-  //   );
-  //   const notif1 = await getLatestTokenNotification(db, 1);
-  //   expect(notif1).not.toBeUndefined();
-  //   expect(notif1?.block_height).toBe(100);
-  //   expect(notif1?.update_mode).toBe('standard');
-  // });
 
   test('ignores other contract log events', async () => {
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({
             tx_id: '0x01',
@@ -496,7 +383,11 @@ describe('token metadata notifications', () => {
     await markAllJobsAsDone(db);
 
     await processor.processBlock(
-      new TestBlockBuilder({ block_height: 100 })
+      new TestBlockBuilder({
+        block_height: 2,
+        index_block_hash: '0x000002',
+        parent_index_block_hash: '0x000001',
+      })
         .addTransaction(
           new TestTransactionBuilder({
             tx_id: '0x01',

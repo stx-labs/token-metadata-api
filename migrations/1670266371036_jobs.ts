@@ -15,6 +15,11 @@ export function up(pgm: MigrationBuilder): void {
       references: 'tokens',
       onDelete: 'CASCADE',
     },
+    token_supply_id: {
+      type: 'int',
+      references: 'tokens',
+      onDelete: 'CASCADE',
+    },
     smart_contract_id: {
       type: 'int',
       references: 'smart_contracts',
@@ -46,15 +51,24 @@ export function up(pgm: MigrationBuilder): void {
   pgm.createConstraint(
     'jobs',
     'jobs_job_type_check',
-    'CHECK (NUM_NONNULLS(token_id, smart_contract_id) = 1)'
+    'CHECK (NUM_NONNULLS(token_id, token_supply_id, smart_contract_id) = 1)'
   );
-  pgm.createIndex('jobs', ['status'], { where: "status = 'pending'" });
-  pgm.createIndex('jobs', ['token_id'], { where: 'smart_contract_id IS NULL', unique: true });
-  pgm.createIndex('jobs', ['smart_contract_id'], { where: 'token_id IS NULL', unique: true });
 
-  pgm.createIndex('jobs', ['token_id']);
-  pgm.createIndex('jobs', ['smart_contract_id']);
+  pgm.createIndex('jobs', ['token_id'], {
+    where: 'smart_contract_id IS NULL AND token_supply_id IS NULL',
+    unique: true,
+  });
+  pgm.createIndex('jobs', ['token_supply_id'], {
+    where: 'smart_contract_id IS NULL AND token_id IS NULL',
+    unique: true,
+  });
+  pgm.createIndex('jobs', ['smart_contract_id'], {
+    where: 'token_id IS NULL AND token_supply_id IS NULL',
+    unique: true,
+  });
+
   pgm.createIndex('jobs', ['status'], { name: 'jobs_status_all_index' });
+  pgm.createIndex('jobs', ['status'], { where: "status = 'pending'" });
   pgm.createIndex('jobs', ['status', { name: 'updated_at', sort: 'ASC' }], {
     where: "status = 'queued'",
   });

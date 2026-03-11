@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { SmartContractRegEx } from '../schemas';
-import { CACHE_CONTROL_MUST_REVALIDATE, parseIfNoneMatchHeader } from '@hirosystems/api-toolkit';
+import { CACHE_CONTROL_MUST_REVALIDATE, parseIfNoneMatchHeader } from '@stacks/api-toolkit';
 
 enum ETagType {
   chainTip = 'chain_tip',

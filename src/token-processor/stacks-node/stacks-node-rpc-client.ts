@@ -1,10 +1,4 @@
-import {
-  ClarityTypeID,
-  ClarityValue,
-  ClarityValueUInt,
-  TransactionVersion,
-  decodeClarityValue,
-} from '@hirosystems/stacks-encoding-native-js';
+import { ClarityTypeID, ClarityValue, ClarityValueUInt, decodeClarityValue } from '@stacks/codec';
 import { request, errors } from 'undici';
 import { ENV } from '../../env';
 import { RetryableJobError } from '../queue/errors';

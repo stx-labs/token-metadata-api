@@ -13,7 +13,7 @@ import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-tok
 import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers';
 import { RetryableJobError } from '../../src/token-processor/queue/errors';
 import { TooManyRequestsHttpError } from '../../src/token-processor/util/errors';
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens } from '../helpers';
 import { InvalidTokenError } from '../../src/pg/errors';
 
@@ -659,7 +659,7 @@ describe('ProcessTokenJob', () => {
           method: 'GET',
         })
         .reply(200, metadata2);
-      await db.updateJobStatus({ id: tokenJob.id, status: DbJobStatus.pending });
+      await db.core.updateJobStatus({ id: tokenJob.id, status: DbJobStatus.pending });
       await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
       const bundle2 = await db.getTokenMetadataBundle({
@@ -868,7 +868,7 @@ describe('ProcessTokenJob', () => {
     });
 
     test('skips request to rate limited host', async () => {
-      await db.insertRateLimitedHost({
+      await db.core.insertRateLimitedHost({
         values: {
           hostname: 'm.io',
           retry_after: 99999,

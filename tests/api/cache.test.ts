@@ -1,4 +1,4 @@
-import { cycleMigrations } from '@hirosystems/api-toolkit';
+import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbSipNumber } from '../../src/pg/types';
@@ -72,7 +72,7 @@ describe('ETag cache', () => {
       DbSipNumber.sip010,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -135,7 +135,7 @@ describe('ETag cache', () => {
       DbSipNumber.sip009,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {
@@ -200,7 +200,7 @@ describe('ETag cache', () => {
       DbSipNumber.sip013,
       1n
     );
-    await db.updateProcessedTokenWithMetadata({
+    await db.core.updateProcessedTokenWithMetadata({
       id: 1,
       values: {
         token: {

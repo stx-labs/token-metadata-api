@@ -28,7 +28,7 @@ import {
   RawMetadataCType,
   RawMetadata,
 } from './types';
-import { logger } from '@hirosystems/api-toolkit';
+import { logger } from '@stacks/api-toolkit';
 
 const METADATA_FETCH_HTTP_AGENT = new Agent({
   headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
@@ -129,6 +129,7 @@ export async function fetchAllMetadataLocalesFromBaseUri(
       if (
         error instanceof MetadataSizeExceededError ||
         error instanceof MetadataHttpError ||
+        error instanceof MetadataParseError ||
         fetchImmediateRetryCount >= ENV.METADATA_MAX_IMMEDIATE_URI_RETRIES
       ) {
         throw error;
