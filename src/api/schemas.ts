@@ -329,6 +329,64 @@ export const SftMetadataResponse = Type.Object(
   { title: 'Sft Metadata Response' }
 );
 
+export const SearchContractParam = Type.Array(Type.String(), {
+  minItems: 1,
+  maxItems: 50,
+  title: 'Contract Identifiers',
+  description:
+    'Contract identifiers to search for. Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER. Defaults token_number to 1 when omitted.',
+  examples: [
+    [
+      'SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token',
+      'SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12:120',
+    ],
+  ],
+});
+
+export const SearchQuerystringParams = Type.Object({
+  contract: SearchContractParam,
+  locale: Type.Optional(
+    Type.String({
+      title: 'Localization',
+      description: 'Metadata localization to retrieve',
+      examples: ['es-MX', 'jp'],
+    })
+  ),
+});
+
+export const SearchResultItem = Type.Object(
+  {
+    contract_id: Type.String({
+      examples: ['SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token'],
+      description: 'Contract principal',
+    }),
+    token_number: Type.Integer({ examples: [1], description: 'Token number' }),
+    token_type: Type.String({ examples: ['ft'], description: 'Token type (ft, nft, sft)' }),
+    name: Type.Optional(Type.String({ examples: ['Wrapped USD'] })),
+    symbol: Type.Optional(Type.String({ examples: ['xUSD'] })),
+    decimals: Type.Optional(Type.Integer({ examples: [8] })),
+    total_supply: Type.Optional(Type.String({ examples: ['9999980000000'] })),
+    token_uri: Type.Optional(TokenUri),
+    description: Type.Optional(TokenDescription),
+    image_uri: Type.Optional(TokenCachedImage),
+    image_thumbnail_uri: Type.Optional(TokenCachedImage),
+    image_canonical_uri: Type.Optional(TokenImage),
+    tx_id: Type.String({
+      examples: ['0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd'],
+      description: 'Transaction ID of the contract deployment',
+    }),
+    sender_address: Type.String({
+      examples: ['SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6'],
+      description: 'Deployer address',
+    }),
+  },
+  { title: 'Search Result Item' }
+);
+
+export const SearchResponse = Type.Array(SearchResultItem, {
+  title: 'Search Response',
+});
+
 export const ApiStatusResponse = Type.Object(
   {
     server_version: Type.String({ examples: ['token-metadata-api v0.0.1 (master:a1b2c3)'] }),

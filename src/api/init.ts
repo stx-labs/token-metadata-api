@@ -3,6 +3,7 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FtRoutes } from './routes/ft';
 import { NftRoutes } from './routes/nft';
 import { SftRoutes } from './routes/sft';
+import { SearchRoutes } from './routes/search';
 import { PgStore } from '../pg/pg-store';
 import FastifyCors from '@fastify/cors';
 import { StatusRoutes } from './routes/status';
@@ -18,6 +19,7 @@ export const Api: FastifyPluginAsync<Record<never, never>, Server, TypeBoxTypePr
   await fastify.register(FtRoutes);
   await fastify.register(NftRoutes);
   await fastify.register(SftRoutes);
+  await fastify.register(SearchRoutes);
   await fastify.register(StatusRoutes);
 };
 

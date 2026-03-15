@@ -191,6 +191,69 @@ describe('ETag cache', () => {
     expect(cached2.statusCode).toBe(200);
   });
 
+  test('Search cache control', async () => {
+    await insertAndEnqueueTestContractWithTokens(
+      db,
+      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+      DbSipNumber.sip010,
+      1n
+    );
+    await db.core.updateProcessedTokenWithMetadata({
+      id: 1,
+      values: {
+        token: {
+          name: 'hello-world',
+          symbol: 'HELLO',
+          decimals: 6,
+          total_supply: '1',
+          uri: 'http://test.com/uri.json',
+        },
+        metadataLocales: [
+          {
+            metadata: {
+              sip: 16,
+              token_id: 1,
+              name: 'hello-world',
+              l10n_locale: 'en',
+              l10n_uri: null,
+              l10n_default: true,
+              description: 'test',
+              image: null,
+              cached_image: null,
+              cached_thumbnail_image: null,
+            },
+          },
+        ],
+      },
+    });
+
+    // Request returns etag
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers.etag).not.toBeUndefined();
+    const etag = response.headers.etag;
+
+    // Cached response
+    const cached = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+      headers: { 'if-none-match': etag },
+    });
+    expect(cached.statusCode).toBe(304);
+
+    // Simulate modified token and check status code
+    await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 1`;
+    const cached2 = await fastify.inject({
+      method: 'GET',
+      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+      headers: { 'if-none-match': etag },
+    });
+    expect(cached2.statusCode).toBe(200);
+  });
+
   test('SFT cache control', async () => {
     const address = 'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9';
     const contractId = 'key-alex-autoalex-v1';

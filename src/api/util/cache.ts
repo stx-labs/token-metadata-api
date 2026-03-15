@@ -1,10 +1,12 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { SmartContractRegEx } from '../schemas';
 import { CACHE_CONTROL_MUST_REVALIDATE, parseIfNoneMatchHeader } from '@stacks/api-toolkit';
+import { parseContractIdentifiers } from './helpers';
 
 enum ETagType {
   chainTip = 'chain_tip',
   token = 'token',
+  bulkToken = 'bulk_token',
 }
 
 async function handleCache(type: ETagType, request: FastifyRequest, reply: FastifyReply) {
@@ -17,6 +19,9 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
       break;
     case ETagType.token:
       etag = await getTokenEtag(request);
+      break;
+    case ETagType.bulkToken:
+      etag = await getBulkTokenEtag(request);
       break;
   }
   if (etag) {
@@ -34,6 +39,10 @@ export async function handleTokenCache(request: FastifyRequest, reply: FastifyRe
 
 export async function handleChainTipCache(request: FastifyRequest, reply: FastifyReply) {
   return handleCache(ETagType.chainTip, request, reply);
+}
+
+export async function handleBulkTokenCache(request: FastifyRequest, reply: FastifyReply) {
+  return handleCache(ETagType.bulkToken, request, reply);
 }
 
 export function setReplyNonCacheable(reply: FastifyReply): void {
@@ -62,6 +71,21 @@ async function getTokenEtag(request: FastifyRequest): Promise<string | undefined
     } while (components.length);
     if (!contractPrincipal) return;
     return await request.server.db.getTokenEtag({ contractPrincipal, tokenNumber });
+  } catch (error) {
+    return undefined;
+  }
+}
+
+async function getBulkTokenEtag(request: FastifyRequest): Promise<string | undefined> {
+  try {
+    const query = request.query as { contract?: string | string[] };
+    const contracts = Array.isArray(query.contract)
+      ? query.contract
+      : query.contract
+      ? [query.contract]
+      : [];
+    const pairs = parseContractIdentifiers(contracts);
+    return await request.server.db.getBulkTokensEtag({ pairs });
   } catch (error) {
     return undefined;
   }
