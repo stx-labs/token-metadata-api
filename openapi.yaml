@@ -1,0 +1,976 @@
+openapi: 3.0.3
+info:
+  title: Token Metadata API
+  description: Welcome to the API reference overview for the [Token Metadata
+    API](https://docs.hiro.so/token-metadata-api). Service that indexes metadata
+    for every SIP-009, SIP-010, and SIP-013 Token in the Stacks blockchain and
+    exposes it via REST API endpoints.
+  version: 2.2.1
+components:
+  schemas: {}
+paths:
+  /metadata/v1/ft:
+    get:
+      operationId: getFungibleTokens
+      summary: Fungible Tokens
+      tags:
+        - Tokens
+      description: Retrieves a list of Fungible Tokens
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: name
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: symbol
+          required: false
+        - schema:
+            title: Stacks Address
+            type: string
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}
+          example: SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9
+          in: query
+          name: address
+          required: false
+          description: Stacks Address
+        - schema:
+            type: boolean
+          in: query
+          name: valid_metadata_only
+          required: false
+          description: If enabled, only tokens with valid SIP-016 metadata will be returned
+        - schema:
+            minimum: 0
+            title: Offset
+            type: integer
+          in: query
+          name: offset
+          required: false
+          description: Result offset
+        - schema:
+            minimum: 1
+            maximum: 60
+            title: Limit
+            type: integer
+          in: query
+          name: limit
+          required: false
+          description: Results per page
+        - schema:
+            title: Order By
+            anyOf:
+              - type: string
+                enum:
+                  - name
+              - type: string
+                enum:
+                  - symbol
+          in: query
+          name: order_by
+          required: false
+          description: Parameter to order results by
+        - schema:
+            title: Order
+            anyOf:
+              - type: string
+                enum:
+                  - asc
+              - type: string
+                enum:
+                  - desc
+          in: query
+          name: order
+          required: false
+          description: Results order
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Paginated Ft Basic Metadata Response
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+                  total:
+                    type: integer
+                    example: 1
+                  results:
+                    type: array
+                    items:
+                      title: Ft Basic Metadata Response
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: Wrapped USD
+                        symbol:
+                          type: string
+                          example: xUSD
+                        decimals:
+                          type: integer
+                          example: 8
+                        total_supply:
+                          type: string
+                          example: "9999980000000"
+                        token_uri:
+                          format: uri
+                          description: URI for this token's metadata JSON
+                          type: string
+                          example: ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                        description:
+                          description: Description
+                          type: string
+                          example: Heavy hitters, all-stars and legends of the game join forces to create
+                            a collection of unique varsity jackets
+                        image_uri:
+                          format: uri
+                          description: Cached image URL
+                          type: string
+                          example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                        image_thumbnail_uri:
+                          format: uri
+                          description: Cached image URL
+                          type: string
+                          example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                        image_canonical_uri:
+                          format: uri
+                          description: Original image URL
+                          type: string
+                          example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                        tx_id:
+                          type: string
+                          example: 0xef2ac1126e16f46843228b1dk4830e19eb7599129e4jf392cab9e65ae83a45c0
+                        sender_address:
+                          type: string
+                          example: ST399W7Z9WS0GMSNQGJGME5JAENKN56D65VGMGKGA
+                        asset_identifier:
+                          description: Clarity asset identifier
+                          type: string
+                          example: SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6.token-ststx-earn-v1::stSTXearn
+                        contract_principal:
+                          type: string
+                          example: SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2
+                      required:
+                        - tx_id
+                        - sender_address
+                        - asset_identifier
+                        - contract_principal
+                required:
+                  - limit
+                  - offset
+                  - total
+                  - results
+  /metadata/v1/ft/{principal}:
+    get:
+      operationId: getFtMetadata
+      summary: Fungible Token Metadata
+      tags:
+        - Tokens
+      description: Retrieves metadata for a SIP-010 Fungible Token
+      parameters:
+        - schema:
+            title: Localization
+            type: string
+          examples:
+            es-MX:
+              value: es-MX
+            jp:
+              value: jp
+          in: query
+          name: locale
+          required: false
+          description: Metadata localization to retrieve
+        - schema:
+            title: Fungible Token Contract Principal
+            type: string
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
+          example: SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
+          in: path
+          name: principal
+          required: true
+          description: Principal for the contract which owns the SIP-010 token
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Ft Metadata Response
+                type: object
+                properties:
+                  name:
+                    description: Token name
+                    type: string
+                    example: Wrapped USD
+                  symbol:
+                    description: Token symbol
+                    type: string
+                    example: xUSD
+                  decimals:
+                    description: Number of decimal places clients should use to format this token's
+                      amounts
+                    type: integer
+                    example: 8
+                  total_supply:
+                    description: Current circulating supply as reported by its contract. Clients
+                      should format this amount with the correct number of
+                      `decimals` before displaying to users
+                    type: string
+                    example: "9999980000000"
+                  token_uri:
+                    format: uri
+                    description: URI for this token's metadata JSON
+                    type: string
+                    example: ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                  description:
+                    description: Description
+                    type: string
+                    example: Heavy hitters, all-stars and legends of the game join forces to create
+                      a collection of unique varsity jackets
+                  image_uri:
+                    format: uri
+                    description: Cached image URL
+                    type: string
+                    example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                  image_thumbnail_uri:
+                    format: uri
+                    description: Cached image URL
+                    type: string
+                    example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                  image_canonical_uri:
+                    format: uri
+                    description: Original image URL
+                    type: string
+                    example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                  tx_id:
+                    description: ID for the transaction that deployed this token
+                    type: string
+                    example: "0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd"
+                  sender_address:
+                    description: Deployer address
+                    type: string
+                    example: SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6
+                  asset_identifier:
+                    description: Clarity asset identifier
+                    type: string
+                    example: SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6.token-ststx-earn-v1::stSTXearn
+                  metadata:
+                    title: Metadata
+                    type: object
+                    properties:
+                      sip:
+                        type: integer
+                        example: 16
+                      name:
+                        type: string
+                        example: "Satoshi's Team #12200"
+                      description:
+                        description: Description
+                        type: string
+                        example: Heavy hitters, all-stars and legends of the game join forces to create
+                          a collection of unique varsity jackets
+                      image:
+                        format: uri
+                        description: Original image URL
+                        type: string
+                        example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_thumbnail_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      attributes:
+                        type: array
+                        items:
+                          title: Metadata Attribute
+                          type: object
+                          properties:
+                            trait_type:
+                              type: string
+                              example: Background
+                            display_type:
+                              type: string
+                              example: string
+                            value:
+                              title: Metadata Value
+                              example: value
+                          required:
+                            - trait_type
+                            - value
+                      properties:
+                        title: Metadata Properties
+                        type: object
+                        additionalProperties:
+                          title: Metadata Value
+                          examples:
+                            - value
+                        example:
+                          collection: Foo Collection
+                          total_supply: "10000"
+                      localization:
+                        title: Metadata Localization
+                        type: object
+                        properties:
+                          uri:
+                            format: uri
+                            type: string
+                            example: http://token.com/metadata?hl={locale}
+                          default:
+                            type: string
+                            example: en
+                          locales:
+                            type: array
+                            items:
+                              type: string
+                            example:
+                              - en
+                              - jp
+                        required:
+                          - uri
+                          - default
+                          - locales
+                    required:
+                      - sip
+                required:
+                  - tx_id
+                  - sender_address
+                  - asset_identifier
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Not Found Error Response
+                anyOf:
+                  - title: Token Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token not found
+                    required:
+                      - error
+                  - title: Contract Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Contract not found
+                    required:
+                      - error
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Error Response
+                anyOf:
+                  - title: Token Metadata Fetch In Progress Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token metadata fetch in progress
+                    required:
+                      - error
+                  - title: Locale Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Locale not found
+                    required:
+                      - error
+                  - type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token error
+                      message:
+                        type: string
+                    required:
+                      - error
+                      - message
+  /metadata/v1/nft/{principal}/{token_id}:
+    get:
+      operationId: getNftMetadata
+      summary: Non-Fungible Token Metadata
+      tags:
+        - Tokens
+      description: Retrieves metadata for a SIP-009 Non-Fungible Token
+      parameters:
+        - schema:
+            title: Localization
+            type: string
+          examples:
+            es-MX:
+              value: es-MX
+            jp:
+              value: jp
+          in: query
+          name: locale
+          required: false
+          description: Metadata localization to retrieve
+        - schema:
+            title: Non-Fungible Token Contract Principal
+            type: string
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
+          example: SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12
+          in: path
+          name: principal
+          required: true
+          description: SIP-009 compliant smart contract principal
+        - schema:
+            title: Token ID
+            type: integer
+          example: "35"
+          in: path
+          name: token_id
+          required: true
+          description: Token ID to retrieve
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Nft Metadata Response
+                type: object
+                properties:
+                  token_uri:
+                    format: uri
+                    description: URI for this token's metadata JSON
+                    type: string
+                    example: ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                  metadata:
+                    title: Metadata
+                    type: object
+                    properties:
+                      sip:
+                        type: integer
+                        example: 16
+                      name:
+                        type: string
+                        example: "Satoshi's Team #12200"
+                      description:
+                        description: Description
+                        type: string
+                        example: Heavy hitters, all-stars and legends of the game join forces to create
+                          a collection of unique varsity jackets
+                      image:
+                        format: uri
+                        description: Original image URL
+                        type: string
+                        example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_thumbnail_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      attributes:
+                        type: array
+                        items:
+                          title: Metadata Attribute
+                          type: object
+                          properties:
+                            trait_type:
+                              type: string
+                              example: Background
+                            display_type:
+                              type: string
+                              example: string
+                            value:
+                              title: Metadata Value
+                              example: value
+                          required:
+                            - trait_type
+                            - value
+                      properties:
+                        title: Metadata Properties
+                        type: object
+                        additionalProperties:
+                          title: Metadata Value
+                          examples:
+                            - value
+                        example:
+                          collection: Foo Collection
+                          total_supply: "10000"
+                      localization:
+                        title: Metadata Localization
+                        type: object
+                        properties:
+                          uri:
+                            format: uri
+                            type: string
+                            example: http://token.com/metadata?hl={locale}
+                          default:
+                            type: string
+                            example: en
+                          locales:
+                            type: array
+                            items:
+                              type: string
+                            example:
+                              - en
+                              - jp
+                        required:
+                          - uri
+                          - default
+                          - locales
+                    required:
+                      - sip
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Not Found Error Response
+                anyOf:
+                  - title: Token Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token not found
+                    required:
+                      - error
+                  - title: Contract Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Contract not found
+                    required:
+                      - error
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Error Response
+                anyOf:
+                  - title: Token Metadata Fetch In Progress Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token metadata fetch in progress
+                    required:
+                      - error
+                  - title: Locale Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Locale not found
+                    required:
+                      - error
+                  - type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token error
+                      message:
+                        type: string
+                    required:
+                      - error
+                      - message
+  /metadata/v1/sft/{principal}/{token_id}:
+    get:
+      operationId: getSftMetadata
+      summary: Semi-Fungible Token Metadata
+      tags:
+        - Tokens
+      description: Retrieves metadata for a SIP-013 Semi-Fungible Token
+      parameters:
+        - schema:
+            title: Localization
+            type: string
+          examples:
+            es-MX:
+              value: es-MX
+            jp:
+              value: jp
+          in: query
+          name: locale
+          required: false
+          description: Metadata localization to retrieve
+        - schema:
+            title: Semi-Fungible Token Contract Principal
+            type: string
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
+          example: SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1
+          in: path
+          name: principal
+          required: true
+          description: SIP-013 compliant smart contract principal
+        - schema:
+            title: Token ID
+            type: integer
+          example: "35"
+          in: path
+          name: token_id
+          required: true
+          description: Token ID to retrieve
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Sft Metadata Response
+                type: object
+                properties:
+                  token_uri:
+                    format: uri
+                    description: URI for this token's metadata JSON
+                    type: string
+                    example: ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                  decimals:
+                    type: integer
+                    example: 6
+                  total_supply:
+                    type: string
+                    example: "250"
+                  metadata:
+                    title: Metadata
+                    type: object
+                    properties:
+                      sip:
+                        type: integer
+                        example: 16
+                      name:
+                        type: string
+                        example: "Satoshi's Team #12200"
+                      description:
+                        description: Description
+                        type: string
+                        example: Heavy hitters, all-stars and legends of the game join forces to create
+                          a collection of unique varsity jackets
+                      image:
+                        format: uri
+                        description: Original image URL
+                        type: string
+                        example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      cached_thumbnail_image:
+                        format: uri
+                        description: Cached image URL
+                        type: string
+                        example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                      attributes:
+                        type: array
+                        items:
+                          title: Metadata Attribute
+                          type: object
+                          properties:
+                            trait_type:
+                              type: string
+                              example: Background
+                            display_type:
+                              type: string
+                              example: string
+                            value:
+                              title: Metadata Value
+                              example: value
+                          required:
+                            - trait_type
+                            - value
+                      properties:
+                        title: Metadata Properties
+                        type: object
+                        additionalProperties:
+                          title: Metadata Value
+                          examples:
+                            - value
+                        example:
+                          collection: Foo Collection
+                          total_supply: "10000"
+                      localization:
+                        title: Metadata Localization
+                        type: object
+                        properties:
+                          uri:
+                            format: uri
+                            type: string
+                            example: http://token.com/metadata?hl={locale}
+                          default:
+                            type: string
+                            example: en
+                          locales:
+                            type: array
+                            items:
+                              type: string
+                            example:
+                              - en
+                              - jp
+                        required:
+                          - uri
+                          - default
+                          - locales
+                    required:
+                      - sip
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Not Found Error Response
+                anyOf:
+                  - title: Token Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token not found
+                    required:
+                      - error
+                  - title: Contract Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Contract not found
+                    required:
+                      - error
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Error Response
+                anyOf:
+                  - title: Token Metadata Fetch In Progress Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token metadata fetch in progress
+                    required:
+                      - error
+                  - title: Locale Not Found Response
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Locale not found
+                    required:
+                      - error
+                  - type: object
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - Token error
+                      message:
+                        type: string
+                    required:
+                      - error
+                      - message
+  /metadata/v1/search:
+    get:
+      operationId: searchTokens
+      summary: Search Tokens
+      tags:
+        - Tokens
+      description: Retrieves metadata for multiple tokens in a single request. Accepts
+        up to 50 contract identifiers.
+      parameters:
+        - schema:
+            minItems: 1
+            maxItems: 50
+            title: Contract Identifiers
+            type: array
+            items:
+              title: Contract Identifier
+              description: "Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER"
+              examples:
+                - SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
+                - SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12:120
+              type: string
+              pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}(:\d+)?$
+          in: query
+          name: contract
+          required: true
+          description: "Contract identifiers to search for. Format: PRINCIPAL or
+            PRINCIPAL:TOKEN_NUMBER. Defaults token_number to 1 when omitted."
+        - schema:
+            title: Localization
+            type: string
+          examples:
+            es-MX:
+              value: es-MX
+            jp:
+              value: jp
+          in: query
+          name: locale
+          required: false
+          description: Metadata localization to retrieve
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Search Response
+                type: array
+                items:
+                  title: Search Result Item
+                  type: object
+                  properties:
+                    contract_id:
+                      description: Contract principal
+                      type: string
+                      example: SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
+                    token_number:
+                      description: Token number
+                      type: integer
+                      example: 1
+                    token_type:
+                      description: Token type (ft, nft, sft)
+                      type: string
+                      example: ft
+                    name:
+                      type: string
+                      example: Wrapped USD
+                    symbol:
+                      type: string
+                      example: xUSD
+                    decimals:
+                      type: integer
+                      example: 8
+                    total_supply:
+                      type: string
+                      example: "9999980000000"
+                    token_uri:
+                      format: uri
+                      description: URI for this token's metadata JSON
+                      type: string
+                      example: ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                    description:
+                      description: Description
+                      type: string
+                      example: Heavy hitters, all-stars and legends of the game join forces to create
+                        a collection of unique varsity jackets
+                    image_uri:
+                      format: uri
+                      description: Cached image URL
+                      type: string
+                      example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                    image_thumbnail_uri:
+                      format: uri
+                      description: Cached image URL
+                      type: string
+                      example: https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                    image_canonical_uri:
+                      format: uri
+                      description: Original image URL
+                      type: string
+                      example: ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                    tx_id:
+                      description: Transaction ID of the contract deployment
+                      type: string
+                      example: "0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd"
+                    sender_address:
+                      description: Deployer address
+                      type: string
+                      example: SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6
+                  required:
+                    - contract_id
+                    - token_number
+                    - token_type
+                    - tx_id
+                    - sender_address
+  /metadata/v1/:
+    get:
+      operationId: getApiStatus
+      summary: API Status
+      tags:
+        - Status
+      description: Displays the status of the API
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                title: Api Status Response
+                type: object
+                properties:
+                  server_version:
+                    type: string
+                    example: token-metadata-api v0.0.1 (master:a1b2c3)
+                  status:
+                    type: string
+                    example: ready
+                  chain_tip:
+                    anyOf:
+                      - type: object
+                        properties:
+                          block_height:
+                            examples:
+                              - 163541
+                            type: integer
+                          index_block_hash:
+                            examples:
+                              - "0x1234567890abcdef1234567890abcdef1234567890ab\
+                                cdef"
+                            type: string
+                        required:
+                          - block_height
+                          - index_block_hash
+                      - type: "null"
+                required:
+                  - server_version
+                  - status
+                  - chain_tip
+servers:
+  - url: https://api.hiro.so/
+    description: mainnet
+  - url: https://api.testnet.hiro.so/
+    description: testnet
+tags:
+  - name: Tokens
+    description: Token metadata endpoints
+  - name: Status
+    description: Service status endpoints
+externalDocs:
+  url: https://github.com/hirosystems/token-metadata-api
+  description: Source Repository

@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metadata/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Tokens
+         * @description Retrieves metadata for multiple tokens in a single request. Accepts up to 50 contract identifiers.
+         */
+        get: operations["searchTokens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/metadata/v1/": {
         parameters: {
             query?: never;
@@ -687,6 +707,94 @@ export interface operations {
                         error: "Token error";
                         message: string;
                     };
+                };
+            };
+        };
+    };
+    searchTokens: {
+        parameters: {
+            query: {
+                /** @description Contract identifiers to search for. Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER. Defaults token_number to 1 when omitted. */
+                contract: string[];
+                /** @description Metadata localization to retrieve */
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Contract principal
+                         * @example SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
+                         */
+                        contract_id: string;
+                        /**
+                         * @description Token number
+                         * @example 1
+                         */
+                        token_number: number;
+                        /**
+                         * @description Token type (ft, nft, sft)
+                         * @example ft
+                         */
+                        token_type: string;
+                        /** @example Wrapped USD */
+                        name?: string;
+                        /** @example xUSD */
+                        symbol?: string;
+                        /** @example 8 */
+                        decimals?: number;
+                        /** @example 9999980000000 */
+                        total_supply?: string;
+                        /**
+                         * Format: uri
+                         * @description URI for this token's metadata JSON
+                         * @example ipfs://ipfs/Qmf9yDYuPTrp8NRUFf8xxDd5Ud24Dx9uYMwMn8o8G2cWPW/12200.json
+                         */
+                        token_uri?: string;
+                        /**
+                         * @description Description
+                         * @example Heavy hitters, all-stars and legends of the game join forces to create a collection of unique varsity jackets
+                         */
+                        description?: string;
+                        /**
+                         * Format: uri
+                         * @description Cached image URL
+                         * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                         */
+                        image_uri?: string;
+                        /**
+                         * Format: uri
+                         * @description Cached image URL
+                         * @example https://ipfs.io/ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                         */
+                        image_thumbnail_uri?: string;
+                        /**
+                         * Format: uri
+                         * @description Original image URL
+                         * @example ipfs://ipfs/QmZMqhh2ztwuZ3Y8PyEp2z5auyH3TCm3nnr5ZfjjgDjd5q/12199.png
+                         */
+                        image_canonical_uri?: string;
+                        /**
+                         * @description Transaction ID of the contract deployment
+                         * @example 0x5642ca7d68976b6b2a2055689d9a57de26d67f0dd8b016d1b0d94cb634454cdd
+                         */
+                        tx_id: string;
+                        /**
+                         * @description Deployer address
+                         * @example SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6
+                         */
+                        sender_address: string;
+                    }[];
                 };
             };
         };
