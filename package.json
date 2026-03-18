@@ -1,7 +1,7 @@
 {
   "name": "@hirosystems/token-metadata-api",
   "description": "A microservice that indexes metadata for all Fungible, Non-Fungible, and Semi-Fungible Tokens in the Stacks blockchain and exposes it via JSON REST API endpoints",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/hirosystems/token-metadata-api.git"
