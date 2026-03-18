@@ -187,7 +187,7 @@ export async function reprocessTokenImageCache(
     for (const token of imageUris) {
       try {
         const [cached, thumbnail] = await processImageCache(
-          getFetchableMetadataUrl(token.image).toString(),
+          getFetchableMetadataUrl(token.image).url.toString(),
           contractPrincipal,
           BigInt(token.token_number)
         );

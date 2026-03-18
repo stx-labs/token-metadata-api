@@ -278,7 +278,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
         total_supply: null,
         uri: null,
       });
-    for await (const batch of batchIterate(tokenValues, 500)) {
+    for (const batch of batchIterate(tokenValues, 500)) {
       await sql`
         WITH token_inserts AS (
           INSERT INTO tokens ${sql(batch)}
@@ -465,7 +465,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     block: DecodedStacksBlock
   ): Promise<void> {
     if (mints.length == 0) return;
-    for await (const batch of batchIterate(mints, 500)) {
+    for (const batch of batchIterate(mints, 500)) {
       const tokenValues = new Map<string, (string | number)[]>();
       for (const mint of batch) {
         // SFT tokens may mint one single token more than once given that it's an FT within an NFT.

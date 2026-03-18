@@ -19,6 +19,7 @@ import { logger, stopwatch } from '@stacks/api-toolkit';
 import {
   NewBlockContractEvent,
   NewBlockEvent,
+  NewBlockEventType,
   NewBlockFtBurnEvent,
   NewBlockFtMintEvent,
   NewBlockMessage,
@@ -110,19 +111,19 @@ export class StacksCoreBlockProcessor {
         this.processTransaction(transaction, contracts);
         for (const event of transaction.events) {
           switch (event.type) {
-            case 'contract_event':
+            case NewBlockEventType.Contract:
               this.processContractEvent(transaction, event, notifications, sftMints);
               break;
-            case 'ft_mint_event':
+            case NewBlockEventType.FtMint:
               this.processFtMintEvent(event, ftSupplyDelta);
               break;
-            case 'ft_burn_event':
+            case NewBlockEventType.FtBurn:
               this.processFtBurnEvent(event, ftSupplyDelta);
               break;
-            case 'nft_mint_event':
+            case NewBlockEventType.NftMint:
               this.processNftMintEvent(transaction, event, nftMints);
               break;
-            case 'nft_burn_event':
+            case NewBlockEventType.NftBurn:
               // Burned NFTs still have their metadata in the database, so we don't need to do
               // anything here.
               break;

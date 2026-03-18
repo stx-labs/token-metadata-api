@@ -1,4 +1,4 @@
-import { DbSipNumber, DbSmartContract } from '../../src/pg/types';
+import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';

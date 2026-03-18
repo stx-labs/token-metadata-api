@@ -1,4 +1,4 @@
-import { cvToHex, tupleCV, bufferCV, uintCV, stringUtf8CV } from '@stacks/transactions';
+import { cvToHex, tupleCV, bufferCV, uintCV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';

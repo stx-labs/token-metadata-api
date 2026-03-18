@@ -82,8 +82,8 @@ async function getBulkTokenEtag(request: FastifyRequest): Promise<string | undef
     const contracts = Array.isArray(query.contract)
       ? query.contract
       : query.contract
-      ? [query.contract]
-      : [];
+        ? [query.contract]
+        : [];
     const pairs = parseContractIdentifiers(contracts);
     return await request.server.db.getBulkTokensEtag({ pairs });
   } catch (error) {

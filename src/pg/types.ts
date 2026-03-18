@@ -1,4 +1,4 @@
-import { PgJsonb, PgNumeric, PgSqlQuery } from '@stacks/api-toolkit';
+import { PgJsonb, PgNumeric } from '@stacks/api-toolkit';
 import { FtOrderBy, Order } from '../api/schemas';
 
 export type DbBlock = {
