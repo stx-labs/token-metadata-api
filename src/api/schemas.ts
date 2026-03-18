@@ -1,6 +1,11 @@
 import { SwaggerOptions } from '@fastify/swagger';
-import { Nullable, SERVER_VERSION } from '@stacks/api-toolkit';
+import { Nullable } from '@stacks/api-toolkit';
 import { Static, TSchema, Type } from '@sinclair/typebox';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+const packageJsonPath = resolve(__dirname, '../../package.json');
+const { version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string };
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -8,7 +13,7 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       title: 'Token Metadata API',
       description:
         'Welcome to the API reference overview for the [Token Metadata API](https://docs.hiro.so/token-metadata-api). Service that indexes metadata for every SIP-009, SIP-010, and SIP-013 Token in the Stacks blockchain and exposes it via REST API endpoints.',
-      version: SERVER_VERSION.tag,
+      version,
     },
     externalDocs: {
       url: 'https://github.com/hirosystems/token-metadata-api',

@@ -28,11 +28,9 @@
     "migrate": "ts-node node_modules/.bin/node-pg-migrate -j ts",
     "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx -f unix",
     "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts migrations/**/*.ts",
-    "generate:openapi": "rimraf ./tmp && node -r ts-node/register ./util/openapi-generator.ts",
-    "generate:docs": "redoc-cli build --output ./tmp/index.html ./tmp/openapi.yaml",
+    "generate:openapi": "rimraf ./openapi.yaml && node -r ts-node/register ./util/openapi-generator.ts",
     "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
-    "generate:vercel": "npm run generate:git-info && npm run generate:openapi && npm run generate:docs",
-    "generate:client": "openapi-typescript ./tmp/openapi.yaml -o ./client/src/generated/schema.d.ts"
+    "generate:client": "openapi-typescript ./openapi.yaml -o ./client/src/generated/schema.d.ts"
   },
   "prettier": "@stacks/prettier-config",
   "devDependencies": {
@@ -54,7 +52,6 @@
     "nock": "^14.0.5",
     "openapi-typescript": "^7.4.1",
     "prettier": "^2.7.1",
-    "redoc-cli": "^0.13.20",
     "rimraf": "^3.0.2",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
