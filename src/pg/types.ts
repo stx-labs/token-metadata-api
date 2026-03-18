@@ -264,6 +264,22 @@ export type DbPaginatedResult<T> = {
   results: T[];
 };
 
+export type DbBulkTokenMetadataItem = {
+  principal: string;
+  token_number: bigint;
+  token_type: DbTokenType;
+  name: string | null;
+  symbol: string | null;
+  decimals: number | null;
+  total_supply: string | null;
+  uri: string | null;
+  tx_id: string;
+  description: string | null;
+  image: string | null;
+  cached_image: string | null;
+  cached_thumbnail_image: string | null;
+};
+
 export type DbFungibleTokenMetadataItem = {
   name?: string;
   symbol?: string;

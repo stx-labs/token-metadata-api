@@ -13,6 +13,7 @@ import {
   DbIndexPaging,
   DbFungibleTokenFilters,
   DbFungibleTokenMetadataItem,
+  DbBulkTokenMetadataItem,
   DbPaginatedResult,
   DbFungibleTokenOrder,
   DbJobInvalidReason,
@@ -314,6 +315,64 @@ export class PgStore extends BasePgStore {
           ${tokenNumbers ? sql`AND t.token_number IN ${sql(tokenNumbers)}` : sql``}
       `;
     });
+  }
+
+  async getBulkTokenMetadata(args: {
+    pairs: { principal: string; tokenNumber: number }[];
+    locale?: string;
+  }): Promise<DbBulkTokenMetadataItem[]> {
+    if (args.pairs.length === 0) return [];
+    const principals = args.pairs.map(p => p.principal);
+    const tokenNumbers = args.pairs.map(p => p.tokenNumber);
+    return this.sql<DbBulkTokenMetadataItem[]>`
+      WITH search_pairs AS (
+        SELECT unnest(${principals}::text[]) AS principal,
+               unnest(${tokenNumbers}::bigint[]) AS token_number
+      )
+      SELECT
+        s.principal,
+        t.token_number,
+        t.type AS token_type,
+        t.name,
+        t.symbol,
+        t.decimals,
+        t.total_supply,
+        t.uri,
+        s.tx_id,
+        m.description,
+        m.image,
+        m.cached_image,
+        m.cached_thumbnail_image
+      FROM search_pairs sp
+      INNER JOIN smart_contracts s ON s.principal = sp.principal AND s.canonical = true
+      INNER JOIN tokens t ON t.smart_contract_id = s.id
+        AND t.token_number = sp.token_number AND t.canonical = true
+      LEFT JOIN metadata m ON t.id = m.token_id
+        AND ${
+          args.locale ? this.sql`m.l10n_locale = ${args.locale}` : this.sql`m.l10n_default = true`
+        }
+    `;
+  }
+
+  async getBulkTokensEtag(args: {
+    pairs: { principal: string; tokenNumber: number }[];
+  }): Promise<string | undefined> {
+    if (args.pairs.length === 0) return undefined;
+    const principals = args.pairs.map(p => p.principal);
+    const tokenNumbers = args.pairs.map(p => p.tokenNumber);
+    const result = await this.sql<{ etag: string }[]>`
+      WITH search_pairs AS (
+        SELECT unnest(${principals}::text[]) AS principal,
+               unnest(${tokenNumbers}::bigint[]) AS token_number
+      )
+      SELECT MAX(date_part('epoch', t.updated_at))::text AS etag
+      FROM search_pairs sp
+      INNER JOIN smart_contracts s ON s.principal = sp.principal AND s.canonical = true
+      INNER JOIN tokens t ON t.smart_contract_id = s.id
+        AND t.token_number = sp.token_number AND t.canonical = true
+    `;
+    if (result.count === 0 || !result[0].etag) return undefined;
+    return result[0].etag;
   }
 
   private async isTokenLocaleAvailable(tokenId: number, locale: string): Promise<boolean> {

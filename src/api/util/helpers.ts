@@ -9,6 +9,21 @@ export const isProdEnv =
   !process.env.NODE_ENV ||
   (!isTestEnv && !isDevEnv);
 
+export function parseContractIdentifiers(
+  contracts: string[]
+): { principal: string; tokenNumber: number }[] {
+  return contracts.map(contract => {
+    const colonIndex = contract.lastIndexOf(':');
+    if (colonIndex !== -1) {
+      return {
+        principal: contract.substring(0, colonIndex),
+        tokenNumber: Number(contract.substring(colonIndex + 1)),
+      };
+    }
+    return { principal: contract, tokenNumber: 1 };
+  });
+}
+
 export function parseMetadataLocaleBundle(
   locale?: DbMetadataLocaleBundle
 ): MetadataType | undefined {
