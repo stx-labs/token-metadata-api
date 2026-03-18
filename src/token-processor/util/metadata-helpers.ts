@@ -272,9 +272,22 @@ export async function fetchMetadata(
         // Disable during tests so we can inject a global mock agent.
         process.env.NODE_ENV === 'test' ? undefined : METADATA_FETCH_HTTP_AGENT,
     });
+    if (result.statusCode >= 400) {
+      const responseError = new errors.ResponseError(
+        result.statusText || `HTTP ${result.statusCode}`,
+        result.statusCode,
+        { headers: result.headers }
+      );
+      if (result.statusCode === 429) {
+        throw new TooManyRequestsHttpError(httpUrl, responseError);
+      }
+      throw new MetadataHttpError(`${url}: ${result.statusCode}`, responseError);
+    }
     return await result.body.text();
   } catch (error) {
-    if (
+    if (error instanceof TooManyRequestsHttpError || error instanceof MetadataHttpError) {
+      throw error;
+    } else if (
       error instanceof errors.HeadersTimeoutError ||
       error instanceof errors.BodyTimeoutError ||
       error instanceof errors.ConnectTimeoutError

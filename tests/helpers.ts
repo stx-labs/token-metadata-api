@@ -33,7 +33,13 @@ export async function startTestApiServer(db: PgStore): Promise<TestFastifyServer
   return await buildApiServer({ db });
 }
 
-export async function startTimeoutServer(delay: number, port: number = 9999) {
+export type TestHttpServer = {
+  server: http.Server;
+  port: number;
+  url: string;
+};
+
+export async function startTimeoutServer(delay: number, port: number = 0): Promise<TestHttpServer> {
   const server = http.createServer((req, res) => {
     setTimeout(() => {
       res.statusCode = 200;
@@ -42,25 +48,41 @@ export async function startTimeoutServer(delay: number, port: number = 9999) {
   });
   server.on('error', e => console.log(e));
   const serverReady = waiter();
-  server.listen(port, '0.0.0.0', () => serverReady.finish());
+  server.listen(port, '127.0.0.1', () => serverReady.finish());
   await serverReady;
-  return server;
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Unable to resolve timeout server port');
+  }
+  return {
+    server,
+    port: address.port,
+    url: `http://127.0.0.1:${address.port}/`,
+  };
 }
 
 export async function startTestResponseServer(
   response: string,
   statusCode: number = 200,
-  port: number = 9999
-) {
+  port: number = 0
+): Promise<TestHttpServer> {
   const server = http.createServer((req, res) => {
     res.statusCode = statusCode;
     res.end(response);
   });
   server.on('error', e => console.log(e));
   const serverReady = waiter();
-  server.listen(port, '0.0.0.0', () => serverReady.finish());
+  server.listen(port, '127.0.0.1', () => serverReady.finish());
   await serverReady;
-  return server;
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Unable to resolve response server port');
+  }
+  return {
+    server,
+    port: address.port,
+    url: `http://127.0.0.1:${address.port}/`,
+  };
 }
 
 export async function closeTestServer(server: http.Server) {

@@ -41,6 +41,7 @@ async function downloadImage(
     const filePath = `${tmpPath}/image`;
     fetch(imgUrl, {
       headers,
+      signal: AbortSignal.timeout(ENV.METADATA_FETCH_TIMEOUT_MS),
       dispatcher: new Agent({
         headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
         bodyTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
@@ -157,6 +158,11 @@ export async function processImageCache(
       `${ENV.IMAGE_CACHE_CDN_BASE_PATH}${remoteName2}`,
     ];
   } catch (error) {
+    if (error instanceof DOMException) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        throw new ImageTimeoutError(new URL(rawImgUrl));
+      }
+    }
     if (error instanceof TypeError) {
       const typeError = error as UndiciCauseTypeError;
       if (

@@ -12,7 +12,6 @@ import { ENV } from '../../src/env';
 import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-token-job';
 import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers';
 import { RetryableJobError } from '../../src/token-processor/queue/errors';
-import { TooManyRequestsHttpError } from '../../src/token-processor/util/errors';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens } from '../helpers';
 import { InvalidTokenError } from '../../src/pg/errors';
@@ -858,13 +857,9 @@ describe('ProcessTokenJob', () => {
           method: 'GET',
         })
         .reply(429, { error: 'nope' }, { headers: { 'retry-after': '999' } });
-      try {
-        await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
-      } catch (error) {
-        expect(error).toBeInstanceOf(RetryableJobError);
-        const err = error as RetryableJobError;
-        expect(err.cause).toBeInstanceOf(TooManyRequestsHttpError);
-      }
+      await expect(
+        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work()
+      ).resolves.not.toThrow();
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
       expect(host).not.toBeUndefined();
     });
