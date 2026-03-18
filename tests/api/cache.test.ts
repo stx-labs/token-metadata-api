@@ -226,12 +226,46 @@ describe('ETag cache', () => {
         ],
       },
     });
+    await insertAndEnqueueTestContractWithTokens(
+      db,
+      'SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2',
+      DbSipNumber.sip010,
+      1n
+    );
+    await db.core.updateProcessedTokenWithMetadata({
+      id: 2,
+      values: {
+        token: {
+          name: 'miamicoin',
+          symbol: 'MIA',
+          decimals: 6,
+          total_supply: '1000000',
+          uri: 'http://test.com/mia.json',
+        },
+        metadataLocales: [
+          {
+            metadata: {
+              sip: 16,
+              token_id: 2,
+              name: 'miamicoin',
+              l10n_locale: 'en',
+              l10n_uri: null,
+              l10n_default: true,
+              description: 'miami',
+              image: null,
+              cached_image: null,
+              cached_thumbnail_image: null,
+            },
+          },
+        ],
+      },
+    });
+
+    const searchUrl =
+      '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world&contract=SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2';
 
     // Request returns etag
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
-    });
+    const response = await fastify.inject({ method: 'GET', url: searchUrl });
     expect(response.statusCode).toBe(200);
     expect(response.headers.etag).not.toBeUndefined();
     const etag = response.headers.etag;
@@ -239,16 +273,16 @@ describe('ETag cache', () => {
     // Cached response
     const cached = await fastify.inject({
       method: 'GET',
-      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+      url: searchUrl,
       headers: { 'if-none-match': etag },
     });
     expect(cached.statusCode).toBe(304);
 
-    // Simulate modified token and check status code
-    await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 1`;
+    // Updating one token in the batch invalidates the etag
+    await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 2`;
     const cached2 = await fastify.inject({
       method: 'GET',
-      url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
+      url: searchUrl,
       headers: { 'if-none-match': etag },
     });
     expect(cached2.statusCode).toBe(200);

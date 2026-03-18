@@ -21,19 +21,4 @@ describe('parseContractIdentifiers', () => {
       },
     ]);
   });
-
-  test('invalid principals are skipped', () => {
-    const result = parseContractIdentifiers(['not-a-principal', 'also.bad']);
-    expect(result).toEqual([]);
-  });
-
-  test('invalid token numbers are skipped', () => {
-    const result = parseContractIdentifiers([
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world:abc',
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world:0',
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world:-1',
-      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world:1.5',
-    ]);
-    expect(result).toEqual([]);
-  });
 });

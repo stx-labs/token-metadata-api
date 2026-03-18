@@ -268,16 +268,16 @@ export type DbBulkTokenMetadataItem = {
   principal: string;
   token_number: bigint;
   token_type: DbTokenType;
-  name?: string;
-  symbol?: string;
-  decimals?: number;
-  total_supply?: string;
-  uri?: string;
+  name: string | null;
+  symbol: string | null;
+  decimals: number | null;
+  total_supply: string | null;
+  uri: string | null;
   tx_id: string;
-  description?: string;
-  image?: string;
-  cached_image?: string;
-  cached_thumbnail_image?: string;
+  description: string | null;
+  image: string | null;
+  cached_image: string | null;
+  cached_thumbnail_image: string | null;
 };
 
 export type DbFungibleTokenMetadataItem = {

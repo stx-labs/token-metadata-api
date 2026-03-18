@@ -329,19 +329,26 @@ export const SftMetadataResponse = Type.Object(
   { title: 'Sft Metadata Response' }
 );
 
-export const SearchContractParam = Type.Array(Type.String(), {
-  minItems: 1,
-  maxItems: 50,
-  title: 'Contract Identifiers',
-  description:
-    'Contract identifiers to search for. Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER. Defaults token_number to 1 when omitted.',
-  examples: [
-    [
+export const SearchContractRegEx =
+  /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}(:\d+)?$/;
+
+export const SearchContractParam = Type.Array(
+  Type.RegEx(SearchContractRegEx, {
+    title: 'Contract Identifier',
+    description: 'Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER',
+    examples: [
       'SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token',
       'SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12:120',
     ],
-  ],
-});
+  }),
+  {
+    minItems: 1,
+    maxItems: 50,
+    title: 'Contract Identifiers',
+    description:
+      'Contract identifiers to search for. Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER. Defaults token_number to 1 when omitted.',
+  }
+);
 
 export const SearchQuerystringParams = Type.Object({
   contract: SearchContractParam,

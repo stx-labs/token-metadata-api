@@ -1,10 +1,5 @@
 import { DbMetadataLocaleBundle } from '../../pg/types';
-import {
-  MetadataPropertiesType,
-  MetadataType,
-  MetadataValueType,
-  SmartContractRegEx,
-} from '../schemas';
+import { MetadataPropertiesType, MetadataType, MetadataValueType } from '../schemas';
 
 export const isDevEnv = process.env.NODE_ENV === 'development';
 export const isTestEnv = process.env.NODE_ENV === 'test';
@@ -17,24 +12,16 @@ export const isProdEnv =
 export function parseContractIdentifiers(
   contracts: string[]
 ): { principal: string; tokenNumber: number }[] {
-  const results: { principal: string; tokenNumber: number }[] = [];
-  for (const contract of contracts) {
+  return contracts.map(contract => {
     const colonIndex = contract.lastIndexOf(':');
-    let principal: string;
-    let tokenNumber = 1;
     if (colonIndex !== -1) {
-      principal = contract.substring(0, colonIndex);
-      const numStr = contract.substring(colonIndex + 1);
-      const parsed = Number(numStr);
-      if (!Number.isInteger(parsed) || parsed < 1) continue;
-      tokenNumber = parsed;
-    } else {
-      principal = contract;
+      return {
+        principal: contract.substring(0, colonIndex),
+        tokenNumber: Number(contract.substring(colonIndex + 1)),
+      };
     }
-    if (!SmartContractRegEx.test(principal)) continue;
-    results.push({ principal, tokenNumber });
-  }
-  return results;
+    return { principal: contract, tokenNumber: 1 };
+  });
 }
 
 export function parseMetadataLocaleBundle(
