@@ -21,7 +21,6 @@ import {
   DbMetadataAttributeInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
-import BigNumber from 'bignumber.js';
 import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
 
 export class StacksCorePgStore extends BasePgStoreModule {
@@ -35,7 +34,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     notifications: TokenMetadataUpdateNotification[];
     nftMints: NftMintEvent[];
     sftMints: SftMintEvent[];
-    ftSupplyDelta: Map<string, BigNumber>;
+    ftSupplyDelta: Map<string, string>;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       await this.insertBlock(sql, args.block);
@@ -401,7 +400,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
   private async insertAndEnqueueFtSupplyChange(
     sql: PgSqlClient,
     contract: string,
-    delta: BigNumber,
+    delta: string,
     block: DecodedStacksBlock
   ): Promise<void> {
     await sql`
