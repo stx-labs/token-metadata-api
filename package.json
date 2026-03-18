@@ -77,7 +77,7 @@
     "fastify-metrics": "^12.1.0",
     "json5": "^2.2.3",
     "node-pg-migrate": "^8.0.4",
-    "p-queue": "^9.1.0",
+    "p-queue": "^6.6.2",
     "sharp": "^0.34.5",
     "undici": "^7.24.4"
   }
