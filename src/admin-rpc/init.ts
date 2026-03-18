@@ -24,7 +24,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
         description:
           'Enqueue a token metadata refresh. This ignores any token refresh modes configured by a SIP-019 notification.',
         body: Type.Object({
-          contractId: Type.RegEx(SmartContractRegEx),
+          contractId: Type.String({ pattern: SmartContractRegEx.source }),
           tokenIds: Type.Optional(Type.Array(Type.Integer())),
         }),
       },
@@ -109,7 +109,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
         description:
           'Recalcualtes caches for token images and uploads results to the configured CDN. This operation is idempotent.',
         body: Type.Object({
-          contractId: Type.RegEx(SmartContractRegEx),
+          contractId: Type.String({ pattern: SmartContractRegEx.source }),
           tokenIds: Type.Optional(Type.Array(Type.Integer())),
         }),
       },
@@ -164,7 +164,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
         description:
           'Imports a smart contract from the Stacks API and refreshes its token metadata',
         body: Type.Object({
-          contractId: Type.RegEx(SmartContractRegEx),
+          contractId: Type.String({ pattern: SmartContractRegEx.source }),
         }),
       },
     },
