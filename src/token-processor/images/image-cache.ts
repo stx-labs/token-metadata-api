@@ -44,7 +44,6 @@ async function downloadImage(
       dispatcher: new Agent({
         headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
         bodyTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
-        maxRedirections: ENV.METADATA_FETCH_MAX_REDIRECTIONS,
         maxResponseSize: ENV.IMAGE_CACHE_MAX_BYTE_SIZE,
         connect: {
           rejectUnauthorized: false, // Ignore SSL cert errors.
@@ -53,8 +52,14 @@ async function downloadImage(
     })
       .then(response => {
         if (response.status == 429) {
+          const errorHeaders = Object.fromEntries(response.headers.entries());
           reject(
-            new TooManyRequestsHttpError(new URL(imgUrl), new errors.ResponseStatusCodeError())
+            new TooManyRequestsHttpError(
+              new URL(imgUrl),
+              new errors.ResponseError(response.statusText, response.status, {
+                headers: errorHeaders,
+              })
+            )
           );
           return;
         }
@@ -63,7 +68,9 @@ async function downloadImage(
           reject(
             new ImageHttpError(
               `ImageCache fetch error`,
-              new errors.ResponseStatusCodeError(response.statusText, response.status)
+              new errors.ResponseError(response.statusText, response.status, {
+                headers: Object.fromEntries(response.headers.entries()),
+              })
             )
           );
           return;

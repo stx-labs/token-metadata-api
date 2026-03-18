@@ -34,7 +34,6 @@ const METADATA_FETCH_HTTP_AGENT = new Agent({
   headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
   bodyTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
   maxResponseSize: ENV.METADATA_MAX_PAYLOAD_BYTE_SIZE,
-  maxRedirections: ENV.METADATA_FETCH_MAX_REDIRECTIONS,
   connect: {
     rejectUnauthorized: false, // Ignore SSL cert errors.
   },
@@ -283,7 +282,7 @@ export async function fetchMetadata(
       throw new MetadataTimeoutError(new URL(url));
     } else if (error instanceof errors.ResponseExceededMaxSizeError) {
       throw new MetadataSizeExceededError(url);
-    } else if (error instanceof errors.ResponseStatusCodeError && error.statusCode === 429) {
+    } else if (error instanceof errors.ResponseError && error.statusCode === 429) {
       throw new TooManyRequestsHttpError(httpUrl, error);
     } else if (
       error instanceof TypeError &&

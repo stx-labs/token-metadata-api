@@ -815,34 +815,36 @@ describe('ProcessTokenJob', () => {
 
     test('parses Retry-After response header correctly', () => {
       // Numeric value
-      const error1 = new errors.ResponseStatusCodeError('rate limited');
-      error1.statusCode = 429;
-      error1.headers = { 'retry-after': '120' };
+      const error1 = new errors.ResponseError('rate limited', 429, {
+        headers: { 'retry-after': '120' },
+      });
       expect(parseRetryAfterResponseHeader(error1)).toBe(120);
 
       // Date string
       const now = Date.now();
       jest.useFakeTimers().setSystemTime(now);
       const inOneHour = now + 3600 * 1000;
-      const error2 = new errors.ResponseStatusCodeError('rate limited');
-      error2.statusCode = 429;
-      error2.headers = { 'retry-after': new Date(inOneHour).toUTCString() };
+      const error2 = new errors.ResponseError('rate limited', 429, {
+        headers: { 'retry-after': new Date(inOneHour).toUTCString() },
+      });
       expect(parseRetryAfterResponseHeader(error2)).toBe(3600);
 
       jest.useFakeTimers().setSystemTime(new Date('2015-10-21'));
-      const error5 = new errors.ResponseStatusCodeError('rate limited');
-      error5.statusCode = 429;
-      error5.headers = { 'retry-after': 'Wed, 21 Oct 2015 07:28:00 GMT' };
+      const error5 = new errors.ResponseError('rate limited', 429, {
+        headers: { 'retry-after': 'Wed, 21 Oct 2015 07:28:00 GMT' },
+      });
       expect(parseRetryAfterResponseHeader(error5)).toBe(26880);
 
       // Empty value
-      const error3 = new errors.ResponseStatusCodeError('rate limited');
-      error3.statusCode = 429;
+      const error3 = new errors.ResponseError('rate limited', 429, {
+        headers: {},
+      });
       expect(parseRetryAfterResponseHeader(error3)).toBeUndefined();
 
       // Non-429 value
-      const error4 = new errors.ResponseStatusCodeError('rate limited');
-      error4.headers = { 'retry-after': '999' };
+      const error4 = new errors.ResponseError('rate limited', 500, {
+        headers: { 'retry-after': '999' },
+      });
       expect(parseRetryAfterResponseHeader(error4)).toBeUndefined();
 
       jest.useRealTimers();
