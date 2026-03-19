@@ -9,6 +9,7 @@ import {
   TestFastifyServer,
 } from '../helpers';
 import { DbSipNumber } from '../../src/pg/types';
+import { afterEach, beforeEach } from 'node:test';
 
 describe('NFT routes', () => {
   let db: PgStore;

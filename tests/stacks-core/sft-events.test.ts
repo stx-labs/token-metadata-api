@@ -11,6 +11,7 @@ import {
   markAllJobsAsDone,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('sft events', () => {
   let db: PgStore;

@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { NewBlockMessage } from '@stacks/node-publisher-client';
 import { decodeStacksCoreBlock } from '../../src/stacks-core/stacks-core-block-processor';
+import { describe, test } from 'node:test';
 
 describe('decode block', () => {
   test('decodes stacks 2.x block with burnchain op tx', () => {

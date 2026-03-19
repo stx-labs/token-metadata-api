@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { mock } from 'node:test';
+import { after, afterEach, before, beforeEach, describe, mock, test } from 'node:test';
 import * as imageCache from '../../src/token-processor/images/image-cache';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { buildAdminRpcServer } from '../../src/admin-rpc/init';
@@ -252,7 +252,7 @@ describe('Admin RPC', () => {
   });
 
   describe('/import-contract', () => {
-    beforeAll(() => {
+    before(() => {
       nock.disableNetConnect();
     });
 
@@ -260,7 +260,7 @@ describe('Admin RPC', () => {
       nock.cleanAll();
     });
 
-    afterAll(() => {
+    after(() => {
       nock.cleanAll();
       nock.enableNetConnect();
     });

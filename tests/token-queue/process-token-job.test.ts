@@ -17,6 +17,7 @@ import { RetryableJobError } from '../../src/token-processor/queue/errors';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens } from '../helpers';
 import { InvalidTokenError } from '../../src/pg/errors';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ProcessTokenJob', () => {
   let db: PgStore;

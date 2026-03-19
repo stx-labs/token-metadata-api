@@ -7,6 +7,7 @@ import { ENV } from '../../src/env';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens, markAllJobsAsDone } from '../helpers';
 import { UpdateTokenSupplyJob } from '../../src/token-processor/queue/job/update-token-supply-job';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('UpdateTokenSupplyJob', () => {
   let db: PgStore;

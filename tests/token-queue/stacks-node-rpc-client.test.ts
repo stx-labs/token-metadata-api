@@ -14,6 +14,7 @@ import {
   StacksNodeJsonParseError,
   StacksNodeHttpError,
 } from '../../src/token-processor/util/errors';
+import { beforeEach, describe, test } from 'node:test';
 
 describe('StacksNodeRpcClient', () => {
   const nodeUrl = `http://${ENV.STACKS_NODE_RPC_HOST}:${ENV.STACKS_NODE_RPC_PORT}`;

@@ -6,6 +6,7 @@ import { JobQueue } from '../../src/token-processor/queue/job-queue';
 import { insertAndEnqueueTestContract } from '../helpers';
 import { cycleMigrations, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
+import { afterEach, beforeEach } from 'node:test';
 
 class TestJobQueue extends JobQueue {
   constructor(args: { db: PgStore; network: StacksNetworkName }) {

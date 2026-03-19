@@ -7,6 +7,7 @@ import { ProcessSmartContractJob } from '../../src/token-processor/queue/job/pro
 import { ENV } from '../../src/env';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContract } from '../helpers';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ProcessSmartContractJob', () => {
   let db: PgStore;

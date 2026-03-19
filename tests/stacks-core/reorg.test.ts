@@ -12,6 +12,7 @@ import {
   markAllJobsAsDone,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { after, before, describe, test } from 'node:test';
 
 describe('re-org handling', () => {
   let db: PgStore;
@@ -21,7 +22,7 @@ describe('re-org handling', () => {
   const ftContractId = `${address}.test-ft`;
   const nftContractId = `${address}.test-nft`;
 
-  beforeAll(async () => {
+  before(async () => {
     ENV.PGDATABASE = 'postgres';
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
@@ -200,7 +201,7 @@ describe('re-org handling', () => {
     assert.notStrictEqual(nftToken3JobBefore, undefined);
   });
 
-  afterAll(async () => {
+  after(async () => {
     await db.close();
   });
 

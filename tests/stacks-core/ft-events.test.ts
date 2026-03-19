@@ -10,6 +10,7 @@ import {
   TestBlockBuilder,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ft events', () => {
   let db: PgStore;

@@ -8,6 +8,7 @@ import {
   startTestApiServer,
   TestFastifyServer,
 } from '../helpers';
+import { afterEach, beforeEach } from 'node:test';
 
 describe('Search routes', () => {
   let db: PgStore;

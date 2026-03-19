@@ -12,6 +12,7 @@ import {
 import { getContractLogMetadataUpdateNotification } from '../../src/token-processor/util/sip-validation';
 import { TestTransactionBuilder } from '../helpers';
 import { NewBlockContractEvent, NewBlockEventType } from '@stacks/node-publisher-client';
+import { describe, test } from 'node:test';
 
 describe('SIP Validation', () => {
   test('SIP-019 FT notification', () => {

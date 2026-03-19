@@ -12,6 +12,7 @@ import {
   SIP_009_ABI,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('nft events', () => {
   let db: PgStore;

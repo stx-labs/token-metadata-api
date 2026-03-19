@@ -5,6 +5,7 @@ import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import { SIP_009_ABI, TestTransactionBuilder, TestBlockBuilder } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('contract deployments', () => {
   let db: PgStore;
