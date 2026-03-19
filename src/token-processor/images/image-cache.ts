@@ -3,8 +3,8 @@ import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers'
 import { logger } from '@stacks/api-toolkit';
 import { PgStore } from '../../pg/pg-store';
 import { Readable } from 'node:stream';
-import * as sharp from 'sharp';
-import * as fs from 'fs';
+import sharp from 'sharp';
+import fs from 'fs';
 import { Agent, fetch, errors } from 'undici';
 import {
   ImageSizeExceededError,
@@ -106,7 +106,7 @@ async function transformImage(filePath: string, resize: boolean = false): Promis
       });
     }
     sharpStream.on('error', reject);
-    sharpStream = sharpStream.png().toFile(outPath, (err, _info) => {
+    sharpStream = sharpStream.png().toFile(outPath, (err: Error | null, _info: unknown) => {
       if (err) reject(err);
       else resolve(outPath);
     });
