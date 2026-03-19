@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -30,9 +31,9 @@ describe('ProcessSmartContractJob', () => {
     await processor.work();
 
     const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
-    expect(tokens.count).toBe(1);
-    expect(tokens[0].type).toBe(DbTokenType.ft);
-    expect(tokens[0].smart_contract_id).toBe(1);
+    assert.strictEqual(tokens.count, 1);
+    assert.strictEqual(tokens[0].type, DbTokenType.ft);
+    assert.strictEqual(tokens[0].smart_contract_id, 1);
   });
 
   test('enqueues all tokens per NFT contract', async () => {
@@ -59,9 +60,9 @@ describe('ProcessSmartContractJob', () => {
     await processor.work();
 
     const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
-    expect(tokens.count).toBe(5);
-    expect(tokens[0].type).toBe(DbTokenType.nft);
-    expect(tokens[0].smart_contract_id).toBe(1);
+    assert.strictEqual(tokens.count, 5);
+    assert.strictEqual(tokens[0].type, DbTokenType.nft);
+    assert.strictEqual(tokens[0].smart_contract_id, 1);
   });
 
   test('ignores NFT contract that exceeds max token count', async () => {
@@ -88,6 +89,6 @@ describe('ProcessSmartContractJob', () => {
     await processor.work();
 
     const tokens = await db.sql<DbToken[]>`SELECT * FROM tokens`;
-    expect(tokens.count).toBe(0);
+    assert.strictEqual(tokens.count, 0);
   });
 });

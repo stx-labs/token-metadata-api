@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -30,8 +31,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(404);
-    expect(response.json().error).toMatch(/Contract not found/);
+    assert.strictEqual(response.statusCode, 404);
+    assert.match(response.json().error, /Contract not found/);
   });
 
   test('token not found', async () => {
@@ -44,8 +45,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(404);
-    expect(response.json().error).toMatch(/Token not found/);
+    assert.strictEqual(response.statusCode, 404);
+    assert.match(response.json().error, /Token not found/);
   });
 
   test('token not processed', async () => {
@@ -59,8 +60,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json()).toStrictEqual({ error: 'Token metadata fetch in progress' });
+    assert.strictEqual(response.statusCode, 422);
+    assert.deepStrictEqual(response.json(), { error: 'Token metadata fetch in progress' });
   });
 
   test('invalid contract', async () => {
@@ -75,8 +76,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json().message).toMatch(/Clarity error/);
+    assert.strictEqual(response.statusCode, 422);
+    assert.match(response.json().message, /Clarity error/);
   });
 
   test('invalid token metadata', async () => {
@@ -91,8 +92,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json().message).toMatch(/Metadata could not be parsed/);
+    assert.strictEqual(response.statusCode, 422);
+    assert.match(response.json().message, /Metadata could not be parsed/);
   });
 
   test('locale not found', async () => {
@@ -134,8 +135,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1?locale=es',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json()).toStrictEqual({ error: 'Locale not found' });
+    assert.strictEqual(response.statusCode, 422);
+    assert.deepStrictEqual(response.json(), { error: 'Locale not found' });
   });
 
   test('empty metadata locales', async () => {
@@ -161,8 +162,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({ token_uri: 'http://test.com/uri.json' });
+    assert.strictEqual(response.statusCode, 200);
+    assert.deepStrictEqual(response.json(), { token_uri: 'http://test.com/uri.json' });
   });
 
   test('valid NFT metadata', async () => {
@@ -234,8 +235,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({
+    assert.strictEqual(response.statusCode, 200);
+    assert.deepStrictEqual(response.json(), {
       token_uri: 'http://test.com/uri.json',
       metadata: {
         sip: 16,
@@ -268,8 +269,8 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toEqual(noVersionResponse.statusCode);
-    expect(response.json()).toStrictEqual(noVersionResponse.json());
+    assert.strictEqual(response.statusCode, noVersionResponse.statusCode);
+    assert.deepStrictEqual(response.json(), noVersionResponse.json());
 
     // Test with canonical = false
     await db.sql`UPDATE tokens SET canonical = false WHERE id = 1`;
@@ -277,6 +278,6 @@ describe('NFT routes', () => {
       method: 'GET',
       url: '/metadata/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response2.statusCode).toBe(404);
+    assert.strictEqual(response2.statusCode, 404);
   });
 });

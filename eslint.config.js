@@ -41,4 +41,12 @@ module.exports = [
       '@typescript-eslint/restrict-template-expressions': 'off',
     },
   }),
+  {
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+    },
+  },
 ];

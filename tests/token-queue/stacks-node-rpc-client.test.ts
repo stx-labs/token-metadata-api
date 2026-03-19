@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import {
   cvToHex,
   uintCV,
@@ -46,9 +47,7 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(client.readStringFromContract('get-token-uri', [])).rejects.toThrow(
-      RetryableJobError
-    );
+    await assert.rejects(client.readStringFromContract('get-token-uri', []), RetryableJobError);
   });
 
   test('contract not found errors get retried', async () => {
@@ -67,9 +66,7 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(client.readStringFromContract('get-token-uri', [])).rejects.toThrow(
-      RetryableJobError
-    );
+    await assert.rejects(client.readStringFromContract('get-token-uri', []), RetryableJobError);
   });
 
   test('other node errors fail immediately', async () => {
@@ -88,10 +85,11 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(client.readStringFromContract('get-token-uri', [])).rejects.not.toThrow(
-      RetryableJobError
+    await assert.rejects(
+      client.readStringFromContract('get-token-uri', []),
+      (err: unknown) => !(err instanceof RetryableJobError)
     );
-    await expect(client.readStringFromContract('get-token-uri', [])).rejects.toThrow();
+    await assert.rejects(client.readStringFromContract('get-token-uri', []));
   });
 
   test('http errors are thrown', async () => {
@@ -106,11 +104,10 @@ describe('StacksNodeRpcClient', () => {
       .reply(500, { message: 'Server Error' });
     setGlobalDispatcher(agent);
 
-    try {
-      await client.readStringFromContract('get-token-uri', []);
-    } catch (error) {
-      expect(error).toBeInstanceOf(StacksNodeHttpError);
-    }
+    await assert.rejects(
+      client.readStringFromContract('get-token-uri', []),
+      (err: unknown) => err instanceof StacksNodeHttpError
+    );
   });
 
   test('json parse errors are thrown', async () => {
@@ -125,11 +122,10 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, 'not parseable');
     setGlobalDispatcher(agent);
 
-    try {
-      await client.readStringFromContract('get-token-uri', []);
-    } catch (error) {
-      expect(error).toBeInstanceOf(StacksNodeJsonParseError);
-    }
+    await assert.rejects(
+      client.readStringFromContract('get-token-uri', []),
+      (err: unknown) => err instanceof StacksNodeJsonParseError
+    );
   });
 
   test('clarity value parse errors are not retried', async () => {
@@ -148,7 +144,7 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(client.readStringFromContract('get-token-uri', [])).rejects.toThrow(Error);
+    await assert.rejects(client.readStringFromContract('get-token-uri', []), Error);
   });
 
   test('incorrect none uri strings are parsed as undefined', async () => {
@@ -167,7 +163,7 @@ describe('StacksNodeRpcClient', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(client.readStringFromContract('get-token-uri', [])).resolves.toBeUndefined();
+    assert.strictEqual(await client.readStringFromContract('get-token-uri', []), undefined);
   });
 
   test('contract ABI is returned correctly', async () => {
@@ -222,7 +218,7 @@ describe('StacksNodeRpcClient', () => {
     setGlobalDispatcher(agent);
 
     const abi = await client.readContractInterface();
-    expect(abi).not.toBeUndefined();
-    expect(abi?.fungible_tokens[0].name).toBe('MEME');
+    assert.notStrictEqual(abi, undefined);
+    assert.strictEqual(abi?.fungible_tokens[0].name, 'MEME');
   });
 });

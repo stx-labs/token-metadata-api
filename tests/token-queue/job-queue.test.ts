@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { DbJob, DbJobStatus, DbSipNumber } from '../../src/pg/types';
@@ -42,7 +43,7 @@ describe('JobQueue', () => {
     const count1 = await db.sql<
       { count: number }[]
     >`SELECT COUNT(*) FROM jobs WHERE status = 'queued'`;
-    expect(count1.count).toBe(1);
+    assert.strictEqual(count1.count, 1);
 
     const job2 = await insertAndEnqueueTestContract(db, 'ABCD.test-ft2', DbSipNumber.sip010);
     await queue.testAdd(job2);
@@ -50,7 +51,7 @@ describe('JobQueue', () => {
     const count2 = await db.sql<
       { count: number }[]
     >`SELECT COUNT(*) FROM jobs WHERE status = 'queued'`;
-    expect(count2.count).toBe(1);
+    assert.strictEqual(count2.count, 1);
   });
 
   test('adds job batches for processing', async () => {
@@ -65,18 +66,18 @@ describe('JobQueue', () => {
 
     // Queued is taken first.
     const added1 = await queue.testAddJobBatch();
-    expect(added1).toBe(1);
-    expect((await db.getJob({ id: job1.id }))?.status).toBe('queued');
-    expect((await db.getJob({ id: job2.id }))?.status).toBe('pending');
-    expect((await db.getJob({ id: job3.id }))?.status).toBe('pending');
+    assert.strictEqual(added1, 1);
+    assert.strictEqual((await db.getJob({ id: job1.id }))?.status, 'queued');
+    assert.strictEqual((await db.getJob({ id: job2.id }))?.status, 'pending');
+    assert.strictEqual((await db.getJob({ id: job3.id }))?.status, 'pending');
 
     // All of the rest are taken.
     await db.core.updateJobStatus({ id: job1.id, status: DbJobStatus.done });
     const added2 = await queue.testAddJobBatch();
-    expect(added2).toBe(2);
-    expect((await db.getJob({ id: job1.id }))?.status).toBe('done');
-    expect((await db.getJob({ id: job2.id }))?.status).toBe('queued');
-    expect((await db.getJob({ id: job3.id }))?.status).toBe('queued');
+    assert.strictEqual(added2, 2);
+    assert.strictEqual((await db.getJob({ id: job1.id }))?.status, 'done');
+    assert.strictEqual((await db.getJob({ id: job2.id }))?.status, 'queued');
+    assert.strictEqual((await db.getJob({ id: job3.id }))?.status, 'queued');
   });
 
   test('pg connection errors are not re-thrown', async () => {

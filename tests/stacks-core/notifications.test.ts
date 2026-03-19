@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, listCV, uintCV, stringUtf8CV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -59,12 +60,12 @@ describe('token metadata notifications', () => {
         .build()
     );
 
-    await expect(db.getPendingJobBatch({ limit: 10 })).resolves.toHaveLength(3);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 10 })).length, 3);
     const notifs = await getLatestContractTokenNotifications(db, contractId);
-    expect(notifs).toHaveLength(3);
-    expect(notifs[0].token_id).toBe(1);
-    expect(notifs[0].update_mode).toBe('standard');
-    expect(notifs[0].block_height).toBe(2);
+    assert.strictEqual(notifs.length, 3);
+    assert.strictEqual(notifs[0].token_id, 1);
+    assert.strictEqual(notifs[0].update_mode, 'standard');
+    assert.strictEqual(notifs[0].block_height, 2);
   });
 
   test('enqueues notification for specific tokens in contract', async () => {
@@ -100,12 +101,12 @@ describe('token metadata notifications', () => {
     );
 
     const jobs = await db.getPendingJobBatch({ limit: 10 });
-    expect(jobs.length).toBe(2); // Only two tokens
-    expect(jobs[0].token_id).toBe(1);
-    await expect(getLatestTokenNotification(db, 1)).resolves.not.toBeUndefined();
-    expect(jobs[1].token_id).toBe(2);
-    await expect(getLatestTokenNotification(db, 2)).resolves.not.toBeUndefined();
-    await expect(getLatestTokenNotification(db, 3)).resolves.toBeUndefined();
+    assert.strictEqual(jobs.length, 2); // Only two tokens
+    assert.strictEqual(jobs[0].token_id, 1);
+    assert.notStrictEqual(await getLatestTokenNotification(db, 1), undefined);
+    assert.strictEqual(jobs[1].token_id, 2);
+    assert.notStrictEqual(await getLatestTokenNotification(db, 2), undefined);
+    assert.strictEqual(await getLatestTokenNotification(db, 3), undefined);
   });
 
   test('updates token refresh mode', async () => {
@@ -142,7 +143,7 @@ describe('token metadata notifications', () => {
     );
 
     const notif = await getLatestTokenNotification(db, 1);
-    expect(notif?.update_mode).toBe('frozen');
+    assert.strictEqual(notif?.update_mode, 'frozen');
   });
 
   test('ignores notification for frozen tokens', async () => {
@@ -207,11 +208,11 @@ describe('token metadata notifications', () => {
     );
 
     const jobs2 = await db.getPendingJobBatch({ limit: 10 });
-    expect(jobs2.length).toBe(0); // No tokens queued.
+    assert.strictEqual(jobs2.length, 0); // No tokens queued.
     const notif = await getLatestTokenNotification(db, 1);
-    expect(notif).not.toBeUndefined();
-    expect(notif?.block_height).toBe(2);
-    expect(notif?.update_mode).toBe('frozen'); // Keeps the old frozen notif
+    assert.notStrictEqual(notif, undefined);
+    assert.strictEqual(notif?.block_height, 2);
+    assert.strictEqual(notif?.update_mode, 'frozen'); // Keeps the old frozen notif
   });
 
   test('second token notification replaces previous', async () => {
@@ -249,10 +250,10 @@ describe('token metadata notifications', () => {
     );
     await markAllJobsAsDone(db);
     const notif1 = await getLatestTokenNotification(db, 1);
-    expect(notif1).not.toBeUndefined();
-    expect(notif1?.block_height).toBe(2);
-    expect(notif1?.update_mode).toBe('dynamic');
-    expect(notif1?.ttl).toBe('3600');
+    assert.notStrictEqual(notif1, undefined);
+    assert.strictEqual(notif1?.block_height, 2);
+    assert.strictEqual(notif1?.update_mode, 'dynamic');
+    assert.strictEqual(notif1?.ttl, '3600');
 
     await processor.processBlock(
       new TestBlockBuilder({
@@ -281,10 +282,10 @@ describe('token metadata notifications', () => {
     );
 
     const notif2 = await getLatestTokenNotification(db, 1);
-    expect(notif2).not.toBeUndefined();
-    expect(notif2?.block_height).toBe(3);
-    expect(notif2?.update_mode).toBe('standard');
-    expect(notif2?.ttl).toBeNull();
+    assert.notStrictEqual(notif2, undefined);
+    assert.strictEqual(notif2?.block_height, 3);
+    assert.strictEqual(notif2?.update_mode, 'standard');
+    assert.strictEqual(notif2?.ttl, null);
   });
 
   test('contract notification replaces token notification', async () => {
@@ -320,8 +321,8 @@ describe('token metadata notifications', () => {
     );
     await markAllJobsAsDone(db);
     const notif1 = await getLatestTokenNotification(db, 1);
-    expect(notif1).not.toBeUndefined();
-    expect(notif1?.block_height).toBe(2);
+    assert.notStrictEqual(notif1, undefined);
+    assert.strictEqual(notif1?.block_height, 2);
 
     await processor.processBlock(
       new TestBlockBuilder({
@@ -349,8 +350,8 @@ describe('token metadata notifications', () => {
     );
 
     const notif2 = await getLatestTokenNotification(db, 1);
-    expect(notif2).not.toBeUndefined();
-    expect(notif2?.block_height).toBe(3);
+    assert.notStrictEqual(notif2, undefined);
+    assert.strictEqual(notif2?.block_height, 3);
   });
 
   test('ignores other contract log events', async () => {
@@ -373,7 +374,7 @@ describe('token metadata notifications', () => {
         )
         .build()
     );
-    await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(0);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 1 })).length, 0);
   });
 
   test('ignores notification from incorrect sender', async () => {
@@ -411,6 +412,6 @@ describe('token metadata notifications', () => {
         .build()
     );
 
-    await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(0);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 1 })).length, 0);
   });
 });

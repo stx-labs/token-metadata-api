@@ -4,7 +4,7 @@
     {
       "label": "npm: testenv:run",
       "type": "shell",
-      "command": "npm run testenv:run -- -d",
+      "command": "npm run testenv:run",
       "isBackground": true,
       "problemMatcher": [
         {

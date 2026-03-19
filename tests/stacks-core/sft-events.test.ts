@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, uintCV } from '@stacks/transactions';
 import { DbSipNumber, DbTokenType } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -69,10 +70,10 @@ describe('sft events', () => {
     );
 
     const token = await db.getToken({ id: 1 });
-    expect(token?.type).toBe(DbTokenType.sft);
-    expect(token?.token_number).toBe('3');
+    assert.strictEqual(token?.type, DbTokenType.sft);
+    assert.strictEqual(token?.token_number, '3');
     const jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].token_id).toBe(1);
+    assert.strictEqual(jobs.length, 1);
+    assert.strictEqual(jobs[0].token_id, 1);
   });
 });

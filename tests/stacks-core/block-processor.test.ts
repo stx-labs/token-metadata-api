@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, uintCV, stringUtf8CV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -42,7 +43,7 @@ describe('block processor', () => {
           )
           .build()
       );
-      await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+      assert.deepStrictEqual(await db.core.getChainTip(db.sql), {
         index_block_hash: '0x000001',
         block_height: 100,
         canonical: true,
@@ -63,7 +64,7 @@ describe('block processor', () => {
           )
           .build()
       );
-      await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+      assert.deepStrictEqual(await db.core.getChainTip(db.sql), {
         index_block_hash: '0x000002',
         block_height: 101,
         canonical: true,
@@ -134,7 +135,7 @@ describe('block processor', () => {
       );
 
       const job = await db.getJob({ id: 2 });
-      expect(job?.status).toBe('pending');
+      assert.strictEqual(job?.status, 'pending');
     });
 
     test('enqueues dynamic tokens for refresh with ttl', async () => {
@@ -201,7 +202,7 @@ describe('block processor', () => {
       );
 
       const job = await db.getJob({ id: 2 });
-      expect(job?.status).toBe('pending');
+      assert.strictEqual(job?.status, 'pending');
     });
   });
 });

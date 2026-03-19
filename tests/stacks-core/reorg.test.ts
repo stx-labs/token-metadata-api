@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, uintCV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -141,7 +142,7 @@ describe('re-org handling', () => {
       // FT contracts need their token record created before supply deltas can be tracked
       if (i === 5) {
         const ftContract = await db.getSmartContract({ principal: ftContractId });
-        expect(ftContract).not.toBeUndefined();
+        assert.notStrictEqual(ftContract, undefined);
         if (ftContract) {
           await db.core.insertAndEnqueueSequentialTokens(db.sql, {
             smart_contract: ftContract,
@@ -154,7 +155,7 @@ describe('re-org handling', () => {
     }
 
     // Verify state before reorg
-    await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+    assert.deepStrictEqual(await db.core.getChainTip(db.sql), {
       index_block_hash: '0x00001e', // Block 30
       block_height: 30,
       canonical: true,
@@ -163,21 +164,21 @@ describe('re-org handling', () => {
 
     // Verify FT contract exists
     const ftContract = await db.getSmartContract({ principal: ftContractId });
-    expect(ftContract).not.toBeUndefined();
-    expect(ftContract?.sip).toBe(DbSipNumber.sip010);
+    assert.notStrictEqual(ftContract, undefined);
+    assert.strictEqual(ftContract?.sip, DbSipNumber.sip010);
 
     // Verify NFT contract exists
     const nftContract = await db.getSmartContract({ principal: nftContractId });
-    expect(nftContract).not.toBeUndefined();
-    expect(nftContract?.sip).toBe(DbSipNumber.sip009);
+    assert.notStrictEqual(nftContract, undefined);
+    assert.strictEqual(nftContract?.sip, DbSipNumber.sip009);
 
     // Verify NFT tokens exist (3 tokens: #1, #2, #3)
     const nftToken1 = await db.getToken({ id: 2 });
     const nftToken2 = await db.getToken({ id: 3 });
     const nftToken3 = await db.getToken({ id: 4 });
-    expect(nftToken1).not.toBeUndefined();
-    expect(nftToken2).not.toBeUndefined();
-    expect(nftToken3).not.toBeUndefined();
+    assert.notStrictEqual(nftToken1, undefined);
+    assert.notStrictEqual(nftToken2, undefined);
+    assert.notStrictEqual(nftToken3, undefined);
 
     // Verify notifications exist
     // Block 24: dynamic notification applied to 2 existing NFT tokens (tokens #1, #2)
@@ -185,7 +186,7 @@ describe('re-org handling', () => {
     const notificationsBefore = await db.sql`
       SELECT * FROM update_notifications WHERE canonical = true ORDER BY block_height
     `;
-    expect(notificationsBefore.length).toBe(5); // 2 (block 24) + 3 (block 29)
+    assert.strictEqual(notificationsBefore.length, 5); // 2 (block 24) + 3 (block 29)
 
     // Verify jobs exist for all NFT tokens (including token #3 which will be reverted) Jobs: FT
     // contract job, NFT contract job, FT token job, NFT token #1 job, NFT token #2 job, NFT token
@@ -193,10 +194,10 @@ describe('re-org handling', () => {
     const jobsBefore = await db.sql<{ id: number; token_id: number | null }[]>`
       SELECT id, token_id FROM jobs ORDER BY id
     `;
-    expect(jobsBefore.length).toBe(7);
+    assert.strictEqual(jobsBefore.length, 7);
     // Verify job for NFT token #3 exists (token_id = 4)
     const nftToken3JobBefore = jobsBefore.find(j => j.token_id === 4);
-    expect(nftToken3JobBefore).not.toBeUndefined();
+    assert.notStrictEqual(nftToken3JobBefore, undefined);
   });
 
   afterAll(async () => {
@@ -222,7 +223,7 @@ describe('re-org handling', () => {
     );
 
     // Verify chain tip is now at the new block 26
-    await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+    assert.deepStrictEqual(await db.core.getChainTip(db.sql), {
       index_block_hash: '0x0000ff',
       block_height: 26,
       canonical: true,
@@ -231,37 +232,37 @@ describe('re-org handling', () => {
 
     // Verify contracts still exist (deployed before reorg point)
     const ftContractAfter = await db.getSmartContract({ principal: ftContractId });
-    expect(ftContractAfter).not.toBeUndefined();
+    assert.notStrictEqual(ftContractAfter, undefined);
 
     const nftContractAfter = await db.getSmartContract({ principal: nftContractId });
-    expect(nftContractAfter).not.toBeUndefined();
+    assert.notStrictEqual(nftContractAfter, undefined);
 
     // Verify NFT token #3 (minted at block 27) is reverted
     const nftToken1After = await db.getToken({ id: 2 });
     const nftToken2After = await db.getToken({ id: 3 });
     const nftToken3After = await db.getToken({ id: 4 });
-    expect(nftToken1After).not.toBeUndefined(); // Still exists (block 18)
-    expect(nftToken2After).not.toBeUndefined(); // Still exists (block 22)
-    expect(nftToken3After).toBeUndefined(); // Reverted (block 27)
+    assert.notStrictEqual(nftToken1After, undefined); // Still exists (block 18)
+    assert.notStrictEqual(nftToken2After, undefined); // Still exists (block 22)
+    assert.strictEqual(nftToken3After, undefined); // Reverted (block 27)
 
     // Verify notifications: frozen notification at block 29 should be reverted
     // Only dynamic notification at block 24 should remain
     const notificationsAfter = await db.sql`
       SELECT * FROM update_notifications WHERE canonical = true ORDER BY block_height
     `;
-    expect(notificationsAfter.length).toBe(2); // Only dynamic notification (x 2 tokens)
+    assert.strictEqual(notificationsAfter.length, 2); // Only dynamic notification (x 2 tokens)
     for (const notification of notificationsAfter) {
-      expect(notification.update_mode).toBe('dynamic');
-      expect(notification.block_height).toBe(24);
+      assert.strictEqual(notification.update_mode, 'dynamic');
+      assert.strictEqual(notification.block_height, 24);
     }
 
     // Verify blocks 26-30 are non-canonical
     const blocksAfter = await db.sql<{ block_height: number }[]>`
       SELECT block_height FROM blocks WHERE canonical = true ORDER BY block_height
     `;
-    expect(blocksAfter.length).toBe(26); // Blocks 1-25 + new block 26
+    assert.strictEqual(blocksAfter.length, 26); // Blocks 1-25 + new block 26
     const maxBlockHeight = Math.max(...blocksAfter.map(b => b.block_height));
-    expect(maxBlockHeight).toBe(26);
+    assert.strictEqual(maxBlockHeight, 26);
   });
 
   test('continues previous canonical chain segment', async () => {
@@ -285,7 +286,7 @@ describe('re-org handling', () => {
     );
 
     // Verify chain tip is now at the new block 31
-    await expect(db.core.getChainTip(db.sql)).resolves.toStrictEqual({
+    assert.deepStrictEqual(await db.core.getChainTip(db.sql), {
       index_block_hash: '0x00001f',
       block_height: 31,
       canonical: true,
@@ -294,21 +295,21 @@ describe('re-org handling', () => {
 
     // Verify FT contract exists
     const ftContract = await db.getSmartContract({ principal: ftContractId });
-    expect(ftContract).not.toBeUndefined();
-    expect(ftContract?.sip).toBe(DbSipNumber.sip010);
+    assert.notStrictEqual(ftContract, undefined);
+    assert.strictEqual(ftContract?.sip, DbSipNumber.sip010);
 
     // Verify NFT contract exists
     const nftContract = await db.getSmartContract({ principal: nftContractId });
-    expect(nftContract).not.toBeUndefined();
-    expect(nftContract?.sip).toBe(DbSipNumber.sip009);
+    assert.notStrictEqual(nftContract, undefined);
+    assert.strictEqual(nftContract?.sip, DbSipNumber.sip009);
 
     // Verify NFT tokens exist (3 tokens: #1, #2, #3)
     const nftToken1 = await db.getToken({ id: 2 });
     const nftToken2 = await db.getToken({ id: 3 });
     const nftToken3 = await db.getToken({ id: 4 });
-    expect(nftToken1).not.toBeUndefined();
-    expect(nftToken2).not.toBeUndefined();
-    expect(nftToken3).not.toBeUndefined();
+    assert.notStrictEqual(nftToken1, undefined);
+    assert.notStrictEqual(nftToken2, undefined);
+    assert.notStrictEqual(nftToken3, undefined);
 
     // Verify notifications exist
     // Block 24: dynamic notification applied to 2 existing NFT tokens (tokens #1, #2)
@@ -316,12 +317,18 @@ describe('re-org handling', () => {
     const notificationsBefore = await db.sql`
       SELECT * FROM update_notifications WHERE canonical = true ORDER BY block_height
     `;
-    expect(notificationsBefore.length).toBe(5); // 2 (block 24) + 3 (block 29)
+    assert.strictEqual(notificationsBefore.length, 5); // 2 (block 24) + 3 (block 29)
 
     // Jobs for NFT #3 and FT supply should be re-enqueued.
     const jobsAfter = await db.getPendingJobBatch({ limit: 10 });
-    expect(jobsAfter.length).toBe(2);
-    expect(jobsAfter.find(j => j.token_id === 4)).toBeDefined();
-    expect(jobsAfter.find(j => j.token_supply_id === 1)).toBeDefined();
+    assert.strictEqual(jobsAfter.length, 2);
+    assert.notStrictEqual(
+      jobsAfter.find(j => j.token_id === 4),
+      undefined
+    );
+    assert.notStrictEqual(
+      jobsAfter.find(j => j.token_supply_id === 1),
+      undefined
+    );
   });
 });

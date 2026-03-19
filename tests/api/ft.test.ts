@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -30,8 +31,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(404);
-    expect(response.json().error).toMatch(/Contract not found/);
+    assert.strictEqual(response.statusCode, 404);
+    assert.match(response.json().error, /Contract not found/);
   });
 
   test('token not found', async () => {
@@ -44,8 +45,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(404);
-    expect(response.json().error).toMatch(/Token not found/);
+    assert.strictEqual(response.statusCode, 404);
+    assert.match(response.json().error, /Token not found/);
   });
 
   test('token not processed', async () => {
@@ -59,8 +60,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json()).toStrictEqual({ error: 'Token metadata fetch in progress' });
+    assert.strictEqual(response.statusCode, 422);
+    assert.deepStrictEqual(response.json(), { error: 'Token metadata fetch in progress' });
   });
 
   test('invalid contract', async () => {
@@ -75,8 +76,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json().message).toMatch(/Clarity error/);
+    assert.strictEqual(response.statusCode, 422);
+    assert.match(response.json().message, /Clarity error/);
   });
 
   test('invalid token metadata', async () => {
@@ -91,8 +92,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json().message).toMatch(/Metadata could not be parsed/);
+    assert.strictEqual(response.statusCode, 422);
+    assert.match(response.json().message, /Metadata could not be parsed/);
   });
 
   test('locale not found', async () => {
@@ -134,8 +135,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world?locale=es',
     });
-    expect(response.statusCode).toBe(422);
-    expect(response.json()).toStrictEqual({ error: 'Locale not found' });
+    assert.strictEqual(response.statusCode, 422);
+    assert.deepStrictEqual(response.json(), { error: 'Locale not found' });
   });
 
   test('empty metadata locales', async () => {
@@ -161,8 +162,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({
+    assert.strictEqual(response.statusCode, 200);
+    assert.deepStrictEqual(response.json(), {
       decimals: 6,
       name: 'hello-world',
       symbol: 'HELLO',
@@ -235,8 +236,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toStrictEqual({
+    assert.strictEqual(response.statusCode, 200);
+    assert.deepStrictEqual(response.json(), {
       name: 'hello-world',
       symbol: 'HELLO',
       token_uri: 'http://test.com/uri.json',
@@ -278,8 +279,8 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toEqual(noVersionResponse.statusCode);
-    expect(response.json()).toStrictEqual(noVersionResponse.json());
+    assert.strictEqual(response.statusCode, noVersionResponse.statusCode);
+    assert.deepStrictEqual(response.json(), noVersionResponse.json());
 
     // Test with canonical = false
     await db.sql`UPDATE tokens SET canonical = false WHERE id = 1`;
@@ -287,7 +288,7 @@ describe('FT routes', () => {
       method: 'GET',
       url: '/metadata/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response2.statusCode).toBe(404);
+    assert.strictEqual(response2.statusCode, 404);
   });
 
   describe('index', () => {
@@ -376,10 +377,10 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft',
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const json = response.json();
-      expect(json.total).toBe(3);
-      expect(json.results[0]).toStrictEqual({
+      assert.strictEqual(json.total, 3);
+      assert.deepStrictEqual(json.results[0], {
         decimals: 5,
         description: 'Meme',
         image_canonical_uri: 'http://img.com/meme.jpg',
@@ -393,7 +394,7 @@ describe('FT routes', () => {
         tx_id: '0xbdc41843d5e0cd4a70611f6badeb5c87b07b12309e77c4fbaf2334c7b4cee89b',
         contract_principal: 'SP22PCWZ9EJMHV4PHVS0C8H3B3E4Q079ZHY6CXDS1.meme-token',
       });
-      expect(json.results[1]).toStrictEqual({
+      assert.deepStrictEqual(json.results[1], {
         decimals: 6,
         description: 'A CityCoin for Miami, ticker is MIA, Stack it to earn Stacks (STX)',
         image_canonical_uri: 'https://cdn.citycoins.co/logos/miamicoin.png',
@@ -407,7 +408,7 @@ describe('FT routes', () => {
         tx_id: '0xa80a44790929467693ccb33a212cf50878a6ad572c4c5b8e7d9a5de794fbefa2',
         contract_principal: 'SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2',
       });
-      expect(json.results[2]).toStrictEqual({
+      assert.deepStrictEqual(json.results[2], {
         decimals: 6,
         description: 'StackSwap Project',
         image_canonical_uri: 'https://app.stackswap.org/icon/stsw.svg',
@@ -429,27 +430,27 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?name=miami', // Partial match
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const json = response.json();
-      expect(json.total).toBe(1);
-      expect(json.results[0].symbol).toBe('MIA');
+      assert.strictEqual(json.total, 1);
+      assert.strictEqual(json.results[0].symbol, 'MIA');
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?name=nothing', // No match
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(0);
+      assert.strictEqual(json2.total, 0);
 
       const response3 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?name=Miami', // Case insensitive
       });
-      expect(response3.statusCode).toBe(200);
+      assert.strictEqual(response3.statusCode, 200);
       const json3 = response3.json();
-      expect(json3.total).toBe(1);
-      expect(json3.results[0].symbol).toBe('MIA');
+      assert.strictEqual(json3.total, 1);
+      assert.strictEqual(json3.results[0].symbol, 'MIA');
 
       // Test a token without SIP-16 metadata
       await insertFt(
@@ -467,10 +468,10 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?name=scam',
       });
-      expect(response4.statusCode).toBe(200);
+      assert.strictEqual(response4.statusCode, 200);
       const json4 = response4.json();
-      expect(json4.total).toBe(1);
-      expect(json4.results[0].symbol).toBe('rstSTX');
+      assert.strictEqual(json4.total, 1);
+      assert.strictEqual(json4.results[0].symbol, 'rstSTX');
     });
 
     test('filters by valid metadata', async () => {
@@ -491,17 +492,17 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft',
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const json = response.json();
-      expect(json.total).toBe(4);
+      assert.strictEqual(json.total, 4);
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?valid_metadata_only=true',
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(3);
+      assert.strictEqual(json2.total, 3);
     });
 
     test('filters by symbol', async () => {
@@ -510,27 +511,27 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?symbol=MIA',
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const json = response.json();
-      expect(json.total).toBe(1);
-      expect(json.results[0].symbol).toBe('MIA');
+      assert.strictEqual(json.total, 1);
+      assert.strictEqual(json.results[0].symbol, 'MIA');
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?symbol=nothing', // No match
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(0);
+      assert.strictEqual(json2.total, 0);
 
       const response3 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?symbol=mia', // Case insensitive
       });
-      expect(response3.statusCode).toBe(200);
+      assert.strictEqual(response3.statusCode, 200);
       const json3 = response3.json();
-      expect(json3.total).toBe(1);
-      expect(json3.results[0].symbol).toBe('MIA');
+      assert.strictEqual(json3.total, 1);
+      assert.strictEqual(json3.results[0].symbol, 'MIA');
     });
 
     test('filters by address', async () => {
@@ -539,18 +540,18 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?address=SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R',
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const json = response.json();
-      expect(json.total).toBe(1);
-      expect(json.results[0].symbol).toBe('MIA');
+      assert.strictEqual(json.total, 1);
+      assert.strictEqual(json.results[0].symbol, 'MIA');
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?address=SP1GK6VGCQQGP1PXH5676BY0334CZC41EAA7K1EK3', // No match
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(0);
+      assert.strictEqual(json2.total, 0);
     });
 
     test('sorts by name', async () => {
@@ -559,23 +560,23 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?order_by=name&order=asc',
       });
-      expect(response1.statusCode).toBe(200);
+      assert.strictEqual(response1.statusCode, 200);
       const json1 = response1.json();
-      expect(json1.total).toBe(3);
-      expect(json1.results[0].symbol).toBe('MEME');
-      expect(json1.results[1].symbol).toBe('MIA');
-      expect(json1.results[2].symbol).toBe('STSW');
+      assert.strictEqual(json1.total, 3);
+      assert.strictEqual(json1.results[0].symbol, 'MEME');
+      assert.strictEqual(json1.results[1].symbol, 'MIA');
+      assert.strictEqual(json1.results[2].symbol, 'STSW');
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?order_by=name&order=desc',
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(3);
-      expect(json2.results[0].symbol).toBe('STSW');
-      expect(json2.results[1].symbol).toBe('MIA');
-      expect(json2.results[2].symbol).toBe('MEME');
+      assert.strictEqual(json2.total, 3);
+      assert.strictEqual(json2.results[0].symbol, 'STSW');
+      assert.strictEqual(json2.results[1].symbol, 'MIA');
+      assert.strictEqual(json2.results[2].symbol, 'MEME');
     });
 
     test('sorts by symbol', async () => {
@@ -584,23 +585,23 @@ describe('FT routes', () => {
         method: 'GET',
         url: '/metadata/ft?order_by=symbol&order=asc',
       });
-      expect(response1.statusCode).toBe(200);
+      assert.strictEqual(response1.statusCode, 200);
       const json1 = response1.json();
-      expect(json1.total).toBe(3);
-      expect(json1.results[0].symbol).toBe('MEME');
-      expect(json1.results[1].symbol).toBe('MIA');
-      expect(json1.results[2].symbol).toBe('STSW');
+      assert.strictEqual(json1.total, 3);
+      assert.strictEqual(json1.results[0].symbol, 'MEME');
+      assert.strictEqual(json1.results[1].symbol, 'MIA');
+      assert.strictEqual(json1.results[2].symbol, 'STSW');
 
       const response2 = await fastify.inject({
         method: 'GET',
         url: '/metadata/ft?order_by=symbol&order=desc',
       });
-      expect(response2.statusCode).toBe(200);
+      assert.strictEqual(response2.statusCode, 200);
       const json2 = response2.json();
-      expect(json2.total).toBe(3);
-      expect(json2.results[0].symbol).toBe('STSW');
-      expect(json2.results[1].symbol).toBe('MIA');
-      expect(json2.results[2].symbol).toBe('MEME');
+      assert.strictEqual(json2.total, 3);
+      assert.strictEqual(json2.results[0].symbol, 'STSW');
+      assert.strictEqual(json2.results[1].symbol, 'MIA');
+      assert.strictEqual(json2.results[2].symbol, 'MEME');
     });
   });
 });

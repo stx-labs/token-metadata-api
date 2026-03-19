@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -52,8 +53,8 @@ describe('UpdateTokenSupplyJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.total_supply).toBe('1997500000000');
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.total_supply, '1997500000000');
     });
 
     test('accepts FTs with incorrect total supply return type', async () => {
@@ -78,8 +79,8 @@ describe('UpdateTokenSupplyJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.total_supply).toBeNull();
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.total_supply, null);
     });
   });
 
@@ -122,8 +123,8 @@ describe('UpdateTokenSupplyJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.total_supply).toBe('200200200');
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.total_supply, '200200200');
     });
   });
 });

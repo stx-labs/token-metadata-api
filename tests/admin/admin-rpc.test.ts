@@ -1,3 +1,5 @@
+import { strict as assert } from 'node:assert';
+import { mock } from 'node:test';
 import * as imageCache from '../../src/token-processor/images/image-cache';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { buildAdminRpcServer } from '../../src/admin-rpc/init';
@@ -50,11 +52,11 @@ describe('Admin RPC', () => {
         }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
 
       const jobs = await db.getPendingJobBatch({ limit: 2 });
-      expect(jobs.length).toBe(1);
-      expect(jobs[0].token_id).toBe(inputJobs[0].token_id);
+      assert.strictEqual(jobs.length, 1);
+      assert.strictEqual(jobs[0].token_id, inputJobs[0].token_id);
     });
 
     test('refreshes all tokens', async () => {
@@ -74,12 +76,12 @@ describe('Admin RPC', () => {
         }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
 
       const jobs = await db.getPendingJobBatch({ limit: 2 });
-      expect(jobs.length).toBe(2);
-      expect(jobs[0].token_id).toBe(inputJobs[0].token_id);
-      expect(jobs[1].token_id).toBe(inputJobs[1].token_id);
+      assert.strictEqual(jobs.length, 2);
+      assert.strictEqual(jobs[0].token_id, inputJobs[0].token_id);
+      assert.strictEqual(jobs[1].token_id, inputJobs[1].token_id);
     });
 
     test('fails on non-existing contract', async () => {
@@ -91,8 +93,8 @@ describe('Admin RPC', () => {
         }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(422);
-      expect(JSON.parse(response.body).error).toMatch(/Contract not found/);
+      assert.strictEqual(response.statusCode, 422);
+      assert.match(JSON.parse(response.body).error, /Contract not found/);
     });
   });
 
@@ -112,11 +114,11 @@ describe('Admin RPC', () => {
         payload: JSON.stringify({ tokenId: 1 }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
 
       const jobs = await db.getPendingJobBatch({ limit: 2 });
-      expect(jobs.length).toBe(1);
-      expect(jobs[0].token_supply_id).toBe(1);
+      assert.strictEqual(jobs.length, 1);
+      assert.strictEqual(jobs[0].token_supply_id, 1);
     });
 
     test('fails on non-existing token', async () => {
@@ -126,8 +128,8 @@ describe('Admin RPC', () => {
         payload: JSON.stringify({ tokenId: 1 }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(422);
-      expect(JSON.parse(response.body).error).toMatch(/Token not found/);
+      assert.strictEqual(response.statusCode, 422);
+      assert.match(JSON.parse(response.body).error, /Token not found/);
     });
   });
 
@@ -149,20 +151,16 @@ describe('Admin RPC', () => {
         payload: JSON.stringify({}),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
 
       const jobs = await db.getPendingJobBatch({ limit: 2 });
-      expect(jobs.length).toBe(2);
+      assert.strictEqual(jobs.length, 2);
     });
   });
 
   describe('/cache-images', () => {
     test('reprocesses token images', async () => {
-      const spy = jest
-        .spyOn(imageCache, 'reprocessTokenImageCache')
-        .mockImplementation((a, b, c) => {
-          return Promise.resolve();
-        });
+      const spy = mock.method(imageCache, 'reprocessTokenImageCache', () => Promise.resolve());
 
       ENV.IMAGE_CACHE_PROCESSOR_ENABLED = true;
       const principal = 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world';
@@ -203,10 +201,10 @@ describe('Admin RPC', () => {
         }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
 
-      expect(spy).toHaveBeenCalledTimes(1);
-      spy.mockRestore();
+      assert.strictEqual(spy.mock.callCount(), 1);
+      spy.mock.restore();
     });
 
     test('rejects when image cache is disabled', async () => {
@@ -249,7 +247,7 @@ describe('Admin RPC', () => {
         }),
         headers: { 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(422);
+      assert.strictEqual(response.statusCode, 422);
     });
   });
 
@@ -283,8 +281,8 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json().error).toBe('Contract not found');
+      assert.strictEqual(response.statusCode, 422);
+      assert.strictEqual(response.json().error, 'Contract not found');
     });
 
     test('fails if contract is not a token contract', async () => {
@@ -313,8 +311,8 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json().error).toBe('Not a token contract');
+      assert.strictEqual(response.statusCode, 422);
+      assert.strictEqual(response.json().error, 'Not a token contract');
     });
 
     test('fails if contract does not have abi', async () => {
@@ -343,8 +341,8 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json().error).toBe('Contract does not have an interface');
+      assert.strictEqual(response.statusCode, 422);
+      assert.strictEqual(response.json().error, 'Contract does not have an interface');
     });
 
     test('fails if transaction is not found', async () => {
@@ -382,8 +380,8 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json().error).toBe('Contract deploy transaction not found');
+      assert.strictEqual(response.statusCode, 422);
+      assert.strictEqual(response.json().error, 'Contract deploy transaction not found');
     });
 
     test('fails if block is not found', async () => {
@@ -428,8 +426,8 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json().error).toBe('Contract deploy block not found');
+      assert.strictEqual(response.statusCode, 422);
+      assert.strictEqual(response.json().error, 'Contract deploy block not found');
     });
 
     test('successfully enqueues contract', async () => {
@@ -480,11 +478,12 @@ describe('Admin RPC', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      expect(response.statusCode).toBe(200);
+      assert.strictEqual(response.statusCode, 200);
       const dbContract = await db.getSmartContract({ id: 1 });
-      expect(dbContract?.sip).toBe(DbSipNumber.sip010);
-      expect(dbContract?.principal).toBe(principal);
-      await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(1);
+      assert.strictEqual(dbContract?.sip, DbSipNumber.sip010);
+      assert.strictEqual(dbContract?.principal, principal);
+      const pendingJobs = await db.getPendingJobBatch({ limit: 1 });
+      assert.strictEqual(pendingJobs.length, 1);
     });
   });
 });

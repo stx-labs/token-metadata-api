@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { ENV } from '../../src/env';
 import { processImageCache } from '../../src/token-processor/images/image-cache';
 import { closeTestServer, startTestResponseServer, startTimeoutServer } from '../helpers';
@@ -20,7 +21,8 @@ describe('Image cache', () => {
   test('throws image fetch timeout error', async () => {
     ENV.METADATA_FETCH_TIMEOUT_MS = 50;
     const timeoutServer = await startTimeoutServer(100);
-    await expect(processImageCache(timeoutServer.url, contract, tokenNumber)).rejects.toThrow(
+    await assert.rejects(
+      processImageCache(timeoutServer.url, contract, tokenNumber),
       ImageTimeoutError
     );
     await closeTestServer(timeoutServer.server);
@@ -28,7 +30,8 @@ describe('Image cache', () => {
 
   test('throws rate limit error', async () => {
     const responseServer = await startTestResponseServer('rate limit exceeded', 429);
-    await expect(processImageCache(responseServer.url, contract, tokenNumber)).rejects.toThrow(
+    await assert.rejects(
+      processImageCache(responseServer.url, contract, tokenNumber),
       TooManyRequestsHttpError
     );
     await closeTestServer(responseServer.server);
@@ -36,7 +39,8 @@ describe('Image cache', () => {
 
   test('throws other server errors', async () => {
     const responseServer = await startTestResponseServer('not found', 404);
-    await expect(processImageCache(responseServer.url, contract, tokenNumber)).rejects.toThrow(
+    await assert.rejects(
+      processImageCache(responseServer.url, contract, tokenNumber),
       ImageHttpError
     );
     await closeTestServer(responseServer.server);
