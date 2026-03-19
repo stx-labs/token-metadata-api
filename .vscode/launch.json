@@ -4,7 +4,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run",
+      "name": "start",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -23,7 +23,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run: readonly",
+      "name": "start: readonly",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -43,7 +43,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run: writeonly",
+      "name": "start: writeonly",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -63,7 +63,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Node Test",
+      "name": "test",
       "runtimeExecutable": "node",
       "args": [
         "--import",
@@ -77,11 +77,14 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Node Test: Admin",
+      "name": "test: admin",
       "runtimeExecutable": "node",
       "args": [
         "--import",
@@ -96,11 +99,14 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Node Test: API",
+      "name": "test: api",
       "runtimeExecutable": "node",
       "args": [
         "--import",
@@ -115,11 +121,14 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Node Test: Stacks Core",
+      "name": "test: stacks-core",
       "runtimeExecutable": "node",
       "args": [
         "--import",
@@ -134,11 +143,14 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Node Test: Token Queue",
+      "name": "test: token-queue",
       "runtimeExecutable": "node",
       "args": [
         "--import",
@@ -153,6 +165,9 @@
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
   ]
 }
