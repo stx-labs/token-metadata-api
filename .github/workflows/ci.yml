@@ -97,12 +97,6 @@ jobs:
       - name: Install deps
         run: npm ci --audit=false
 
-      - name: Setup integration environment
-        run: |
-          sudo ufw disable
-          npm run testenv:run
-          npm run testenv:logs -- --no-color &> docker-testenv-logs.txt &
-
       - name: Run tests
         run: npm run test:${{ matrix.suite }} -- --test-coverage
 
@@ -110,14 +104,6 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Print integration environment logs
-        run: cat docker-testenv-logs.txt
-        if: failure()
-
-      - name: Teardown integration environment
-        run: npm run testenv:stop
-        if: always()
 
   version:
     runs-on: ubuntu-latest
