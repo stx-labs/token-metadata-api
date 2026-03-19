@@ -7,7 +7,7 @@ import { RetryableJobError } from '../../src/token-processor/queue/errors';
 import { Job } from '../../src/token-processor/queue/job/job';
 import { UserError } from '../../src/token-processor/util/errors';
 import { insertAndEnqueueTestContract } from '../helpers';
-import { afterEach, beforeEach } from 'node:test';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 class TestRetryableJob extends Job {
   description(): string {

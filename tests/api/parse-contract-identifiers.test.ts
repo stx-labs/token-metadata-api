@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { parseContractIdentifiers } from '../../src/api/util/helpers';
+import { describe, test } from 'node:test';
 
 describe('parseContractIdentifiers', () => {
   test('principal only defaults to token_number 1', () => {

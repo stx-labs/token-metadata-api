@@ -8,6 +8,7 @@ import {
   getTokenSpecificUri,
   fetchMetadata,
 } from '../../src/token-processor/util/metadata-helpers';
+import { describe, test } from 'node:test';
 
 describe('Metadata Helpers', () => {
   test('performs timed and limited request', async () => {

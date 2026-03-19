@@ -3,14 +3,14 @@ import { strict as assert } from 'node:assert';
 import * as net from 'node:net';
 import Docker from 'dockerode';
 
-const IMAGE = process.env.TESTENV_POSTGRES_IMAGE ?? 'postgres:15';
-const CONTAINER_NAME = process.env.TESTENV_POSTGRES_CONTAINER ?? 'token-metadata-api-test-postgres';
-const HOST = process.env.TESTENV_POSTGRES_HOST ?? '127.0.0.1';
-const PORT = Number(process.env.TESTENV_POSTGRES_PORT ?? 5432);
-const USER = process.env.TESTENV_POSTGRES_USER ?? 'postgres';
-const PASSWORD = process.env.TESTENV_POSTGRES_PASSWORD ?? 'postgres';
-const DATABASE = process.env.TESTENV_POSTGRES_DB ?? 'postgres';
-const STARTUP_TIMEOUT_MS = Number(process.env.TESTENV_POSTGRES_TIMEOUT_MS ?? 120_000);
+const IMAGE = 'postgres:17';
+const CONTAINER_NAME = 'token-metadata-api-test-postgres';
+const HOST = '127.0.0.1';
+const PORT = 5432;
+const USER = 'postgres';
+const PASSWORD = 'postgres';
+const DATABASE = 'postgres';
+const STARTUP_TIMEOUT_MS = 120_000;
 
 function createDockerClient(): Docker {
   if (process.env.DOCKER_HOST) {
@@ -18,7 +18,7 @@ function createDockerClient(): Docker {
     return new Docker({
       host: dockerHost.hostname,
       port: Number(dockerHost.port),
-      protocol: dockerHost.protocol.replace(':', ''),
+      protocol: dockerHost.protocol.replace(':', '') as 'http' | 'https' | 'ssh',
     });
   }
   return new Docker({ socketPath: process.env.DOCKER_SOCKET_PATH ?? '/var/run/docker.sock' });
@@ -133,7 +133,7 @@ async function waitForPort(): Promise<void> {
   throw new Error(`timed out waiting for postgres on ${HOST}:${PORT}`);
 }
 
-async function runUp(): Promise<void> {
+export async function runUp(): Promise<void> {
   const docker = createDockerClient();
   await pullImageIfMissing(docker);
   await ensureContainerRunning(docker);
@@ -141,7 +141,7 @@ async function runUp(): Promise<void> {
   process.stdout.write(`[testenv] postgres ready on ${HOST}:${PORT}\n`);
 }
 
-async function runDown(): Promise<void> {
+export async function runDown(): Promise<void> {
   const docker = createDockerClient();
   const container = await getContainer(docker);
   if (!container) {
@@ -164,24 +164,26 @@ async function runLogs(argv: string[]): Promise<void> {
   if (!container) {
     throw new Error(`container ${CONTAINER_NAME} not found`);
   }
-  const stream = await container.logs({
+  if (follow) {
+    const logStream = await container.logs({
+      stdout: true,
+      stderr: true,
+      follow: true,
+      timestamps: true,
+      tail: 200,
+    });
+    container.modem.demuxStream(logStream, process.stdout, process.stderr);
+    await streamToPromise(logStream);
+    return;
+  }
+  const output = await container.logs({
     stdout: true,
     stderr: true,
-    follow,
+    follow: false,
     timestamps: true,
     tail: 200,
   });
-  if (stream instanceof Buffer) {
-    process.stdout.write(stream.toString('utf8'));
-    return;
-  }
-  const logStream = stream as NodeJS.ReadableStream;
-  container.modem.demuxStream(logStream, process.stdout, process.stderr);
-  if (follow) {
-    await streamToPromise(logStream);
-  } else {
-    logStream.destroy();
-  }
+  process.stdout.write(output.toString('utf8'));
 }
 
 async function main(): Promise<void> {
@@ -201,8 +203,11 @@ async function main(): Promise<void> {
   throw new Error(`unsupported command: ${command}`);
 }
 
-void main().catch(error => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`[testenv] ${message}\n`);
-  process.exitCode = 1;
-});
+// Only run CLI when invoked directly (not when loaded via --import)
+if (process.argv[1]?.includes('setup.ts') || process.argv[1]?.includes('setup.js')) {
+  void main().catch(error => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`[testenv] ${message}\n`);
+    process.exitCode = 1;
+  });
+}
