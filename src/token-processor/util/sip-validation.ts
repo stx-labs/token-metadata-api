@@ -246,7 +246,7 @@ function findFunction(fun: ClarityAbiFunction, functionList: ClarityAbiFunction[
     if (standardFunction.name !== fun.name || standardFunction.args.length !== fun.args.length)
       return false;
     for (let i = 0; i < fun.args.length; i++) {
-      if (standardFunction.args[i].type.toString() !== fun.args[i].type.toString()) {
+      if (JSON.stringify(standardFunction.args[i].type) !== JSON.stringify(fun.args[i].type)) {
         return false;
       }
     }

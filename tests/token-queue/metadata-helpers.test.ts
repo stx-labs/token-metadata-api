@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { ENV } from '../../src/env';
 import { MetadataHttpError, MetadataParseError } from '../../src/token-processor/util/errors';
@@ -7,6 +8,7 @@ import {
   getTokenSpecificUri,
   fetchMetadata,
 } from '../../src/token-processor/util/metadata-helpers';
+import { describe, test } from 'node:test';
 
 describe('Metadata Helpers', () => {
   test('performs timed and limited request', async () => {
@@ -24,7 +26,7 @@ describe('Metadata Helpers', () => {
     setGlobalDispatcher(agent);
 
     const result = await fetchMetadata(url, 'ABCD.test', 1n);
-    expect(result).toBe('hello');
+    assert.strictEqual(result, 'hello');
   });
 
   test('throws on incorrect raw metadata schema', async () => {
@@ -39,7 +41,8 @@ describe('Metadata Helpers', () => {
       .reply(200, '[{"test-bad-json": true}]');
     setGlobalDispatcher(agent);
 
-    await expect(getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n)).rejects.toThrow(
+    await assert.rejects(
+      getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n),
       /JSON parse error/
     );
   });
@@ -57,7 +60,7 @@ describe('Metadata Helpers', () => {
       .reply(500, { message: 'server error' });
     setGlobalDispatcher(agent);
 
-    await expect(fetchMetadata(url, 'ABCD.test', 1n)).rejects.toThrow(MetadataHttpError);
+    await assert.rejects(fetchMetadata(url, 'ABCD.test', 1n), MetadataHttpError);
   });
 
   test('does not throw on raw metadata with null, stringable, or boolean values', async () => {
@@ -95,9 +98,7 @@ describe('Metadata Helpers', () => {
       .reply(200, crashPunks1);
     setGlobalDispatcher(agent);
 
-    await expect(
-      getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n)
-    ).resolves.not.toThrow();
+    await assert.doesNotReject(getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n));
   });
 
   test('throws when metadata does not contain a name', async () => {
@@ -116,7 +117,8 @@ describe('Metadata Helpers', () => {
       .reply(200, crashPunks1);
     setGlobalDispatcher(agent);
 
-    await expect(getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n)).rejects.toThrow(
+    await assert.rejects(
+      getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n),
       MetadataParseError
     );
   });
@@ -155,15 +157,16 @@ describe('Metadata Helpers', () => {
     setGlobalDispatcher(agent);
 
     const metadata = await getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n);
-    expect(metadata.name).toBe('Mutant Monkeys #27');
-    expect(metadata.image).toBe(
+    assert.strictEqual(metadata.name, 'Mutant Monkeys #27');
+    assert.strictEqual(
+      metadata.image,
       'https://byzantion.mypinata.cloud/ipfs/QmbNC9qvcYZugaeGeReDhyYiNH7oPzrCX1cZUnQeszFz4P'
     );
     const attributes = metadata.attributes;
-    expect(attributes).not.toBeUndefined();
+    assert.notStrictEqual(attributes, undefined);
     if (attributes) {
-      expect(attributes[0].trait_type).toBe('Background');
-      expect(attributes[0].value).toBe('MM1 Orange');
+      assert.strictEqual(attributes[0].trait_type, 'Background');
+      assert.strictEqual(attributes[0].value, 'MM1 Orange');
     }
   });
 
@@ -182,27 +185,30 @@ describe('Metadata Helpers', () => {
     setGlobalDispatcher(agent);
 
     const metadata = await getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n);
-    expect(metadata.name).toBe('Boombox [4th Edition]');
-    expect(metadata.description).toBe(
+    assert.strictEqual(metadata.name, 'Boombox [4th Edition]');
+    assert.strictEqual(
+      metadata.description,
       'The first ever Boombox to exist IRL, this art was created by 3D printing a model and photographing it under some very Boomerific lighting. 💥'
     );
-    expect(metadata.image).toBe(
+    assert.strictEqual(
+      metadata.image,
       'https://cloudflare-ipfs.com/ipfs/bafybeiggfn5e4k3lu23ibs3mgpfonsscr4nadwwkyflqk7xo5kepmfnwhu'
     );
     const properties = metadata.properties;
-    expect(properties).not.toBeUndefined();
+    assert.notStrictEqual(properties, undefined);
     if (properties) {
-      expect(properties['external_url'].display_type).toBe('url');
-      expect(properties['external_url'].trait_type).toBe('string');
-      expect(properties['external_url'].value).toBe(
+      assert.strictEqual(properties['external_url'].display_type, 'url');
+      assert.strictEqual(properties['external_url'].trait_type, 'string');
+      assert.strictEqual(
+        properties['external_url'].value,
         'https://app.sigle.io/boom.id.blockstack/tOja1EkEDtKlR5-CH9ogG'
       );
-      expect(properties['twitter_url'].display_type).toBe('url');
-      expect(properties['twitter_url'].trait_type).toBe('string');
-      expect(properties['twitter_url'].value).toBe('https://twitter.com/boom_wallet');
-      expect(properties['discord_url'].display_type).toBe('url');
-      expect(properties['discord_url'].trait_type).toBe('string');
-      expect(properties['discord_url'].value).toBe('https://discord.gg/4PhujhCGzB');
+      assert.strictEqual(properties['twitter_url'].display_type, 'url');
+      assert.strictEqual(properties['twitter_url'].trait_type, 'string');
+      assert.strictEqual(properties['twitter_url'].value, 'https://twitter.com/boom_wallet');
+      assert.strictEqual(properties['discord_url'].display_type, 'url');
+      assert.strictEqual(properties['discord_url'].trait_type, 'string');
+      assert.strictEqual(properties['discord_url'].value, 'https://discord.gg/4PhujhCGzB');
     }
   });
 
@@ -213,57 +219,64 @@ describe('Metadata Helpers', () => {
 
     const arweave = 'ar://II4z2ziYyqG7-kWDa98lWGfjxRdYOx9Zdld9P_I_kzE/9731.json';
     const fetch1 = getFetchableMetadataUrl(arweave);
-    expect(fetch1.url.toString()).toBe(
+    assert.strictEqual(
+      fetch1.url.toString(),
       'https://arweave.net/II4z2ziYyqG7-kWDa98lWGfjxRdYOx9Zdld9P_I_kzE/9731.json'
     );
-    expect(fetch1.gateway).toBe('arweave');
-    expect(fetch1.fetchHeaders).toBeUndefined();
+    assert.strictEqual(fetch1.gateway, 'arweave');
+    assert.strictEqual(fetch1.fetchHeaders, undefined);
 
     const ipfs =
       'ipfs://ipfs/bafybeifwoqwdhs5djtx6vopvuwfcdrqeuecayp5wzpzjylxycejnhtrhgu/vague_art_paintings/vague_art_paintings_6_metadata.json';
     const fetch2 = getFetchableMetadataUrl(ipfs);
-    expect(fetch2.url.toString()).toBe(
+    assert.strictEqual(
+      fetch2.url.toString(),
       'https://cloudflare-ipfs.com/ipfs/bafybeifwoqwdhs5djtx6vopvuwfcdrqeuecayp5wzpzjylxycejnhtrhgu/vague_art_paintings/vague_art_paintings_6_metadata.json'
     );
-    expect(fetch2.gateway).toBe('ipfs');
-    expect(fetch2.fetchHeaders).toEqual({ Authorization: 'Bearer 1234567890' });
+    assert.strictEqual(fetch2.gateway, 'ipfs');
+    assert.deepStrictEqual(fetch2.fetchHeaders, { Authorization: 'Bearer 1234567890' });
 
     const ipfs2 = 'ipfs://QmYCnfeseno5cLpC75rmy6LQhsNYQCJabiuwqNUXMaA3Fo/1145.png';
     const fetch3 = getFetchableMetadataUrl(ipfs2);
-    expect(fetch3.url.toString()).toBe(
+    assert.strictEqual(
+      fetch3.url.toString(),
       'https://cloudflare-ipfs.com/ipfs/QmYCnfeseno5cLpC75rmy6LQhsNYQCJabiuwqNUXMaA3Fo/1145.png'
     );
-    expect(fetch3.gateway).toBe('ipfs');
-    expect(fetch3.fetchHeaders).toEqual({ Authorization: 'Bearer 1234567890' });
+    assert.strictEqual(fetch3.gateway, 'ipfs');
+    assert.deepStrictEqual(fetch3.fetchHeaders, { Authorization: 'Bearer 1234567890' });
 
     const ipfs3 = 'https://ipfs.io/ipfs/QmYCnfeseno5cLpC75rmy6LQhsNYQCJabiuwqNUXMaA3Fo/1145.png';
     const fetch4 = getFetchableMetadataUrl(ipfs3);
-    expect(fetch4.url.toString()).toBe(
+    assert.strictEqual(
+      fetch4.url.toString(),
       'https://cloudflare-ipfs.com/ipfs/QmYCnfeseno5cLpC75rmy6LQhsNYQCJabiuwqNUXMaA3Fo/1145.png'
     );
-    expect(fetch4.gateway).toBe('ipfs');
-    expect(fetch4.fetchHeaders).toEqual({ Authorization: 'Bearer 1234567890' });
+    assert.strictEqual(fetch4.gateway, 'ipfs');
+    assert.deepStrictEqual(fetch4.fetchHeaders, { Authorization: 'Bearer 1234567890' });
 
     const http = 'https://test.io/1.json';
     const fetch5 = getFetchableMetadataUrl(http);
-    expect(fetch5.url.toString()).toBe(http);
-    expect(fetch5.gateway).toBeNull();
-    expect(fetch5.fetchHeaders).toBeUndefined();
+    assert.strictEqual(fetch5.url.toString(), http);
+    assert.strictEqual(fetch5.gateway, null);
+    assert.strictEqual(fetch5.fetchHeaders, undefined);
   });
 
   test('replace URI string tokens', () => {
     const uri1 =
       'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/$TOKEN_ID.json';
-    expect(getTokenSpecificUri(uri1, 7n)).toBe(
+    assert.strictEqual(
+      getTokenSpecificUri(uri1, 7n),
       'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/7.json'
     );
     const uri2 = 'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/{id}.json';
-    expect(getTokenSpecificUri(uri2, 7n)).toBe(
+    assert.strictEqual(
+      getTokenSpecificUri(uri2, 7n),
       'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/7.json'
     );
     const uri3 =
       'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/{id}-{locale}.json';
-    expect(getTokenSpecificUri(uri3, 7n, 'es')).toBe(
+    assert.strictEqual(
+      getTokenSpecificUri(uri3, 7n, 'es'),
       'https://ipfs.io/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn/7-es.json'
     );
   });
@@ -282,6 +295,6 @@ describe('Metadata Helpers', () => {
       .replyWithError(Object.assign(new TypeError(), { cause: new Error('read ECONNRESET') }));
     setGlobalDispatcher(agent);
 
-    await expect(fetchMetadata(url, 'ABCD.test', 1n)).rejects.toThrow(MetadataHttpError);
+    await assert.rejects(fetchMetadata(url, 'ABCD.test', 1n), MetadataHttpError);
   });
 });

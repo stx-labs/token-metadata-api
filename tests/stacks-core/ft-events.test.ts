@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { DbProcessedTokenUpdateBundle, DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
@@ -9,6 +10,7 @@ import {
   TestBlockBuilder,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ft events', () => {
   let db: PgStore;
@@ -41,7 +43,7 @@ describe('ft events', () => {
     };
     await db.core.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
     let jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(0);
+    assert.strictEqual(jobs.length, 0);
 
     await processor.processBlock(
       new TestBlockBuilder({
@@ -58,10 +60,10 @@ describe('ft events', () => {
     );
 
     jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].smart_contract_id).toBeNull();
-    expect(jobs[0].token_id).toBeNull();
-    expect(jobs[0].token_supply_id).toBe(1);
+    assert.strictEqual(jobs.length, 1);
+    assert.strictEqual(jobs[0].smart_contract_id, null);
+    assert.strictEqual(jobs[0].token_id, null);
+    assert.strictEqual(jobs[0].token_supply_id, 1);
   });
 
   test('FT burns enqueue token supply update', async () => {
@@ -80,7 +82,7 @@ describe('ft events', () => {
     };
     await db.core.updateProcessedTokenWithMetadata({ id: 1, values: tokenValues });
     let jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(0);
+    assert.strictEqual(jobs.length, 0);
 
     await processor.processBlock(
       new TestBlockBuilder({
@@ -97,9 +99,9 @@ describe('ft events', () => {
     );
 
     jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].smart_contract_id).toBeNull();
-    expect(jobs[0].token_id).toBeNull();
-    expect(jobs[0].token_supply_id).toBe(1);
+    assert.strictEqual(jobs.length, 1);
+    assert.strictEqual(jobs[0].smart_contract_id, null);
+    assert.strictEqual(jobs[0].token_id, null);
+    assert.strictEqual(jobs[0].token_supply_id, 1);
   });
 });

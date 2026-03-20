@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import {
   bufferCV,
   cvToHex,
@@ -11,6 +12,7 @@ import {
 import { getContractLogMetadataUpdateNotification } from '../../src/token-processor/util/sip-validation';
 import { TestTransactionBuilder } from '../helpers';
 import { NewBlockContractEvent, NewBlockEventType } from '@stacks/node-publisher-client';
+import { describe, test } from 'node:test';
 
 describe('SIP Validation', () => {
   test('SIP-019 FT notification', () => {
@@ -32,10 +34,10 @@ describe('SIP Validation', () => {
       tx,
       tx.events[0] as NewBlockContractEvent
     );
-    expect(notification1).not.toBeUndefined();
-    expect(notification1?.contract_id).toBe(contractId);
-    expect(notification1?.token_class).toBe('ft');
-    expect(notification1?.token_ids).toBeUndefined();
+    assert.notStrictEqual(notification1, undefined);
+    assert.strictEqual(notification1?.contract_id, contractId);
+    assert.strictEqual(notification1?.token_class, 'ft');
+    assert.strictEqual(notification1?.token_ids, undefined);
   });
 
   test('SIP-019 notification ownership', () => {
@@ -62,7 +64,7 @@ describe('SIP Validation', () => {
       tx2,
       tx2.events[0] as NewBlockContractEvent
     );
-    expect(notification2).toBeUndefined();
+    assert.strictEqual(notification2, undefined);
 
     // Sent by the contract owner
     const tx3 = new TestTransactionBuilder({ tx_id: '0x123', sender: address })
@@ -72,10 +74,10 @@ describe('SIP Validation', () => {
       tx3,
       tx3.events[0] as NewBlockContractEvent
     );
-    expect(notification3).not.toBeUndefined();
-    expect(notification3?.contract_id).toBe(contractId);
-    expect(notification3?.token_class).toBe('ft');
-    expect(notification3?.token_ids).toBeUndefined();
+    assert.notStrictEqual(notification3, undefined);
+    assert.strictEqual(notification3?.contract_id, contractId);
+    assert.strictEqual(notification3?.token_class, 'ft');
+    assert.strictEqual(notification3?.token_ids, undefined);
 
     // Emitted by the correct contract
     const tx4 = new TestTransactionBuilder({
@@ -88,10 +90,10 @@ describe('SIP Validation', () => {
       tx4,
       tx4.events[0] as NewBlockContractEvent
     );
-    expect(notification4).not.toBeUndefined();
-    expect(notification4?.contract_id).toBe(contractId);
-    expect(notification4?.token_class).toBe('ft');
-    expect(notification4?.token_ids).toBeUndefined();
+    assert.notStrictEqual(notification4, undefined);
+    assert.strictEqual(notification4?.contract_id, contractId);
+    assert.strictEqual(notification4?.token_class, 'ft');
+    assert.strictEqual(notification4?.token_ids, undefined);
   });
 
   test('SIP-019 NFT notification', () => {
@@ -109,10 +111,10 @@ describe('SIP Validation', () => {
       tx1,
       tx1.events[0] as NewBlockContractEvent
     );
-    expect(notification1).not.toBeUndefined();
-    expect(notification1?.contract_id).toBe(contractId);
-    expect(notification1?.token_class).toBe('nft');
-    expect(notification1?.token_ids).toBeUndefined();
+    assert.notStrictEqual(notification1, undefined);
+    assert.strictEqual(notification1?.contract_id, contractId);
+    assert.strictEqual(notification1?.token_class, 'nft');
+    assert.strictEqual(notification1?.token_ids, undefined);
 
     // Add token IDs
     const tuple2 = tupleCV({
@@ -136,10 +138,10 @@ describe('SIP Validation', () => {
       committed: true,
     };
     const notification2 = getContractLogMetadataUpdateNotification(tx1, event2);
-    expect(notification2).not.toBeUndefined();
-    expect(notification2?.contract_id).toBe(contractId);
-    expect(notification2?.token_class).toBe('nft');
-    expect(notification2?.token_ids).toEqual([1n, 2n]);
+    assert.notStrictEqual(notification2, undefined);
+    assert.strictEqual(notification2?.contract_id, contractId);
+    assert.strictEqual(notification2?.token_class, 'nft');
+    assert.deepStrictEqual(notification2?.token_ids, [1n, 2n]);
   });
 
   test('SIP-019 notification with update mode', () => {
@@ -168,11 +170,11 @@ describe('SIP Validation', () => {
       tx,
       tx.events[0] as NewBlockContractEvent
     );
-    expect(notification).not.toBeUndefined();
-    expect(notification?.contract_id).toBe(contractId);
-    expect(notification?.token_class).toBe('nft');
-    expect(notification?.token_ids).toEqual([1n, 2n]);
-    expect(notification?.update_mode).toBe('dynamic');
-    expect(notification?.ttl).toBe(9999n);
+    assert.notStrictEqual(notification, undefined);
+    assert.strictEqual(notification?.contract_id, contractId);
+    assert.strictEqual(notification?.token_class, 'nft');
+    assert.deepStrictEqual(notification?.token_ids, [1n, 2n]);
+    assert.strictEqual(notification?.update_mode, 'dynamic');
+    assert.strictEqual(notification?.ttl, 9999n);
   });
 });

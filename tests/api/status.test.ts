@@ -1,7 +1,9 @@
+import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
 import { startTestApiServer, TestFastifyServer } from '../helpers';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('Status routes', () => {
   let db: PgStore;
@@ -22,14 +24,14 @@ describe('Status routes', () => {
   test('returns status when nothing has been processed', async () => {
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
-    expect(json).toStrictEqual({
+    assert.deepStrictEqual(json, {
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
       chain_tip: null,
     });
     const noVersionResponse = await fastify.inject({ method: 'GET', url: '/metadata/' });
-    expect(response.statusCode).toEqual(noVersionResponse.statusCode);
-    expect(json).toStrictEqual(noVersionResponse.json());
+    assert.strictEqual(response.statusCode, noVersionResponse.statusCode);
+    assert.deepStrictEqual(json, noVersionResponse.json());
   });
 
   test('returns status when a block has been processed', async () => {
@@ -41,7 +43,7 @@ describe('Status routes', () => {
     });
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
-    expect(json).toStrictEqual({
+    assert.deepStrictEqual(json, {
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
       chain_tip: {

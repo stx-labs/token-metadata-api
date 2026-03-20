@@ -1,0 +1,10 @@
+process.env.STACKS_NODE_RPC_HOST = process.env.STACKS_NODE_RPC_HOST ?? 'localhost';
+process.env.STACKS_NODE_RPC_PORT = process.env.STACKS_NODE_RPC_PORT ?? '24000';
+process.env.PGHOST = process.env.PGHOST ?? 'localhost';
+process.env.PGPORT = process.env.PGPORT ?? '5432';
+process.env.PGUSER = process.env.PGUSER ?? 'postgres';
+process.env.PGDATABASE = process.env.PGDATABASE ?? 'postgres';
+process.env.PGPASSWORD = process.env.PGPASSWORD ?? 'postgres';
+process.env.NETWORK = process.env.NETWORK ?? 'mainnet';
+process.env.SNP_REDIS_URL = process.env.SNP_REDIS_URL ?? 'redis://localhost:6379';
+process.env.SNP_REDIS_STREAM_KEY_PREFIX = process.env.SNP_REDIS_STREAM_KEY_PREFIX ?? 'test';

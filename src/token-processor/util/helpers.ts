@@ -13,14 +13,12 @@ export function dbSipNumberToDbTokenType(sip: DbSipNumber): DbTokenType {
 }
 
 /**
- * Parses a `Retry-After` HTTP header from an undici 429 `ResponseStatusCodeError` error so we can
+ * Parses a `Retry-After` HTTP header from an undici 429 `ResponseError` error so we can
  * determine when we can try calling the same host again looking for metadata.
- * @param error - Original ResponseStatusCodeError
+ * @param error - Original ResponseError
  * @returns retry-after value in seconds since now
  */
-export function parseRetryAfterResponseHeader(
-  error: errors.ResponseStatusCodeError
-): number | undefined {
+export function parseRetryAfterResponseHeader(error: errors.ResponseError): number | undefined {
   if (error.statusCode != 429 || !error.headers || !('retry-after' in error.headers)) {
     return;
   }

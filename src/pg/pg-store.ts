@@ -396,7 +396,7 @@ export class PgStore extends BasePgStore {
     if (tokenJobStatus.count === 0) {
       throw new TokenNotFoundError();
     }
-    const status = tokenJobStatus[0].status;
+    const status = tokenJobStatus[0].status as DbJobStatus;
     if (status === DbJobStatus.invalid) {
       throw new InvalidTokenError(tokenJobStatus[0].invalid_reason);
     }

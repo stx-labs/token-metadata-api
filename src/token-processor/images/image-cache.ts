@@ -3,8 +3,8 @@ import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers'
 import { logger } from '@stacks/api-toolkit';
 import { PgStore } from '../../pg/pg-store';
 import { Readable } from 'node:stream';
-import * as sharp from 'sharp';
-import * as fs from 'fs';
+import sharp from 'sharp';
+import fs from 'fs';
 import { Agent, fetch, errors } from 'undici';
 import {
   ImageSizeExceededError,
@@ -41,10 +41,10 @@ async function downloadImage(
     const filePath = `${tmpPath}/image`;
     fetch(imgUrl, {
       headers,
+      signal: AbortSignal.timeout(ENV.METADATA_FETCH_TIMEOUT_MS),
       dispatcher: new Agent({
         headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
         bodyTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
-        maxRedirections: ENV.METADATA_FETCH_MAX_REDIRECTIONS,
         maxResponseSize: ENV.IMAGE_CACHE_MAX_BYTE_SIZE,
         connect: {
           rejectUnauthorized: false, // Ignore SSL cert errors.
@@ -53,8 +53,14 @@ async function downloadImage(
     })
       .then(response => {
         if (response.status == 429) {
+          const errorHeaders = Object.fromEntries(response.headers.entries());
           reject(
-            new TooManyRequestsHttpError(new URL(imgUrl), new errors.ResponseStatusCodeError())
+            new TooManyRequestsHttpError(
+              new URL(imgUrl),
+              new errors.ResponseError(response.statusText, response.status, {
+                headers: errorHeaders,
+              })
+            )
           );
           return;
         }
@@ -63,7 +69,9 @@ async function downloadImage(
           reject(
             new ImageHttpError(
               `ImageCache fetch error`,
-              new errors.ResponseStatusCodeError(response.statusText, response.status)
+              new errors.ResponseError(response.statusText, response.status, {
+                headers: Object.fromEntries(response.headers.entries()),
+              })
             )
           );
           return;
@@ -98,7 +106,7 @@ async function transformImage(filePath: string, resize: boolean = false): Promis
       });
     }
     sharpStream.on('error', reject);
-    sharpStream = sharpStream.png().toFile(outPath, (err, _info) => {
+    sharpStream = sharpStream.png().toFile(outPath, (err: Error | null, _info: unknown) => {
       if (err) reject(err);
       else resolve(outPath);
     });
@@ -150,6 +158,11 @@ export async function processImageCache(
       `${ENV.IMAGE_CACHE_CDN_BASE_PATH}${remoteName2}`,
     ];
   } catch (error) {
+    if (error instanceof DOMException) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        throw new ImageTimeoutError(new URL(rawImgUrl));
+      }
+    }
     if (error instanceof TypeError) {
       const typeError = error as UndiciCauseTypeError;
       if (
@@ -180,7 +193,7 @@ export async function reprocessTokenImageCache(
     for (const token of imageUris) {
       try {
         const [cached, thumbnail] = await processImageCache(
-          getFetchableMetadataUrl(token.image).toString(),
+          getFetchableMetadataUrl(token.image).url.toString(),
           contractPrincipal,
           BigInt(token.token_number)
         );

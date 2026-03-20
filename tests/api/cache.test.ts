@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -7,6 +8,7 @@ import {
   insertAndEnqueueTestContractWithTokens,
   startTestApiServer,
 } from '../helpers';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ETag cache', () => {
   let db: PgStore;
@@ -33,7 +35,7 @@ describe('ETag cache', () => {
     });
     const response = await fastify.inject({ method: 'GET', url: '/metadata/v1/' });
     const json = response.json();
-    expect(json).toStrictEqual({
+    assert.deepStrictEqual(json, {
       server_version: 'token-metadata-api v0.0.1 (test:123456)',
       status: 'ready',
       chain_tip: {
@@ -41,7 +43,7 @@ describe('ETag cache', () => {
         index_block_hash: '0x99',
       },
     });
-    expect(response.headers.etag).not.toBeUndefined();
+    assert.notStrictEqual(response.headers.etag, undefined);
     const etag = response.headers.etag;
 
     const cached = await fastify.inject({
@@ -49,7 +51,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/',
       headers: { 'if-none-match': etag },
     });
-    expect(cached.statusCode).toBe(304);
+    assert.strictEqual(cached.statusCode, 304);
 
     await db.core.insertBlock(db.sql, {
       block_height: 100,
@@ -62,7 +64,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/',
       headers: { 'if-none-match': etag },
     });
-    expect(cached2.statusCode).toBe(200);
+    assert.strictEqual(cached2.statusCode, 200);
   });
 
   test('FT cache control', async () => {
@@ -106,8 +108,8 @@ describe('ETag cache', () => {
       method: 'GET',
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.headers.etag).not.toBeUndefined();
+    assert.strictEqual(response.statusCode, 200);
+    assert.notStrictEqual(response.headers.etag, undefined);
     const etag = response.headers.etag;
 
     // Cached response
@@ -116,7 +118,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
       headers: { 'if-none-match': etag },
     });
-    expect(cached.statusCode).toBe(304);
+    assert.strictEqual(cached.statusCode, 304);
 
     // Simulate modified token and check status code
     await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 1`;
@@ -125,7 +127,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/ft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
       headers: { 'if-none-match': etag },
     });
-    expect(cached2.statusCode).toBe(200);
+    assert.strictEqual(cached2.statusCode, 200);
   });
 
   test('NFT cache control', async () => {
@@ -169,8 +171,8 @@ describe('ETag cache', () => {
       method: 'GET',
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.headers.etag).not.toBeUndefined();
+    assert.strictEqual(response.statusCode, 200);
+    assert.notStrictEqual(response.headers.etag, undefined);
     const etag = response.headers.etag;
 
     // Cached response
@@ -179,7 +181,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
       headers: { 'if-none-match': etag },
     });
-    expect(cached.statusCode).toBe(304);
+    assert.strictEqual(cached.statusCode, 304);
 
     // Simulate modified token and check status code
     await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 1`;
@@ -188,7 +190,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/nft/SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world/1',
       headers: { 'if-none-match': etag },
     });
-    expect(cached2.statusCode).toBe(200);
+    assert.strictEqual(cached2.statusCode, 200);
   });
 
   test('Search cache control', async () => {
@@ -266,8 +268,8 @@ describe('ETag cache', () => {
 
     // Request returns etag
     const response = await fastify.inject({ method: 'GET', url: searchUrl });
-    expect(response.statusCode).toBe(200);
-    expect(response.headers.etag).not.toBeUndefined();
+    assert.strictEqual(response.statusCode, 200);
+    assert.notStrictEqual(response.headers.etag, undefined);
     const etag = response.headers.etag;
 
     // Cached response
@@ -276,7 +278,7 @@ describe('ETag cache', () => {
       url: searchUrl,
       headers: { 'if-none-match': etag },
     });
-    expect(cached.statusCode).toBe(304);
+    assert.strictEqual(cached.statusCode, 304);
 
     // Updating one token in the batch invalidates the etag
     await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 2`;
@@ -285,7 +287,7 @@ describe('ETag cache', () => {
       url: searchUrl,
       headers: { 'if-none-match': etag },
     });
-    expect(cached2.statusCode).toBe(200);
+    assert.strictEqual(cached2.statusCode, 200);
   });
 
   test('SFT cache control', async () => {
@@ -331,8 +333,8 @@ describe('ETag cache', () => {
       method: 'GET',
       url: '/metadata/v1/sft/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1/1',
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.headers.etag).not.toBeUndefined();
+    assert.strictEqual(response.statusCode, 200);
+    assert.notStrictEqual(response.headers.etag, undefined);
     const etag = response.headers.etag;
 
     // Cached response
@@ -341,7 +343,7 @@ describe('ETag cache', () => {
       url: '/metadata/v1/sft/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1/1',
       headers: { 'if-none-match': etag },
     });
-    expect(cached.statusCode).toBe(304);
+    assert.strictEqual(cached.statusCode, 304);
 
     // Simulate modified token and check status code
     await db.sql`UPDATE tokens SET updated_at = NOW() WHERE id = 1`;
@@ -350,6 +352,6 @@ describe('ETag cache', () => {
       url: '/metadata/v1/sft/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1/1',
       headers: { 'if-none-match': etag },
     });
-    expect(cached2.statusCode).toBe(200);
+    assert.strictEqual(cached2.statusCode, 200);
   });
 });

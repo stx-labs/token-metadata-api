@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
@@ -11,6 +12,7 @@ import {
   SIP_009_ABI,
 } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('nft events', () => {
   let db: PgStore;
@@ -49,9 +51,9 @@ describe('nft events', () => {
     );
 
     const jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].token_id).toBe(4);
-    await expect(db.getToken({ id: 4 })).resolves.not.toBeUndefined();
+    assert.strictEqual(jobs.length, 1);
+    assert.strictEqual(jobs[0].token_id, 4);
+    assert.notStrictEqual(await db.getToken({ id: 4 }), undefined);
   });
 
   test('NFT contract can start with zero tokens', async () => {
@@ -89,9 +91,9 @@ describe('nft events', () => {
     );
 
     const jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].token_id).toBe(1);
-    await expect(db.getToken({ id: 1 })).resolves.not.toBeUndefined();
+    assert.strictEqual(jobs.length, 1);
+    assert.strictEqual(jobs[0].token_id, 1);
+    assert.notStrictEqual(await db.getToken({ id: 1 }), undefined);
   });
 
   test('NFT mint is ignored if contract does not exist', async () => {
@@ -113,7 +115,7 @@ describe('nft events', () => {
     );
 
     const jobs = await db.getPendingJobBatch({ limit: 1 });
-    expect(jobs).toHaveLength(0);
-    await expect(db.getToken({ id: 1 })).resolves.toBeUndefined();
+    assert.strictEqual(jobs.length, 0);
+    assert.strictEqual(await db.getToken({ id: 1 }), undefined);
   });
 });

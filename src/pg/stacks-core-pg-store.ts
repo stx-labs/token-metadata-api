@@ -21,7 +21,6 @@ import {
   DbMetadataAttributeInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
-import BigNumber from 'bignumber.js';
 import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
 
 export class StacksCorePgStore extends BasePgStoreModule {
@@ -35,7 +34,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     notifications: TokenMetadataUpdateNotification[];
     nftMints: NftMintEvent[];
     sftMints: SftMintEvent[];
-    ftSupplyDelta: Map<string, BigNumber>;
+    ftSupplyDelta: Map<string, string>;
   }): Promise<void> {
     await this.sqlWriteTransaction(async sql => {
       await this.insertBlock(sql, args.block);
@@ -279,7 +278,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
         total_supply: null,
         uri: null,
       });
-    for await (const batch of batchIterate(tokenValues, 500)) {
+    for (const batch of batchIterate(tokenValues, 500)) {
       await sql`
         WITH token_inserts AS (
           INSERT INTO tokens ${sql(batch)}
@@ -401,7 +400,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
   private async insertAndEnqueueFtSupplyChange(
     sql: PgSqlClient,
     contract: string,
-    delta: BigNumber,
+    delta: string,
     block: DecodedStacksBlock
   ): Promise<void> {
     await sql`
@@ -466,7 +465,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
     block: DecodedStacksBlock
   ): Promise<void> {
     if (mints.length == 0) return;
-    for await (const batch of batchIterate(mints, 500)) {
+    for (const batch of batchIterate(mints, 500)) {
       const tokenValues = new Map<string, (string | number)[]>();
       for (const mint of batch) {
         // SFT tokens may mint one single token more than once given that it's an FT within an NFT.

@@ -82,6 +82,11 @@ export class StacksNodeRpcClient {
         throwOnError: true,
       });
       const text = await result.body.text();
+      if (result.statusCode >= 400) {
+        throw new StacksNodeHttpError(
+          `${url}: HTTP ${result.statusCode} ${result.statusText || ''} ${text}`.trim()
+        );
+      }
       try {
         return JSON.parse(text) as ClarityAbi;
       } catch (error) {
@@ -112,6 +117,11 @@ export class StacksNodeRpcClient {
         throwOnError: true,
       });
       const text = await result.body.text();
+      if (result.statusCode >= 400) {
+        throw new StacksNodeHttpError(
+          `${url}: HTTP ${result.statusCode} ${result.statusText || ''} ${text}`.trim()
+        );
+      }
       try {
         return JSON.parse(text) as ReadOnlyContractCallResponse;
       } catch (error) {

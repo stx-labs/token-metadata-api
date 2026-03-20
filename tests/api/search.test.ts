@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -7,6 +8,7 @@ import {
   startTestApiServer,
   TestFastifyServer,
 } from '../helpers';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('Search routes', () => {
   let db: PgStore;
@@ -110,10 +112,10 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
     });
-    expect(response.statusCode).toBe(200);
+    assert.strictEqual(response.statusCode, 200);
     const json = response.json();
-    expect(json).toHaveLength(1);
-    expect(json[0]).toStrictEqual({
+    assert.strictEqual(json.length, 1);
+    assert.deepStrictEqual(json[0], {
       contract_id: 'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world',
       token_number: 1,
       token_type: 'ft',
@@ -145,13 +147,15 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world&contract=SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12',
     });
-    expect(response.statusCode).toBe(200);
+    assert.strictEqual(response.statusCode, 200);
     const json = response.json();
-    expect(json).toHaveLength(2);
-    expect(json.find((r: any) => r.token_type === 'ft').contract_id).toBe(
+    assert.strictEqual(json.length, 2);
+    assert.strictEqual(
+      json.find((r: any) => r.token_type === 'ft').contract_id,
       'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world'
     );
-    expect(json.find((r: any) => r.token_type === 'nft').contract_id).toBe(
+    assert.strictEqual(
+      json.find((r: any) => r.token_type === 'nft').contract_id,
       'SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12'
     );
   });
@@ -166,10 +170,13 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world&contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.does-not-exist',
     });
-    expect(response.statusCode).toBe(200);
+    assert.strictEqual(response.statusCode, 200);
     const json = response.json();
-    expect(json).toHaveLength(1);
-    expect(json[0].contract_id).toBe('SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world');
+    assert.strictEqual(json.length, 1);
+    assert.strictEqual(
+      json[0].contract_id,
+      'SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world'
+    );
   });
 
   test('NFT with specific token number', async () => {
@@ -182,10 +189,10 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search?contract=SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12:3',
     });
-    expect(response.statusCode).toBe(200);
+    assert.strictEqual(response.statusCode, 200);
     const json = response.json();
-    expect(json).toHaveLength(1);
-    expect(json[0].token_number).toBe(3);
+    assert.strictEqual(json.length, 1);
+    assert.strictEqual(json[0].token_number, 3);
   });
 
   test('locale parameter works', async () => {
@@ -241,10 +248,10 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search?contract=SP2SYHR84SDJJDK8M09HFS4KBFXPPCX9H7RZ9YVTS.hello-world&locale=es',
     });
-    expect(response.statusCode).toBe(200);
+    assert.strictEqual(response.statusCode, 200);
     const json = response.json();
-    expect(json).toHaveLength(1);
-    expect(json[0].description).toBe('Descripcion en espanol');
+    assert.strictEqual(json.length, 1);
+    assert.strictEqual(json[0].description, 'Descripcion en espanol');
   });
 
   test('empty contract list returns 400', async () => {
@@ -252,6 +259,6 @@ describe('Search routes', () => {
       method: 'GET',
       url: '/metadata/v1/search',
     });
-    expect(response.statusCode).toBe(400);
+    assert.strictEqual(response.statusCode, 400);
   });
 });

@@ -1,9 +1,11 @@
-import { DbSipNumber, DbSmartContract } from '../../src/pg/types';
+import { strict as assert } from 'node:assert';
+import { DbSipNumber } from '../../src/pg/types';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { ENV } from '../../src/env';
 import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
 import { SIP_009_ABI, TestTransactionBuilder, TestBlockBuilder } from '../helpers';
 import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('contract deployments', () => {
   let db: PgStore;
@@ -38,11 +40,12 @@ describe('contract deployments', () => {
         .build()
     );
     const dbContract = await db.getSmartContract({ id: 1 });
-    expect(dbContract?.sip).toBe(DbSipNumber.sip009);
-    expect(dbContract?.principal).toBe(
+    assert.strictEqual(dbContract?.sip, DbSipNumber.sip009);
+    assert.strictEqual(
+      dbContract?.principal,
       'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.friedger-pool-nft'
     );
-    await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(1);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 1 })).length, 1);
   });
 
   test('ignores token contract from a failed transaction', async () => {
@@ -66,8 +69,8 @@ describe('contract deployments', () => {
         )
         .build()
     );
-    await expect(db.getSmartContract({ id: 1 })).resolves.toBeUndefined();
-    await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(0);
+    assert.strictEqual(await db.getSmartContract({ id: 1 }), undefined);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 1 })).length, 0);
   });
 
   test('ignores non-token contract', async () => {
@@ -96,7 +99,7 @@ describe('contract deployments', () => {
         )
         .build()
     );
-    await expect(db.getSmartContract({ id: 1 })).resolves.toBeUndefined();
-    await expect(db.getPendingJobBatch({ limit: 1 })).resolves.toHaveLength(0);
+    assert.strictEqual(await db.getSmartContract({ id: 1 }), undefined);
+    assert.strictEqual((await db.getPendingJobBatch({ limit: 1 })).length, 0);
   });
 });

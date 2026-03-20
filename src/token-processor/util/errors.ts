@@ -69,7 +69,7 @@ export class TooManyRequestsHttpError extends Error {
   /** `Retry-After` header value in seconds, if any. */
   public retryAfter?: number;
 
-  constructor(url: URL, error: errors.ResponseStatusCodeError) {
+  constructor(url: URL, error: errors.ResponseError) {
     super(url.toString());
     this.name = this.constructor.name;
     this.url = url;

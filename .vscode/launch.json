@@ -4,7 +4,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run",
+      "name": "start",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -23,7 +23,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run: readonly",
+      "name": "start: readonly",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -43,7 +43,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Run: writeonly",
+      "name": "start: writeonly",
       "runtimeArgs": [
         "-r",
         "ts-node/register"
@@ -63,81 +63,111 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "name": "test",
+      "runtimeExecutable": "node",
       "args": [
-        "--testTimeout=3600000",
-        "--runInBand",
-        "--no-cache",
+        "--import",
+        "tsx",
+        "--import",
+        "${workspaceFolder}/tests/setup-env.ts",
+        "--test",
+        "--test-concurrency=1",
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: Admin",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "name": "test: admin",
+      "runtimeExecutable": "node",
       "args": [
-        "--testTimeout=3600000",
-        "--runInBand",
-        "--no-cache",
-        "${workspaceFolder}/tests/admin/"
+        "--import",
+        "tsx",
+        "--import",
+        "${workspaceFolder}/tests/setup-env.ts",
+        "--test",
+        "--test-concurrency=1",
+        "${workspaceFolder}/tests/admin/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: API",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "name": "test: api",
+      "runtimeExecutable": "node",
       "args": [
-        "--testTimeout=3600000",
-        "--runInBand",
-        "--no-cache",
-        "${workspaceFolder}/tests/api/"
+        "--import",
+        "tsx",
+        "--import",
+        "${workspaceFolder}/tests/setup-env.ts",
+        "--test",
+        "--test-concurrency=1",
+        "${workspaceFolder}/tests/api/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: Stacks Core",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "name": "test: stacks-core",
+      "runtimeExecutable": "node",
       "args": [
-        "--testTimeout=3600000",
-        "--runInBand",
-        "--no-cache",
-        "${workspaceFolder}/tests/stacks-core/",
+        "--import",
+        "tsx",
+        "--import",
+        "${workspaceFolder}/tests/setup-env.ts",
+        "--test",
+        "--test-concurrency=1",
+        "${workspaceFolder}/tests/stacks-core/*.test.ts",
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Jest: Token Queue",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "name": "test: token-queue",
+      "runtimeExecutable": "node",
       "args": [
-        "--testTimeout=3600000",
-        "--runInBand",
-        "--no-cache",
-        "${workspaceFolder}/tests/token-queue/"
+        "--import",
+        "tsx",
+        "--import",
+        "${workspaceFolder}/tests/setup-env.ts",
+        "--test",
+        "--test-concurrency=1",
+        "${workspaceFolder}/tests/token-queue/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: testenv:run",
       "postDebugTask": "npm: testenv:stop",
+      "env": {
+        "NODE_ENV": "test"
+      },
     },
   ]
 }

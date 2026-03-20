@@ -1,3 +1,5 @@
+import { strict as assert } from 'node:assert';
+import { mock } from 'node:test';
 import { cvToHex, noneCV, stringUtf8CV, uintCV } from '@stacks/transactions';
 import { errors, MockAgent, setGlobalDispatcher } from 'undici';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
@@ -12,10 +14,10 @@ import { ENV } from '../../src/env';
 import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-token-job';
 import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers';
 import { RetryableJobError } from '../../src/token-processor/queue/errors';
-import { TooManyRequestsHttpError } from '../../src/token-processor/util/errors';
 import { cycleMigrations } from '@stacks/api-toolkit';
 import { insertAndEnqueueTestContractWithTokens } from '../helpers';
 import { InvalidTokenError } from '../../src/pg/errors';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ProcessTokenJob', () => {
   let db: PgStore;
@@ -99,11 +101,11 @@ describe('ProcessTokenJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.name).toBe('FooToken');
-      expect(token?.symbol).toBe('FOO');
-      expect(token?.decimals).toBe(6);
-      expect(token?.total_supply).toBe('1997500000000');
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.name, 'FooToken');
+      assert.strictEqual(token?.symbol, 'FOO');
+      assert.strictEqual(token?.decimals, 6);
+      assert.strictEqual(token?.total_supply, '1997500000000');
     });
 
     test('keeps contract FT info if metadata fetch fails', async () => {
@@ -171,16 +173,16 @@ describe('ProcessTokenJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.name).toBe('FooToken');
-      expect(token?.symbol).toBe('FOO');
-      expect(token?.decimals).toBe(6);
-      expect(token?.total_supply).toBe('1997500000000');
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.name, 'FooToken');
+      assert.strictEqual(token?.symbol, 'FOO');
+      assert.strictEqual(token?.decimals, 6);
+      assert.strictEqual(token?.total_supply, '1997500000000');
       const bundle = await db.getTokenMetadataBundle({
         contractPrincipal: 'ABCD.test-ft',
         tokenNumber: 1,
       });
-      expect(bundle?.metadataLocale).toBeUndefined();
+      assert.strictEqual(bundle?.metadataLocale, undefined);
     });
 
     test('accepts FTs with incorrect total supply return type', async () => {
@@ -241,11 +243,11 @@ describe('ProcessTokenJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.name).toBe('FooToken');
-      expect(token?.symbol).toBe('FOO');
-      expect(token?.decimals).toBe(6);
-      expect(token?.total_supply).toBeNull();
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.name, 'FooToken');
+      assert.strictEqual(token?.symbol, 'FOO');
+      assert.strictEqual(token?.decimals, 6);
+      assert.strictEqual(token?.total_supply, null);
     });
 
     test('accepts FTs with invalid image entries', async () => {
@@ -334,8 +336,8 @@ describe('ProcessTokenJob', () => {
         contractPrincipal: 'ABCD.test-ft',
         tokenNumber: 1,
       });
-      expect(token).not.toBeUndefined();
-      expect(token?.metadataLocale?.metadata?.image).toBe(null);
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.metadataLocale?.metadata?.image, null);
     });
   });
 
@@ -412,40 +414,41 @@ describe('ProcessTokenJob', () => {
         contractPrincipal: 'ABCD.test-nft',
         tokenNumber: 1,
       });
-      expect(bundle).not.toBeUndefined();
-      expect(bundle?.token.uri).toBe('http://m.io/1.json');
-      expect(bundle?.metadataLocale?.metadata.name).toBe('Mutant Monkeys #1');
-      expect(bundle?.metadataLocale?.metadata.image).toBe(
+      assert.notStrictEqual(bundle, undefined);
+      assert.strictEqual(bundle?.token.uri, 'http://m.io/1.json');
+      assert.strictEqual(bundle?.metadataLocale?.metadata.name, 'Mutant Monkeys #1');
+      assert.strictEqual(
+        bundle?.metadataLocale?.metadata.image,
         'https://byzantion.mypinata.cloud/ipfs/QmWAYP9LJD15mgrnapfpJhBArG6T3J4XKTM77tzqggvP7w'
       );
-      expect(bundle?.metadataLocale?.metadata.description).toBeNull();
+      assert.strictEqual(bundle?.metadataLocale?.metadata.description, null);
 
       const attr0 = bundle?.metadataLocale?.attributes[0];
-      expect(attr0?.trait_type).toBe('Background');
-      expect(attr0?.value as string).toBe('MM1 Purple');
-      expect(attr0?.display_type).toBeNull();
+      assert.strictEqual(attr0?.trait_type, 'Background');
+      assert.strictEqual(attr0?.value as string, 'MM1 Purple');
+      assert.strictEqual(attr0?.display_type, null);
 
       const attr1 = bundle?.metadataLocale?.attributes[1];
-      expect(attr1?.trait_type).toBe('Fur');
-      expect(attr1?.value as string).toBe(5050);
-      expect(attr1?.display_type).toBe('Number');
+      assert.strictEqual(attr1?.trait_type, 'Fur');
+      assert.strictEqual(attr1?.value as string, 5050);
+      assert.strictEqual(attr1?.display_type, 'Number');
 
       const attr2 = bundle?.metadataLocale?.attributes[2];
-      expect(attr2?.trait_type).toBe('Clothes');
-      expect(attr2?.value as string).toStrictEqual(['hello', 'world']);
-      expect(attr2?.display_type).toBeNull();
+      assert.strictEqual(attr2?.trait_type, 'Clothes');
+      assert.deepStrictEqual(attr2?.value, ['hello', 'world']);
+      assert.strictEqual(attr2?.display_type, null);
 
       const properties = bundle?.metadataLocale?.properties as DbMetadataProperty[];
-      expect(properties[0].name).toBe('external_url');
-      expect(properties[0].value).toBe('https://bitcoinmonkeys.io/');
-      expect(properties[4].name).toBe('collection_size');
-      expect(properties[4].value).toBe(5000);
-      expect(properties[6].name).toBe('prop');
-      expect(properties[6].value).toStrictEqual({ a: 1, b: 2 });
-      expect(properties[7].name).toBe('allow_multiple_claims');
-      expect(properties[7].value).toStrictEqual(true);
-      expect(properties[8].name).toBe('whitelisted');
-      expect(properties[8].value).toStrictEqual(false);
+      assert.strictEqual(properties[0].name, 'external_url');
+      assert.strictEqual(properties[0].value, 'https://bitcoinmonkeys.io/');
+      assert.strictEqual(properties[4].name, 'collection_size');
+      assert.strictEqual(properties[4].value, 5000);
+      assert.strictEqual(properties[6].name, 'prop');
+      assert.deepStrictEqual(properties[6].value, { a: 1, b: 2 });
+      assert.strictEqual(properties[7].name, 'allow_multiple_claims');
+      assert.deepStrictEqual(properties[7].value, true);
+      assert.strictEqual(properties[8].name, 'whitelisted');
+      assert.deepStrictEqual(properties[8].value, false);
     });
 
     test('parses metadata with localizations', async () => {
@@ -528,11 +531,11 @@ describe('ProcessTokenJob', () => {
         contractPrincipal: 'ABCD.test-nft',
         tokenNumber: 1,
       });
-      expect(bundle).not.toBeUndefined();
-      expect(bundle?.token.uri).toBe('http://m.io/1.json');
-      expect(bundle?.metadataLocale?.metadata.l10n_locale).toBe('en');
-      expect(bundle?.metadataLocale?.metadata.l10n_default).toBe(true);
-      expect(bundle?.metadataLocale?.metadata.l10n_uri).toBe('http://m.io/1.json');
+      assert.notStrictEqual(bundle, undefined);
+      assert.strictEqual(bundle?.token.uri, 'http://m.io/1.json');
+      assert.strictEqual(bundle?.metadataLocale?.metadata.l10n_locale, 'en');
+      assert.strictEqual(bundle?.metadataLocale?.metadata.l10n_default, true);
+      assert.strictEqual(bundle?.metadataLocale?.metadata.l10n_uri, 'http://m.io/1.json');
 
       // Make sure localization overrides work correctly
       const mexicanBundle = await db.getTokenMetadataBundle({
@@ -540,31 +543,33 @@ describe('ProcessTokenJob', () => {
         tokenNumber: 1,
         locale: 'es-MX',
       });
-      expect(mexicanBundle).not.toBeUndefined();
-      expect(mexicanBundle?.token.uri).toBe('http://m.io/1.json');
-      expect(mexicanBundle?.metadataLocale?.metadata.l10n_locale).toBe('es-MX');
-      expect(mexicanBundle?.metadataLocale?.metadata.l10n_default).toBe(false);
-      expect(mexicanBundle?.metadataLocale?.metadata.l10n_uri).toBe(
+      assert.notStrictEqual(mexicanBundle, undefined);
+      assert.strictEqual(mexicanBundle?.token.uri, 'http://m.io/1.json');
+      assert.strictEqual(mexicanBundle?.metadataLocale?.metadata.l10n_locale, 'es-MX');
+      assert.strictEqual(mexicanBundle?.metadataLocale?.metadata.l10n_default, false);
+      assert.strictEqual(
+        mexicanBundle?.metadataLocale?.metadata.l10n_uri,
         'http://m-locale.io/1-es-MX.json'
       );
-      expect(mexicanBundle?.metadataLocale?.metadata.name).toBe('Changos Mutantes #1');
-      expect(mexicanBundle?.metadataLocale?.metadata.image).toBe(
+      assert.strictEqual(mexicanBundle?.metadataLocale?.metadata.name, 'Changos Mutantes #1');
+      assert.strictEqual(
+        mexicanBundle?.metadataLocale?.metadata.image,
         'https://byzantion.mypinata.cloud/ipfs/QmWAYP9LJD15mgrnapfpJhBArG6T3J4XKTM77tzqggvP7w'
       );
-      expect(mexicanBundle?.metadataLocale?.metadata.description).toBeNull();
+      assert.strictEqual(mexicanBundle?.metadataLocale?.metadata.description, null);
       const attributes = mexicanBundle?.metadataLocale?.attributes as DbMetadataAttribute[];
-      expect(attributes.length).toBe(1);
-      expect(attributes[0].trait_type).toBe('Fondo');
-      expect(attributes[0].value).toBe('MM1 Morado');
+      assert.strictEqual(attributes.length, 1);
+      assert.strictEqual(attributes[0].trait_type, 'Fondo');
+      assert.strictEqual(attributes[0].value, 'MM1 Morado');
       const properties = mexicanBundle?.metadataLocale?.properties as DbMetadataProperty[];
-      expect(properties[0].name).toBe('external_url');
-      expect(properties[0].value).toBe('https://bitcoinmonkeys.io/');
-      expect(properties[1].name).toBe('description');
-      expect(properties[1].value).toBe("Changos Mutantes es una colección de 5,000 NFT's");
-      expect(properties[2].name).toBe('colection_name');
-      expect(properties[2].value).toBe('Changos Mutantes');
-      expect(properties[3].name).toBe('artist');
-      expect(properties[3].value).toBe('Bitcoin Monkeys');
+      assert.strictEqual(properties[0].name, 'external_url');
+      assert.strictEqual(properties[0].value, 'https://bitcoinmonkeys.io/');
+      assert.strictEqual(properties[1].name, 'description');
+      assert.strictEqual(properties[1].value, "Changos Mutantes es una colección de 5,000 NFT's");
+      assert.strictEqual(properties[2].name, 'colection_name');
+      assert.strictEqual(properties[2].value, 'Changos Mutantes');
+      assert.strictEqual(properties[3].name, 'artist');
+      assert.strictEqual(properties[3].value, 'Bitcoin Monkeys');
     });
 
     test('metadata refresh replaces previous metadata entries for token', async () => {
@@ -624,22 +629,24 @@ describe('ProcessTokenJob', () => {
         contractPrincipal: 'ABCD.test-nft',
         tokenNumber: 1,
       });
-      expect(bundle1).not.toBeUndefined();
-      expect(bundle1?.token.uri).toBe('http://m.io/1.json');
-      expect(bundle1?.metadataLocale?.metadata.name).toBe('Mutant Monkeys #1');
-      expect(bundle1?.metadataLocale?.metadata.image).toBe(
+      assert.notStrictEqual(bundle1, undefined);
+      assert.strictEqual(bundle1?.token.uri, 'http://m.io/1.json');
+      assert.strictEqual(bundle1?.metadataLocale?.metadata.name, 'Mutant Monkeys #1');
+      assert.strictEqual(
+        bundle1?.metadataLocale?.metadata.image,
         'https://byzantion.mypinata.cloud/ipfs/QmWAYP9LJD15mgrnapfpJhBArG6T3J4XKTM77tzqggvP7w'
       );
-      expect(bundle1?.metadataLocale?.attributes.length).toBe(1);
-      expect(bundle1?.metadataLocale?.attributes[0].trait_type).toBe('Background');
-      expect(bundle1?.metadataLocale?.attributes[0].value as string).toBe('MM1 Purple');
-      expect(bundle1?.metadataLocale?.properties.length).toBe(2);
-      expect(bundle1?.metadataLocale?.properties[0].name).toBe('external_url');
-      expect(bundle1?.metadataLocale?.properties[0].value as string).toBe(
+      assert.strictEqual(bundle1?.metadataLocale?.attributes.length, 1);
+      assert.strictEqual(bundle1?.metadataLocale?.attributes[0].trait_type, 'Background');
+      assert.strictEqual(bundle1?.metadataLocale?.attributes[0].value as string, 'MM1 Purple');
+      assert.strictEqual(bundle1?.metadataLocale?.properties.length, 2);
+      assert.strictEqual(bundle1?.metadataLocale?.properties[0].name, 'external_url');
+      assert.strictEqual(
+        bundle1?.metadataLocale?.properties[0].value as string,
         'https://bitcoinmonkeys.io/'
       );
-      expect(bundle1?.metadataLocale?.properties[1].name).toBe('colection_name');
-      expect(bundle1?.metadataLocale?.properties[1].value as string).toBe('Mutant Monkeys');
+      assert.strictEqual(bundle1?.metadataLocale?.properties[1].name, 'colection_name');
+      assert.strictEqual(bundle1?.metadataLocale?.properties[1].value as string, 'Mutant Monkeys');
 
       // Process again with different metadata
       agent
@@ -666,18 +673,20 @@ describe('ProcessTokenJob', () => {
         contractPrincipal: 'ABCD.test-nft',
         tokenNumber: 1,
       });
-      expect(bundle2).not.toBeUndefined();
-      expect(bundle2?.token.uri).toBe('http://m.io/1.json');
-      expect(bundle2?.metadataLocale?.metadata.name).toBe('Mutant Monkeys #1 NEW');
-      expect(bundle2?.metadataLocale?.metadata.image).toBe(
+      assert.notStrictEqual(bundle2, undefined);
+      assert.strictEqual(bundle2?.token.uri, 'http://m.io/1.json');
+      assert.strictEqual(bundle2?.metadataLocale?.metadata.name, 'Mutant Monkeys #1 NEW');
+      assert.strictEqual(
+        bundle2?.metadataLocale?.metadata.image,
         'https://byzantion.mypinata.cloud/ipfs/new'
       );
-      expect(bundle2?.metadataLocale?.attributes.length).toBe(1);
-      expect(bundle2?.metadataLocale?.attributes[0].trait_type).toBe('New Background');
-      expect(bundle2?.metadataLocale?.attributes[0].value as string).toBe('MM1 Red');
-      expect(bundle2?.metadataLocale?.properties.length).toBe(1);
-      expect(bundle2?.metadataLocale?.properties[0].name).toBe('colection_name');
-      expect(bundle2?.metadataLocale?.properties[0].value as string).toBe(
+      assert.strictEqual(bundle2?.metadataLocale?.attributes.length, 1);
+      assert.strictEqual(bundle2?.metadataLocale?.attributes[0].trait_type, 'New Background');
+      assert.strictEqual(bundle2?.metadataLocale?.attributes[0].value as string, 'MM1 Red');
+      assert.strictEqual(bundle2?.metadataLocale?.properties.length, 1);
+      assert.strictEqual(bundle2?.metadataLocale?.properties[0].name, 'colection_name');
+      assert.strictEqual(
+        bundle2?.metadataLocale?.properties[0].value as string,
         'Mutant Monkeys Reloaded'
       );
     });
@@ -717,12 +726,14 @@ describe('ProcessTokenJob', () => {
 
       await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
 
-      await expect(
-        db.getTokenMetadataBundle({
-          contractPrincipal: 'ABCD.test-nft',
-          tokenNumber: 1,
-        })
-      ).rejects.toThrow(InvalidTokenError);
+      await assert.rejects(
+        () =>
+          db.getTokenMetadataBundle({
+            contractPrincipal: 'ABCD.test-nft',
+            tokenNumber: 1,
+          }),
+        InvalidTokenError
+      );
     });
   });
 
@@ -779,10 +790,10 @@ describe('ProcessTokenJob', () => {
       await processor.work();
 
       const token = await db.getToken({ id: 1 });
-      expect(token).not.toBeUndefined();
-      expect(token?.uri).toBeNull();
-      expect(token?.decimals).toBe(6);
-      expect(token?.total_supply).toBe('200200200');
+      assert.notStrictEqual(token, undefined);
+      assert.strictEqual(token?.uri, null);
+      assert.strictEqual(token?.decimals, 6);
+      assert.strictEqual(token?.total_supply, '200200200');
     });
   });
 
@@ -815,37 +826,41 @@ describe('ProcessTokenJob', () => {
 
     test('parses Retry-After response header correctly', () => {
       // Numeric value
-      const error1 = new errors.ResponseStatusCodeError('rate limited');
-      error1.statusCode = 429;
-      error1.headers = { 'retry-after': '120' };
-      expect(parseRetryAfterResponseHeader(error1)).toBe(120);
+      const error1 = new errors.ResponseError('rate limited', 429, {
+        headers: { 'retry-after': '120' },
+      });
+      assert.strictEqual(parseRetryAfterResponseHeader(error1), 120);
 
       // Date string
       const now = Date.now();
-      jest.useFakeTimers().setSystemTime(now);
-      const inOneHour = now + 3600 * 1000;
-      const error2 = new errors.ResponseStatusCodeError('rate limited');
-      error2.statusCode = 429;
-      error2.headers = { 'retry-after': new Date(inOneHour).toUTCString() };
-      expect(parseRetryAfterResponseHeader(error2)).toBe(3600);
+      mock.timers.enable({ apis: ['Date'], now });
+      try {
+        const inOneHour = now + 3600 * 1000;
+        const error2 = new errors.ResponseError('rate limited', 429, {
+          headers: { 'retry-after': new Date(inOneHour).toUTCString() },
+        });
+        assert.strictEqual(parseRetryAfterResponseHeader(error2), 3600);
 
-      jest.useFakeTimers().setSystemTime(new Date('2015-10-21'));
-      const error5 = new errors.ResponseStatusCodeError('rate limited');
-      error5.statusCode = 429;
-      error5.headers = { 'retry-after': 'Wed, 21 Oct 2015 07:28:00 GMT' };
-      expect(parseRetryAfterResponseHeader(error5)).toBe(26880);
+        mock.timers.setTime(new Date('2015-10-21').getTime());
+        const error5 = new errors.ResponseError('rate limited', 429, {
+          headers: { 'retry-after': 'Wed, 21 Oct 2015 07:28:00 GMT' },
+        });
+        assert.strictEqual(parseRetryAfterResponseHeader(error5), 26880);
 
-      // Empty value
-      const error3 = new errors.ResponseStatusCodeError('rate limited');
-      error3.statusCode = 429;
-      expect(parseRetryAfterResponseHeader(error3)).toBeUndefined();
+        // Empty value
+        const error3 = new errors.ResponseError('rate limited', 429, {
+          headers: {},
+        });
+        assert.strictEqual(parseRetryAfterResponseHeader(error3), undefined);
 
-      // Non-429 value
-      const error4 = new errors.ResponseStatusCodeError('rate limited');
-      error4.headers = { 'retry-after': '999' };
-      expect(parseRetryAfterResponseHeader(error4)).toBeUndefined();
-
-      jest.useRealTimers();
+        // Non-429 value
+        const error4 = new errors.ResponseError('rate limited', 500, {
+          headers: { 'retry-after': '999' },
+        });
+        assert.strictEqual(parseRetryAfterResponseHeader(error4), undefined);
+      } finally {
+        mock.timers.reset();
+      }
     });
 
     test('saves rate limited hosts', async () => {
@@ -856,15 +871,11 @@ describe('ProcessTokenJob', () => {
           method: 'GET',
         })
         .reply(429, { error: 'nope' }, { headers: { 'retry-after': '999' } });
-      try {
-        await new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work();
-      } catch (error) {
-        expect(error).toBeInstanceOf(RetryableJobError);
-        const err = error as RetryableJobError;
-        expect(err.cause).toBeInstanceOf(TooManyRequestsHttpError);
-      }
+      await assert.doesNotReject(
+        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).work()
+      );
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
-      expect(host).not.toBeUndefined();
+      assert.notStrictEqual(host, undefined);
     });
 
     test('skips request to rate limited host', async () => {
@@ -874,11 +885,12 @@ describe('ProcessTokenJob', () => {
           retry_after: 99999,
         },
       });
-      await expect(
-        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
-      ).rejects.toThrow(/skipping fetch to rate-limited hostname/);
+      await assert.rejects(
+        new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler(),
+        /skipping fetch to rate-limited hostname/
+      );
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
-      expect(host).not.toBeUndefined();
+      assert.notStrictEqual(host, undefined);
     });
 
     test('resumes calls if retry-after is complete', async () => {
@@ -911,13 +923,13 @@ describe('ProcessTokenJob', () => {
       `;
 
       // Token is processed now.
-      await expect(
+      await assert.doesNotReject(
         new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
-      ).resolves.not.toThrow();
+      );
 
       // Rate limited host is gone.
       const host = await db.getRateLimitedHost({ hostname: 'm.io' });
-      expect(host).toBeUndefined();
+      assert.strictEqual(host, undefined);
     });
   });
 
@@ -945,8 +957,9 @@ describe('ProcessTokenJob', () => {
       .reply(200, mockResponse);
     setGlobalDispatcher(agent);
 
-    await expect(
-      new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler()
-    ).rejects.toThrow(RetryableJobError);
+    await assert.rejects(
+      new ProcessTokenJob({ db, job: tokenJob, network: 'mainnet' }).handler(),
+      RetryableJobError
+    );
   });
 });

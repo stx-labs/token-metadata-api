@@ -34,7 +34,6 @@ const METADATA_FETCH_HTTP_AGENT = new Agent({
   headersTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
   bodyTimeout: ENV.METADATA_FETCH_TIMEOUT_MS,
   maxResponseSize: ENV.METADATA_MAX_PAYLOAD_BYTE_SIZE,
-  maxRedirections: ENV.METADATA_FETCH_MAX_REDIRECTIONS,
   connect: {
     rejectUnauthorized: false, // Ignore SSL cert errors.
   },
@@ -273,9 +272,22 @@ export async function fetchMetadata(
         // Disable during tests so we can inject a global mock agent.
         process.env.NODE_ENV === 'test' ? undefined : METADATA_FETCH_HTTP_AGENT,
     });
+    if (result.statusCode >= 400) {
+      const responseError = new errors.ResponseError(
+        result.statusText || `HTTP ${result.statusCode}`,
+        result.statusCode,
+        { headers: result.headers }
+      );
+      if (result.statusCode === 429) {
+        throw new TooManyRequestsHttpError(httpUrl, responseError);
+      }
+      throw new MetadataHttpError(`${url}: ${result.statusCode}`, responseError);
+    }
     return await result.body.text();
   } catch (error) {
-    if (
+    if (error instanceof TooManyRequestsHttpError || error instanceof MetadataHttpError) {
+      throw error;
+    } else if (
       error instanceof errors.HeadersTimeoutError ||
       error instanceof errors.BodyTimeoutError ||
       error instanceof errors.ConnectTimeoutError
@@ -283,7 +295,7 @@ export async function fetchMetadata(
       throw new MetadataTimeoutError(new URL(url));
     } else if (error instanceof errors.ResponseExceededMaxSizeError) {
       throw new MetadataSizeExceededError(url);
-    } else if (error instanceof errors.ResponseStatusCodeError && error.statusCode === 429) {
+    } else if (error instanceof errors.ResponseError && error.statusCode === 429) {
       throw new TooManyRequestsHttpError(httpUrl, error);
     } else if (
       error instanceof TypeError &&

@@ -19,6 +19,7 @@ import { logger, stopwatch } from '@stacks/api-toolkit';
 import {
   NewBlockContractEvent,
   NewBlockEvent,
+  NewBlockEventType,
   NewBlockFtBurnEvent,
   NewBlockFtMintEvent,
   NewBlockMessage,
@@ -102,7 +103,7 @@ export class StacksCoreBlockProcessor {
       const notifications: TokenMetadataUpdateNotification[] = [];
       const sftMints: SftMintEvent[] = [];
       const nftMints: NftMintEvent[] = [];
-      const ftSupplyDelta: Map<string, BigNumber> = new Map();
+      const ftSupplyDelta: Map<string, string> = new Map();
 
       // Process each transaction in the new block.
       for (const transaction of block.transactions) {
@@ -110,19 +111,19 @@ export class StacksCoreBlockProcessor {
         this.processTransaction(transaction, contracts);
         for (const event of transaction.events) {
           switch (event.type) {
-            case 'contract_event':
+            case NewBlockEventType.Contract:
               this.processContractEvent(transaction, event, notifications, sftMints);
               break;
-            case 'ft_mint_event':
+            case NewBlockEventType.FtMint:
               this.processFtMintEvent(event, ftSupplyDelta);
               break;
-            case 'ft_burn_event':
+            case NewBlockEventType.FtBurn:
               this.processFtBurnEvent(event, ftSupplyDelta);
               break;
-            case 'nft_mint_event':
+            case NewBlockEventType.NftMint:
               this.processNftMintEvent(transaction, event, nftMints);
               break;
-            case 'nft_burn_event':
+            case NewBlockEventType.NftBurn:
               // Burned NFTs still have their metadata in the database, so we don't need to do
               // anything here.
               break;
@@ -197,11 +198,11 @@ export class StacksCoreBlockProcessor {
     }
   }
 
-  private processFtMintEvent(event: NewBlockFtMintEvent, ftSupplyDelta: Map<string, BigNumber>) {
+  private processFtMintEvent(event: NewBlockFtMintEvent, ftSupplyDelta: Map<string, string>) {
     const principal = event.ft_mint_event.asset_identifier.split('::')[0];
-    const previous = ftSupplyDelta.get(principal) ?? BigNumber(0);
+    const previous = BigNumber(ftSupplyDelta.get(principal) ?? '0');
     const amount = BigNumber(event.ft_mint_event.amount);
-    ftSupplyDelta.set(principal, previous.plus(amount));
+    ftSupplyDelta.set(principal, previous.plus(amount).toString());
     logger.info(
       {
         contract: principal,
@@ -212,11 +213,11 @@ export class StacksCoreBlockProcessor {
     );
   }
 
-  private processFtBurnEvent(event: NewBlockFtBurnEvent, ftSupplyDelta: Map<string, BigNumber>) {
+  private processFtBurnEvent(event: NewBlockFtBurnEvent, ftSupplyDelta: Map<string, string>) {
     const principal = event.ft_burn_event.asset_identifier.split('::')[0];
-    const previous = ftSupplyDelta.get(principal) ?? BigNumber(0);
+    const previous = BigNumber(ftSupplyDelta.get(principal) ?? '0');
     const amount = BigNumber(event.ft_burn_event.amount);
-    ftSupplyDelta.set(principal, previous.minus(amount));
+    ftSupplyDelta.set(principal, previous.minus(amount).toString());
     logger.info(
       {
         contract: principal,
