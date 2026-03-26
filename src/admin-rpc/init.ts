@@ -1,20 +1,20 @@
 import Fastify, { FastifyPluginCallback } from 'fastify';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { PgStore } from '../pg/pg-store';
+import { PgStore } from '../pg/pg-store.js';
 import { Server } from 'http';
 import { Type } from '@sinclair/typebox';
-import { SmartContractRegEx } from '../api/schemas';
+import { SmartContractRegEx } from '../api/schemas.js';
 import { logger, PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
-import { reprocessTokenImageCache } from '../token-processor/images/image-cache';
-import { ENV } from '../env';
-import { JobQueue } from '../token-processor/queue/job-queue';
+import { reprocessTokenImageCache } from '../token-processor/images/image-cache.js';
+import { ENV } from '../env.js';
+import { JobQueue } from '../token-processor/queue/job-queue.js';
 import { createClient } from '@stacks/blockchain-api-client';
 import { ClarityAbi } from '@stacks/transactions';
-import { getSmartContractSip } from '../token-processor/util/sip-validation';
+import { getSmartContractSip } from '../token-processor/util/sip-validation.js';
 
 export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.post(
@@ -95,7 +95,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
         description: 'Retry all failed and invalid jobs',
       },
     },
-    async (request, reply) => {
+    async (_request, reply) => {
       await fastify.db.core.retryAllFailedJobs();
       logger.info(`AdminRPC retrying all failed and invalid jobs`);
       await reply.code(200).send();
@@ -132,7 +132,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
   fastify.post(
     '/job-queue/start',
     { schema: { description: 'Starts the job queue' } },
-    async (request, reply) => {
+    async (_request, reply) => {
       const jobQueue = fastify.jobQueue;
       if (!jobQueue || jobQueue.isRunning()) {
         await reply.code(422).send({ error: 'Job queue is already running' });
@@ -146,7 +146,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
   fastify.post(
     '/job-queue/stop',
     { schema: { description: 'Stops the job queue' } },
-    async (request, reply) => {
+    async (_request, reply) => {
       const jobQueue = fastify.jobQueue;
       if (!jobQueue || !jobQueue.isRunning()) {
         await reply.code(422).send({ error: 'Job queue is already stopped' });
@@ -218,6 +218,7 @@ export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeB
           // We need to convert to `any` first because there's a bug in the Stacks API types
           // library that causes TS to incorrectly think `tx_index` is not available in the
           // transaction response.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tx_index: (transaction as any).tx_index,
           fungible_token_name: abi.fungible_tokens[0]?.name ?? null,
           non_fungible_token_name: abi.non_fungible_tokens[0]?.name ?? null,

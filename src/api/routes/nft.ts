@@ -7,14 +7,14 @@ import {
   NftPrincipalParam,
   TokenIdParam,
   TokenQuerystringParams,
-} from '../schemas';
-import { handleTokenCache } from '../util/cache';
-import { parseMetadataLocaleBundle } from '../util/helpers';
-import { generateTokenErrorResponse, TokenErrorResponseSchema } from '../util/errors';
+} from '../schemas.js';
+import { handleTokenCache } from '../util/cache.js';
+import { parseMetadataLocaleBundle } from '../util/helpers.js';
+import { generateTokenErrorResponse, TokenErrorResponseSchema } from '../util/errors.js';
 
 export const NftRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleTokenCache);

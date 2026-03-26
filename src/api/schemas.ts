@@ -1,12 +1,25 @@
 import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
+import { isProdEnv, logger, SERVER_VERSION } from '@stacks/api-toolkit';
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
 
-const packageJsonPath = resolve(__dirname, '../../package.json');
-const { version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string };
+const openApiVersion = (() => {
+  if (isProdEnv) return SERVER_VERSION.tag;
+  try {
+    const packageJsonPath = resolve(__dirname, '../../package.json');
+    return (JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string }).version;
+  } catch (error) {
+    logger.error(error, 'Error reading version from package.json');
+    return SERVER_VERSION.tag;
+  }
+})();
 
 export const OpenApiSchemaOptions: SwaggerOptions = {
   openapi: {
@@ -14,7 +27,7 @@ export const OpenApiSchemaOptions: SwaggerOptions = {
       title: 'Token Metadata API',
       description:
         'Welcome to the API reference overview for the [Token Metadata API](https://docs.hiro.so/token-metadata-api). Service that indexes metadata for every SIP-009, SIP-010, and SIP-013 Token in the Stacks blockchain and exposes it via REST API endpoints.',
-      version,
+      version: openApiVersion,
     },
     externalDocs: {
       url: 'https://github.com/hirosystems/token-metadata-api',

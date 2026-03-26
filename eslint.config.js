@@ -1,52 +1,45 @@
-const { FlatCompat } = require('@eslint/eslintrc');
+import stacksConfig from '@stacks/eslint-config';
+import tsdoc from 'eslint-plugin-tsdoc';
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-module.exports = [
-  ...compat.config({
-    extends: ['@stacks/eslint-config', 'prettier'],
-    parser: '@typescript-eslint/parser',
-    parserOptions: {
-      tsconfigRootDir: __dirname,
-      project: './tsconfig.json',
-      ecmaVersion: 2020,
-      sourceType: 'module',
+export default [
+  {
+    ignores: ['dist/**', 'client/**', 'util/**', 'migrations/**', 'tests/**', 'coverage/**'],
+  },
+  ...stacksConfig,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        project: './tsconfig.json',
+      },
     },
-    ignorePatterns: [
-      '*.config.js',
-      'config/*',
-      '*.mjs',
-      'tests/**/*.js',
-      'client/*',
-      'coverage/*',
-      'dist/*',
-      'node_modules/',
-    ],
-    plugins: ['@typescript-eslint', 'eslint-plugin-tsdoc', 'prettier'],
+    plugins: { tsdoc },
     rules: {
-      'prettier/prettier': 'error',
       '@typescript-eslint/no-inferrable-types': 'off',
-      '@typescript-eslint/camelcase': 'off',
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-use-before-define': ['error', 'nofunc'],
       '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
       'no-warning-comments': 'warn',
       'tsdoc/syntax': 'error',
-      // TODO: Remove this when `any` abi type is fixed.
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
-    },
-  }),
-  {
-    files: ['tests/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
     },
   },
 ];

@@ -1,9 +1,9 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
-import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types';
-import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { SmartContractClarityError } from '../../util/errors';
-import { Job } from './job';
+import codec from '@stacks/codec';
+import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types.js';
+import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
+import { SmartContractClarityError } from '../../util/errors.js';
+import { Job } from './job.js';
 import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**
@@ -20,7 +20,7 @@ export class UpdateTokenSupplyJob extends Job {
     if (!tokenId) {
       return;
     }
-    const [token, contract] = await this.db.sqlTransaction(async sql => {
+    const [token, contract] = await this.db.sqlTransaction(async _sql => {
       const token = await this.db.getToken({ id: tokenId });
       if (!token) {
         logger.warn(`UpdateTokenSupplyJob token not found id=${tokenId}`);
@@ -80,7 +80,7 @@ export class UpdateTokenSupplyJob extends Job {
   private async updateTokenSupply(
     client: StacksNodeRpcClient,
     token: DbToken,
-    arg: ClarityValueUInt[] = []
+    arg: codec.ClarityValueUInt[] = []
   ) {
     let fTotalSupply: PgNumeric | undefined;
     try {
@@ -100,13 +100,13 @@ export class UpdateTokenSupplyJob extends Job {
     await this.db.core.updateTokenSupply({ id: token.id, total_supply: fTotalSupply });
   }
 
-  private uIntCv(n: bigint): ClarityValueUInt {
+  private uIntCv(n: bigint): codec.ClarityValueUInt {
     const cv = uintCV(n);
     const hex = cvToHex(cv);
     return {
       value: n.toString(),
       hex: hex,
-      repr: decodeClarityValueToRepr(hex),
-    } as ClarityValueUInt;
+      repr: codec.decodeClarityValueToRepr(hex),
+    } as codec.ClarityValueUInt;
   }
 }

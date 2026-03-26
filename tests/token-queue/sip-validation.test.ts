@@ -9,8 +9,8 @@ import {
   tupleCV,
   uintCV,
 } from '@stacks/transactions';
-import { getContractLogMetadataUpdateNotification } from '../../src/token-processor/util/sip-validation';
-import { TestTransactionBuilder } from '../helpers';
+import { getContractLogMetadataUpdateNotification } from '../../src/token-processor/util/sip-validation.js';
+import { TestTransactionBuilder } from '../helpers.js';
 import { NewBlockContractEvent, NewBlockEventType } from '@stacks/node-publisher-client';
 import { describe, test } from 'node:test';
 

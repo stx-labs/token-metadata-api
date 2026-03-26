@@ -1,11 +1,11 @@
 import { BasePgStoreModule, PgSqlClient, batchIterate } from '@stacks/api-toolkit';
-import { ENV } from '../env';
+import { ENV } from '../env.js';
 import {
   NftMintEvent,
   SftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
-} from '../token-processor/util/sip-validation';
+} from '../token-processor/util/sip-validation.js';
 import {
   DbSmartContractInsert,
   DbTokenType,
@@ -18,10 +18,12 @@ import {
   DbProcessedTokenUpdateBundle,
   DbRateLimitedHost,
   DbRateLimitedHostInsert,
+  DbMetadataInsert,
   DbMetadataAttributeInsert,
-} from './types';
-import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
-import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
+  DbMetadataPropertyInsert,
+} from './types.js';
+import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers.js';
+import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor.js';
 
 export class StacksCorePgStore extends BasePgStoreModule {
   /**
@@ -546,9 +548,20 @@ export class StacksCorePgStore extends BasePgStoreModule {
       // Write new metadata
       if (args.values.metadataLocales && args.values.metadataLocales.length > 0) {
         for (const locale of args.values.metadataLocales) {
-          delete (locale.metadata as Record<string, unknown>)['id'];
+          const metadataValues: DbMetadataInsert = {
+            sip: locale.metadata.sip,
+            token_id: args.id,
+            name: locale.metadata.name,
+            l10n_locale: locale.metadata.l10n_locale,
+            l10n_uri: locale.metadata.l10n_uri,
+            l10n_default: locale.metadata.l10n_default,
+            description: locale.metadata.description,
+            image: locale.metadata.image,
+            cached_image: locale.metadata.cached_image,
+            cached_thumbnail_image: locale.metadata.cached_thumbnail_image,
+          };
           const metadataInsert = await sql<{ id: number }[]>`
-            INSERT INTO metadata ${sql(locale.metadata)} RETURNING id
+            INSERT INTO metadata ${sql(metadataValues)} RETURNING id
           `;
           const metadataId = metadataInsert[0].id;
           if (locale.attributes && locale.attributes.length > 0) {
@@ -561,7 +574,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
             await sql`INSERT INTO metadata_attributes ${sql(values)}`;
           }
           if (locale.properties && locale.properties.length > 0) {
-            const values = locale.properties.map(property => ({
+            const values: DbMetadataPropertyInsert[] = locale.properties.map(property => ({
               name: property.name,
               value:
                 typeof property.value == 'boolean'

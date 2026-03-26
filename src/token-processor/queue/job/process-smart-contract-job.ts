@@ -1,7 +1,7 @@
-import { ENV } from '../../../env';
-import { DbSipNumber, DbSmartContract } from '../../../pg/types';
-import { Job } from './job';
-import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
+import { ENV } from '../../../env.js';
+import { DbSipNumber, DbSmartContract } from '../../../pg/types.js';
+import { Job } from './job.js';
+import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
 import { logger } from '@stacks/api-toolkit';
 
 /**
@@ -21,7 +21,7 @@ export class ProcessSmartContractJob extends Job {
     }
     this.contract = contract;
     switch (contract.sip) {
-      case DbSipNumber.sip009:
+      case DbSipNumber.sip009: {
         // NFT contracts expose their token count in `get-last-token-id`. We'll get that number
         // through a contract call and then queue that same number of tokens for metadata retrieval.
         const tokenCount = await this.getNftContractLastTokenId(contract);
@@ -29,7 +29,7 @@ export class ProcessSmartContractJob extends Job {
           await this.enqueueTokens(contract, tokenCount);
         }
         break;
-
+      }
       case DbSipNumber.sip010:
         // FT contracts only have 1 token to process. Do that immediately.
         await this.enqueueTokens(contract, 1n);

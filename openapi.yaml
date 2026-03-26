@@ -5,7 +5,7 @@ info:
     API](https://docs.hiro.so/token-metadata-api). Service that indexes metadata
     for every SIP-009, SIP-010, and SIP-013 Token in the Stacks blockchain and
     exposes it via REST API endpoints.
-  version: 2.2.1
+  version: v2.2.1
 components:
   schemas: {}
 paths:
@@ -28,9 +28,9 @@ paths:
           name: symbol
           required: false
         - schema:
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}
             title: Stacks Address
             type: string
-            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}
           example: SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9
           in: query
           name: address
@@ -93,6 +93,11 @@ paths:
               schema:
                 title: Paginated Ft Basic Metadata Response
                 type: object
+                required:
+                  - limit
+                  - offset
+                  - total
+                  - results
                 properties:
                   limit:
                     type: integer
@@ -108,6 +113,11 @@ paths:
                     items:
                       title: Ft Basic Metadata Response
                       type: object
+                      required:
+                        - tx_id
+                        - sender_address
+                        - asset_identifier
+                        - contract_principal
                       properties:
                         name:
                           type: string
@@ -159,16 +169,6 @@ paths:
                         contract_principal:
                           type: string
                           example: SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.miamicoin-token-v2
-                      required:
-                        - tx_id
-                        - sender_address
-                        - asset_identifier
-                        - contract_principal
-                required:
-                  - limit
-                  - offset
-                  - total
-                  - results
   /metadata/v1/ft/{principal}:
     get:
       operationId: getFtMetadata
@@ -190,9 +190,9 @@ paths:
           required: false
           description: Metadata localization to retrieve
         - schema:
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
             title: Fungible Token Contract Principal
             type: string
-            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
           example: SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
           in: path
           name: principal
@@ -206,6 +206,10 @@ paths:
               schema:
                 title: Ft Metadata Response
                 type: object
+                required:
+                  - tx_id
+                  - sender_address
+                  - asset_identifier
                 properties:
                   name:
                     description: Token name
@@ -266,6 +270,8 @@ paths:
                   metadata:
                     title: Metadata
                     type: object
+                    required:
+                      - sip
                     properties:
                       sip:
                         type: integer
@@ -298,6 +304,9 @@ paths:
                         items:
                           title: Metadata Attribute
                           type: object
+                          required:
+                            - trait_type
+                            - value
                           properties:
                             trait_type:
                               type: string
@@ -308,9 +317,6 @@ paths:
                             value:
                               title: Metadata Value
                               example: value
-                          required:
-                            - trait_type
-                            - value
                       properties:
                         title: Metadata Properties
                         type: object
@@ -324,6 +330,10 @@ paths:
                       localization:
                         title: Metadata Localization
                         type: object
+                        required:
+                          - uri
+                          - default
+                          - locales
                         properties:
                           uri:
                             format: uri
@@ -339,16 +349,6 @@ paths:
                             example:
                               - en
                               - jp
-                        required:
-                          - uri
-                          - default
-                          - locales
-                    required:
-                      - sip
-                required:
-                  - tx_id
-                  - sender_address
-                  - asset_identifier
         "404":
           description: Default Response
           content:
@@ -358,22 +358,22 @@ paths:
                 anyOf:
                   - title: Token Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token not found
-                    required:
-                      - error
                   - title: Contract Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Contract not found
-                    required:
-                      - error
         "422":
           description: Default Response
           content:
@@ -383,23 +383,26 @@ paths:
                 anyOf:
                   - title: Token Metadata Fetch In Progress Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token metadata fetch in progress
-                    required:
-                      - error
                   - title: Locale Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Locale not found
+                  - type: object
                     required:
                       - error
-                  - type: object
+                      - message
                     properties:
                       error:
                         type: string
@@ -407,9 +410,6 @@ paths:
                           - Token error
                       message:
                         type: string
-                    required:
-                      - error
-                      - message
   /metadata/v1/nft/{principal}/{token_id}:
     get:
       operationId: getNftMetadata
@@ -431,9 +431,9 @@ paths:
           required: false
           description: Metadata localization to retrieve
         - schema:
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
             title: Non-Fungible Token Contract Principal
             type: string
-            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
           example: SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12
           in: path
           name: principal
@@ -464,6 +464,8 @@ paths:
                   metadata:
                     title: Metadata
                     type: object
+                    required:
+                      - sip
                     properties:
                       sip:
                         type: integer
@@ -496,6 +498,9 @@ paths:
                         items:
                           title: Metadata Attribute
                           type: object
+                          required:
+                            - trait_type
+                            - value
                           properties:
                             trait_type:
                               type: string
@@ -506,9 +511,6 @@ paths:
                             value:
                               title: Metadata Value
                               example: value
-                          required:
-                            - trait_type
-                            - value
                       properties:
                         title: Metadata Properties
                         type: object
@@ -522,6 +524,10 @@ paths:
                       localization:
                         title: Metadata Localization
                         type: object
+                        required:
+                          - uri
+                          - default
+                          - locales
                         properties:
                           uri:
                             format: uri
@@ -537,12 +543,6 @@ paths:
                             example:
                               - en
                               - jp
-                        required:
-                          - uri
-                          - default
-                          - locales
-                    required:
-                      - sip
         "404":
           description: Default Response
           content:
@@ -552,22 +552,22 @@ paths:
                 anyOf:
                   - title: Token Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token not found
-                    required:
-                      - error
                   - title: Contract Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Contract not found
-                    required:
-                      - error
         "422":
           description: Default Response
           content:
@@ -577,23 +577,26 @@ paths:
                 anyOf:
                   - title: Token Metadata Fetch In Progress Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token metadata fetch in progress
-                    required:
-                      - error
                   - title: Locale Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Locale not found
+                  - type: object
                     required:
                       - error
-                  - type: object
+                      - message
                     properties:
                       error:
                         type: string
@@ -601,9 +604,6 @@ paths:
                           - Token error
                       message:
                         type: string
-                    required:
-                      - error
-                      - message
   /metadata/v1/sft/{principal}/{token_id}:
     get:
       operationId: getSftMetadata
@@ -625,9 +625,9 @@ paths:
           required: false
           description: Metadata localization to retrieve
         - schema:
+            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
             title: Semi-Fungible Token Contract Principal
             type: string
-            pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}$
           example: SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.key-alex-autoalex-v1
           in: path
           name: principal
@@ -664,6 +664,8 @@ paths:
                   metadata:
                     title: Metadata
                     type: object
+                    required:
+                      - sip
                     properties:
                       sip:
                         type: integer
@@ -696,6 +698,9 @@ paths:
                         items:
                           title: Metadata Attribute
                           type: object
+                          required:
+                            - trait_type
+                            - value
                           properties:
                             trait_type:
                               type: string
@@ -706,9 +711,6 @@ paths:
                             value:
                               title: Metadata Value
                               example: value
-                          required:
-                            - trait_type
-                            - value
                       properties:
                         title: Metadata Properties
                         type: object
@@ -722,6 +724,10 @@ paths:
                       localization:
                         title: Metadata Localization
                         type: object
+                        required:
+                          - uri
+                          - default
+                          - locales
                         properties:
                           uri:
                             format: uri
@@ -737,12 +743,6 @@ paths:
                             example:
                               - en
                               - jp
-                        required:
-                          - uri
-                          - default
-                          - locales
-                    required:
-                      - sip
         "404":
           description: Default Response
           content:
@@ -752,22 +752,22 @@ paths:
                 anyOf:
                   - title: Token Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token not found
-                    required:
-                      - error
                   - title: Contract Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Contract not found
-                    required:
-                      - error
         "422":
           description: Default Response
           content:
@@ -777,23 +777,26 @@ paths:
                 anyOf:
                   - title: Token Metadata Fetch In Progress Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Token metadata fetch in progress
-                    required:
-                      - error
                   - title: Locale Not Found Response
                     type: object
+                    required:
+                      - error
                     properties:
                       error:
                         type: string
                         enum:
                           - Locale not found
+                  - type: object
                     required:
                       - error
-                  - type: object
+                      - message
                     properties:
                       error:
                         type: string
@@ -801,9 +804,6 @@ paths:
                           - Token error
                       message:
                         type: string
-                    required:
-                      - error
-                      - message
   /metadata/v1/search:
     get:
       operationId: searchTokens
@@ -819,13 +819,13 @@ paths:
             title: Contract Identifiers
             type: array
             items:
+              pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}(:\d+)?$
               title: Contract Identifier
               description: "Format: PRINCIPAL or PRINCIPAL:TOKEN_NUMBER"
               examples:
                 - SP32XCD69XPS3GKDEXAQ29PJRDSD5AR643GNEEBXZ.fari-token
                 - SP497E7RX3233ATBS2AB9G4WTHB63X5PBSP5VGAQ.boomboxes-cycle-12:120
               type: string
-              pattern: ^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}\.[a-zA-Z]([a-zA-Z0-9]|[-_]){0,39}(:\d+)?$
           in: query
           name: contract
           required: true
@@ -854,6 +854,12 @@ paths:
                 items:
                   title: Search Result Item
                   type: object
+                  required:
+                    - contract_id
+                    - token_number
+                    - token_type
+                    - tx_id
+                    - sender_address
                   properties:
                     contract_id:
                       description: Contract principal
@@ -912,12 +918,6 @@ paths:
                       description: Deployer address
                       type: string
                       example: SPZA22A4D15RKH5G8XDGQ7BPC20Q5JNMH0VQKSR6
-                  required:
-                    - contract_id
-                    - token_number
-                    - token_type
-                    - tx_id
-                    - sender_address
   /metadata/v1/:
     get:
       operationId: getApiStatus
@@ -933,6 +933,10 @@ paths:
               schema:
                 title: Api Status Response
                 type: object
+                required:
+                  - server_version
+                  - status
+                  - chain_tip
                 properties:
                   server_version:
                     type: string
@@ -943,6 +947,9 @@ paths:
                   chain_tip:
                     anyOf:
                       - type: object
+                        required:
+                          - block_height
+                          - index_block_hash
                         properties:
                           block_height:
                             examples:
@@ -953,14 +960,7 @@ paths:
                               - "0x1234567890abcdef1234567890abcdef1234567890ab\
                                 cdef"
                             type: string
-                        required:
-                          - block_height
-                          - index_block_hash
                       - type: "null"
-                required:
-                  - server_version
-                  - status
-                  - chain_tip
 servers:
   - url: https://api.hiro.so/
     description: mainnet

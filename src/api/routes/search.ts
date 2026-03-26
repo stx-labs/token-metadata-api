@@ -1,15 +1,15 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { SearchQuerystringParams, SearchResponse } from '../schemas';
-import { handleBulkTokenCache } from '../util/cache';
-import { parseContractIdentifiers } from '../util/helpers';
+import { SearchQuerystringParams, SearchResponse } from '../schemas.js';
+import { handleBulkTokenCache } from '../util/cache.js';
+import { parseContractIdentifiers } from '../util/helpers.js';
 
 export const SearchRoutes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
-> = (fastify, options, done) => {
+> = (fastify, _options, done) => {
   fastify.addHook('preHandler', handleBulkTokenCache);
   fastify.get(
     '/search',

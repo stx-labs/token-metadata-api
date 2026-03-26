@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { SmartContractRegEx } from '../schemas';
+import { SmartContractRegEx } from '../schemas.js';
 import { CACHE_CONTROL_MUST_REVALIDATE, parseIfNoneMatchHeader } from '@stacks/api-toolkit';
-import { parseContractIdentifiers } from './helpers';
+import { parseContractIdentifiers } from './helpers.js';
 
 enum ETagType {
   chainTip = 'chain_tip',
@@ -13,10 +13,11 @@ async function handleCache(type: ETagType, request: FastifyRequest, reply: Fasti
   const ifNoneMatch = parseIfNoneMatchHeader(request.headers['if-none-match']);
   let etag: string | undefined;
   switch (type) {
-    case ETagType.chainTip:
+    case ETagType.chainTip: {
       const chainTip = await request.server.db.core.getChainTip(request.server.db.sql);
       etag = chainTip?.index_block_hash;
       break;
+    }
     case ETagType.token:
       etag = await getTokenEtag(request);
       break;
@@ -71,7 +72,7 @@ async function getTokenEtag(request: FastifyRequest): Promise<string | undefined
     } while (components.length);
     if (!contractPrincipal) return;
     return await request.server.db.getTokenEtag({ contractPrincipal, tokenNumber });
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -86,7 +87,7 @@ async function getBulkTokenEtag(request: FastifyRequest): Promise<string | undef
         : [];
     const pairs = parseContractIdentifiers(contracts);
     return await request.server.db.getBulkTokensEtag({ pairs });
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }

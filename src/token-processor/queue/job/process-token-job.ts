@@ -1,21 +1,21 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
+import codec from '@stacks/codec';
 import {
   DbMetadataLocaleInsertBundle,
   DbProcessedTokenUpdateBundle,
   DbSmartContract,
   DbToken,
   DbTokenType,
-} from '../../../pg/types';
-import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { SmartContractClarityError } from '../../util/errors';
+} from '../../../pg/types.js';
+import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
+import { SmartContractClarityError } from '../../util/errors.js';
 import {
   fetchAllMetadataLocalesFromBaseUri,
   getFetchableMetadataUrl,
   getTokenSpecificUri,
-} from '../../util/metadata-helpers';
-import { RetryableJobError } from '../errors';
-import { Job } from './job';
+} from '../../util/metadata-helpers.js';
+import { RetryableJobError } from '../errors.js';
+import { Job } from './job.js';
 import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**
@@ -32,7 +32,7 @@ export class ProcessTokenJob extends Job {
     if (!tokenId) {
       return;
     }
-    const [token, contract] = await this.db.sqlTransaction(async sql => {
+    const [token, contract] = await this.db.sqlTransaction(async _sql => {
       const token = await this.db.getToken({ id: tokenId });
       if (!token) {
         logger.warn(`ProcessTokenJob token not found id=${tokenId}`);
@@ -216,13 +216,13 @@ export class ProcessTokenJob extends Job {
     }
   }
 
-  private uIntCv(n: bigint): ClarityValueUInt {
+  private uIntCv(n: bigint): codec.ClarityValueUInt {
     const cv = uintCV(n);
     const hex = cvToHex(cv);
     return {
       value: n.toString(),
       hex: hex,
-      repr: decodeClarityValueToRepr(hex),
-    } as ClarityValueUInt;
+      repr: codec.decodeClarityValueToRepr(hex),
+    } as codec.ClarityValueUInt;
   }
 }

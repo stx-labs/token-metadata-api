@@ -2,28 +2,28 @@ import { strict as assert } from 'node:assert';
 import { mock } from 'node:test';
 import { cvToHex, noneCV, stringUtf8CV, uintCV } from '@stacks/transactions';
 import { errors, MockAgent, setGlobalDispatcher } from 'undici';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
 import {
   DbJob,
   DbJobStatus,
   DbMetadataAttribute,
   DbMetadataProperty,
   DbSipNumber,
-} from '../../src/pg/types';
-import { ENV } from '../../src/env';
-import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-token-job';
-import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers';
-import { RetryableJobError } from '../../src/token-processor/queue/errors';
+} from '../../src/pg/types.js';
+import { ENV } from '../../src/env.js';
+import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-token-job.js';
+import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers.js';
+import { RetryableJobError } from '../../src/token-processor/queue/errors.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { insertAndEnqueueTestContractWithTokens } from '../helpers';
-import { InvalidTokenError } from '../../src/pg/errors';
+import { insertAndEnqueueTestContractWithTokens, setupEnv } from '../helpers.js';
+import { InvalidTokenError } from '../../src/pg/errors.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ProcessTokenJob', () => {
   let db: PgStore;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
   });

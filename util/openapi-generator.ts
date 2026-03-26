@@ -1,9 +1,9 @@
 import Fastify from 'fastify';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { Api } from '../src/api/init';
+import { Api } from '../src/api/init.js';
 import FastifySwagger from '@fastify/swagger';
 import { writeFileSync } from 'fs';
-import { OpenApiSchemaOptions } from '../src/api/schemas';
+import { OpenApiSchemaOptions } from '../src/api/schemas.js';
 
 /**
  * Generates `openapi.yaml` based on current Swagger definitions.

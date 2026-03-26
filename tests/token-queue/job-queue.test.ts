@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { ENV } from '../../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbJob, DbJobStatus, DbSipNumber } from '../../src/pg/types';
-import { JobQueue } from '../../src/token-processor/queue/job-queue';
-import { insertAndEnqueueTestContract } from '../helpers';
+import { ENV } from '../../src/env.js';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbJob, DbJobStatus, DbSipNumber } from '../../src/pg/types.js';
+import { JobQueue } from '../../src/token-processor/queue/job-queue.js';
+import { insertAndEnqueueTestContract, setupEnv } from '../helpers.js';
 import { cycleMigrations, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
 import { afterEach, beforeEach, describe, test } from 'node:test';
@@ -25,7 +25,7 @@ describe('JobQueue', () => {
   let queue: TestJobQueue;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
     queue = new TestJobQueue({ db, network: 'mainnet' });

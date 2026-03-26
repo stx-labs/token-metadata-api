@@ -379,10 +379,12 @@ export interface operations {
                                 uri: string;
                                 /** @example en */
                                 default: string;
-                                /** @example [
+                                /**
+                                 * @example [
                                  *       "en",
                                  *       "jp"
-                                 *     ] */
+                                 *     ]
+                                 */
                                 locales: string[];
                             };
                         };
@@ -520,10 +522,12 @@ export interface operations {
                                 uri: string;
                                 /** @example en */
                                 default: string;
-                                /** @example [
+                                /**
+                                 * @example [
                                  *       "en",
                                  *       "jp"
-                                 *     ] */
+                                 *     ]
+                                 */
                                 locales: string[];
                             };
                         };
@@ -665,10 +669,12 @@ export interface operations {
                                 uri: string;
                                 /** @example en */
                                 default: string;
-                                /** @example [
+                                /**
+                                 * @example [
                                  *       "en",
                                  *       "jp"
-                                 *     ] */
+                                 *     ]
+                                 */
                                 locales: string[];
                             };
                         };
@@ -820,7 +826,9 @@ export interface operations {
                         /** @example ready */
                         status: string;
                         chain_tip: {
+                            /** @example 163541 */
                             block_height: number;
+                            /** @example 0x1234567890abcdef1234567890abcdef1234567890abcdef */
                             index_block_hash: string;
                         } | null;
                     };

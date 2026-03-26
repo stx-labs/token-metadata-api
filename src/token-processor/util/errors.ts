@@ -1,6 +1,6 @@
 import { errors } from 'undici';
-import { parseRetryAfterResponseHeader } from './helpers';
-import { DbJobInvalidReason } from '../../pg/types';
+import { parseRetryAfterResponseHeader } from './helpers.js';
+import { DbJobInvalidReason } from '../../pg/types.js';
 
 export interface UndiciCauseTypeError extends TypeError {
   cause?: unknown;

@@ -1,17 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, uintCV } from '@stacks/transactions';
-import { DbSipNumber } from '../../src/pg/types';
+import { DbSipNumber } from '../../src/pg/types.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env';
-import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
+import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store.js';
 import {
   TestTransactionBuilder,
   TestBlockBuilder,
   SIP_009_ABI,
   SIP_010_ABI,
   markAllJobsAsDone,
-} from '../helpers';
-import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+  setupEnv,
+} from '../helpers.js';
+import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor.js';
 import { after, before, describe, test } from 'node:test';
 
 describe('re-org handling', () => {
@@ -23,7 +23,7 @@ describe('re-org handling', () => {
   const nftContractId = `${address}.test-nft`;
 
   before(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
     processor = new StacksCoreBlockProcessor({ db: db.core });

@@ -1,12 +1,12 @@
-import { PgStore } from './pg/pg-store';
-import { JobQueue } from './token-processor/queue/job-queue';
-import { buildApiServer, buildPromServer } from './api/init';
-import { TokenProcessorMetrics } from './token-processor/token-processor-metrics';
-import { ENV } from './env';
-import { buildAdminRpcServer } from './admin-rpc/init';
-import { isProdEnv } from './api/util/helpers';
+import { PgStore } from './pg/pg-store.js';
+import { JobQueue } from './token-processor/queue/job-queue.js';
+import { buildApiServer, buildPromServer } from './api/init.js';
+import { TokenProcessorMetrics } from './token-processor/token-processor-metrics.js';
+import { ENV } from './env.js';
+import { buildAdminRpcServer } from './admin-rpc/init.js';
+import { isProdEnv } from './api/util/helpers.js';
 import { buildProfilerServer, logger, registerShutdownConfig } from '@stacks/api-toolkit';
-import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream';
+import { buildSnpEventStreamHandler } from './stacks-core/snp-event-stream.js';
 import { StacksNetworkName } from '@stacks/network';
 
 /**

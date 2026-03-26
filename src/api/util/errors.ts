@@ -7,7 +7,7 @@ import {
   TokenNotProcessedResponse,
   NotFoundResponse,
   ContractNotFoundResponse,
-} from '../schemas';
+} from '../schemas.js';
 import {
   ContractNotFoundError,
   InvalidContractError,
@@ -15,16 +15,16 @@ import {
   TokenLocaleNotFoundError,
   TokenNotFoundError,
   TokenNotProcessedError,
-} from '../../pg/errors';
-import { setReplyNonCacheable } from './cache';
-import { DbJobInvalidReason } from '../../pg/types';
+} from '../../pg/errors.js';
+import { setReplyNonCacheable } from './cache.js';
+import { DbJobInvalidReason } from '../../pg/types.js';
 
 export const TokenErrorResponseSchema = {
   404: NotFoundResponse,
   422: ErrorResponse,
 };
 
-export async function generateTokenErrorResponse(error: any, reply: FastifyReply) {
+export async function generateTokenErrorResponse(error: unknown, reply: FastifyReply) {
   setReplyNonCacheable(reply);
   if (error instanceof TokenNotFoundError) {
     await reply.code(404).send(Value.Create(TokenNotFoundResponse));

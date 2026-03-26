@@ -15,14 +15,14 @@ import {
   PaginatedResponse,
   StacksAddressParam,
   TokenQuerystringParams,
-} from '../schemas';
-import { handleChainTipCache, handleTokenCache } from '../util/cache';
-import { generateTokenErrorResponse, TokenErrorResponseSchema } from '../util/errors';
-import { parseMetadataLocaleBundle } from '../util/helpers';
+} from '../schemas.js';
+import { handleChainTipCache, handleTokenCache } from '../util/cache.js';
+import { generateTokenErrorResponse, TokenErrorResponseSchema } from '../util/errors.js';
+import { parseMetadataLocaleBundle } from '../util/helpers.js';
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleChainTipCache);
@@ -98,7 +98,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
 
 const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleTokenCache);

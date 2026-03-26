@@ -1,9 +1,9 @@
 import { SERVER_VERSION } from '@stacks/api-toolkit';
 import { logger as defaultLogger } from '@stacks/api-toolkit';
 import { EventEmitter } from 'node:events';
-import { decodeStacksCoreBlock, StacksCoreBlockProcessor } from './stacks-core-block-processor';
+import { decodeStacksCoreBlock, StacksCoreBlockProcessor } from './stacks-core-block-processor.js';
 import { StacksMessageStream, MessagePath, Message } from '@stacks/node-publisher-client';
-import { PgStore } from '../pg/pg-store';
+import { PgStore } from '../pg/pg-store.js';
 
 /**
  * Handles the SNP event stream and processes Stacks Core blocks.
