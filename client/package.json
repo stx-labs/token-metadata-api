@@ -1,6 +1,6 @@
 {
   "name": "@stacks/token-metadata-api-client",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Client for the Stacks Token Metadata API",
   "author": "Stacks Labs",
   "keywords": [
