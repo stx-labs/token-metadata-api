@@ -1,13 +1,13 @@
 import { strict as assert } from 'node:assert';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { ENV } from '../../src/env';
-import { MetadataHttpError, MetadataParseError } from '../../src/token-processor/util/errors';
+import { ENV } from '../../src/env.js';
+import { MetadataHttpError, MetadataParseError } from '../../src/token-processor/util/errors.js';
 import {
   getFetchableMetadataUrl,
   getMetadataFromUri,
   getTokenSpecificUri,
   fetchMetadata,
-} from '../../src/token-processor/util/metadata-helpers';
+} from '../../src/token-processor/util/metadata-helpers.js';
 import { describe, test } from 'node:test';
 
 describe('Metadata Helpers', () => {

@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { startTestApiServer, TestFastifyServer } from '../helpers';
+import { ENV } from '../../src/env.js';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { startTestApiServer, TestFastifyServer } from '../helpers.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('Status routes', () => {

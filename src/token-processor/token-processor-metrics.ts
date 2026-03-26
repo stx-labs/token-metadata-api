@@ -1,5 +1,5 @@
 import * as prom from 'prom-client';
-import { PgStore } from '../pg/pg-store';
+import { PgStore } from '../pg/pg-store.js';
 
 export class TokenProcessorMetrics {
   readonly token_metadata_block_height: prom.Gauge;

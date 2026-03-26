@@ -1,12 +1,12 @@
 import PQueue from 'p-queue';
-import { PgStore } from '../../pg/pg-store';
-import { DbJob, DbJobStatus } from '../../pg/types';
-import { ENV } from '../../env';
-import { ProcessSmartContractJob } from './job/process-smart-contract-job';
-import { ProcessTokenJob } from './job/process-token-job';
+import { PgStore } from '../../pg/pg-store.js';
+import { DbJob, DbJobStatus } from '../../pg/types.js';
+import { ENV } from '../../env.js';
+import { ProcessSmartContractJob } from './job/process-smart-contract-job.js';
+import { ProcessTokenJob } from './job/process-token-job.js';
 import { logger, timeout } from '@stacks/api-toolkit';
 import { StacksNetworkName } from '@stacks/network';
-import { UpdateTokenSupplyJob } from './job/update-token-supply-job';
+import { UpdateTokenSupplyJob } from './job/update-token-supply-job.js';
 
 /**
  * A priority queue that organizes all necessary work for contract ingestion and token metadata

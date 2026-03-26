@@ -1,12 +1,12 @@
 import { ClarityTypeID, ClarityValue, ClarityValueUInt, decodeClarityValue } from '@stacks/codec';
 import { request, errors } from 'undici';
-import { ENV } from '../../env';
-import { RetryableJobError } from '../queue/errors';
+import { ENV } from '../../env.js';
+import { RetryableJobError } from '../queue/errors.js';
 import {
   SmartContractClarityError,
   StacksNodeJsonParseError,
   StacksNodeHttpError,
-} from '../util/errors';
+} from '../util/errors.js';
 import { ClarityAbi, getAddressFromPrivateKey, makeRandomPrivKey } from '@stacks/transactions';
 import { StacksNetworkName } from '@stacks/network';
 

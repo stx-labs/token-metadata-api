@@ -1,13 +1,14 @@
 {
-  "name": "@hirosystems/token-metadata-api",
+  "name": "@stx-labs/token-metadata-api",
   "description": "A microservice that indexes metadata for all Fungible, Non-Fungible, and Semi-Fungible Tokens in the Stacks blockchain and exposes it via JSON REST API endpoints",
   "version": "2.2.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hirosystems/token-metadata-api.git"
+    "url": "https://github.com/stx-labs/token-metadata-api.git"
   },
+  "type": "module",
   "main": "index.js",
-  "author": "Hiro Systems PBC <engineering@hiro.so> (https://hiro.so)",
+  "author": "Stacks Labs",
   "license": "GPL-3.0",
   "engines": {
     "node": ">=24"
@@ -16,7 +17,7 @@
     "build": "rimraf ./dist && tsc --project tsconfig.build.json",
     "build:client": "npm run generate:git-info && npm run generate:openapi && npm run generate:client",
     "start": "node ./dist/src/index.js",
-    "start-ts": "ts-node ./src/index.ts",
+    "start-ts": "node --import tsx ./src/index.ts",
     "test": "npm run testenv:run && NODE_ENV=test node --import tsx --import ./tests/setup-env.ts --test --test-concurrency=1; EXIT=$?; npm run testenv:stop; exit $EXIT",
     "test:admin": "npm run test -- ./tests/admin/*.test.ts",
     "test:api": "npm run test -- ./tests/api/*.test.ts",
@@ -24,10 +25,10 @@
     "test:token-queue": "npm run test -- ./tests/token-queue/*.test.ts",
     "testenv:run": "node --import tsx ./tests/setup.ts up",
     "testenv:stop": "node --import tsx ./tests/setup.ts down",
-    "migrate": "ts-node node_modules/.bin/node-pg-migrate -j ts",
+    "migrate": "node --import tsx node_modules/.bin/node-pg-migrate -j ts",
     "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx -f unix",
     "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts migrations/**/*.ts",
-    "generate:openapi": "rimraf ./openapi.yaml && node -r ts-node/register ./util/openapi-generator.ts",
+    "generate:openapi": "rimraf ./openapi.yaml && node --import tsx ./util/openapi-generator.ts",
     "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
     "generate:client": "openapi-typescript ./openapi.yaml -o ./client/src/generated/schema.d.ts"
   },
@@ -72,7 +73,7 @@
     "fastify-metrics": "^12.1.0",
     "json5": "^2.2.3",
     "node-pg-migrate": "^8.0.4",
-    "p-queue": "^6.6.2",
+    "p-queue": "^8.1.0",
     "sharp": "^0.34.5",
     "undici": "^7.24.4"
   }

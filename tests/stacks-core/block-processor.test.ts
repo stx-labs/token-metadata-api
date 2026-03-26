@@ -1,16 +1,16 @@
 import { strict as assert } from 'node:assert';
 import { cvToHex, tupleCV, bufferCV, uintCV, stringUtf8CV } from '@stacks/transactions';
-import { DbSipNumber } from '../../src/pg/types';
+import { DbSipNumber } from '../../src/pg/types.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env';
-import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store';
+import { ENV } from '../../src/env.js';
+import { PgStore, MIGRATIONS_DIR } from '../../src/pg/pg-store.js';
 import {
   insertAndEnqueueTestContractWithTokens,
   markAllJobsAsDone,
   TestTransactionBuilder,
   TestBlockBuilder,
-} from '../helpers';
-import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor';
+} from '../helpers.js';
+import { StacksCoreBlockProcessor } from '../../src/stacks-core/stacks-core-block-processor.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('block processor', () => {

@@ -1,7 +1,7 @@
-import { ENV } from '../../env';
-import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers';
+import { ENV } from '../../env.js';
+import { parseDataUrl, getFetchableMetadataUrl } from '../util/metadata-helpers.js';
 import { logger } from '@stacks/api-toolkit';
-import { PgStore } from '../../pg/pg-store';
+import { PgStore } from '../../pg/pg-store.js';
 import { Readable } from 'node:stream';
 import sharp from 'sharp';
 import fs from 'fs';
@@ -13,7 +13,7 @@ import {
   UndiciCauseTypeError,
   ImageHttpError,
   ImageParseError,
-} from '../util/errors';
+} from '../util/errors.js';
 import { pipeline } from 'node:stream/promises';
 import { Storage } from '@google-cloud/storage';
 

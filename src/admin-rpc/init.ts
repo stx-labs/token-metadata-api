@@ -1,16 +1,16 @@
 import Fastify, { FastifyPluginCallback } from 'fastify';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { PgStore } from '../pg/pg-store';
+import { PgStore } from '../pg/pg-store.js';
 import { Server } from 'http';
 import { Type } from '@sinclair/typebox';
-import { SmartContractRegEx } from '../api/schemas';
+import { SmartContractRegEx } from '../api/schemas.js';
 import { logger, PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
-import { reprocessTokenImageCache } from '../token-processor/images/image-cache';
-import { ENV } from '../env';
-import { JobQueue } from '../token-processor/queue/job-queue';
+import { reprocessTokenImageCache } from '../token-processor/images/image-cache.js';
+import { ENV } from '../env.js';
+import { JobQueue } from '../token-processor/queue/job-queue.js';
 import { createClient } from '@stacks/blockchain-api-client';
 import { ClarityAbi } from '@stacks/transactions';
-import { getSmartContractSip } from '../token-processor/util/sip-validation';
+import { getSmartContractSip } from '../token-processor/util/sip-validation.js';
 
 export const AdminApi: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,

@@ -8,8 +8,8 @@ import {
   DbMetadataPropertyInsert,
   DbSmartContract,
   DbToken,
-} from '../../pg/types';
-import { ENV } from '../../env';
+} from '../../pg/types.js';
+import { ENV } from '../../env.js';
 import {
   MetadataHttpError,
   MetadataParseError,
@@ -17,9 +17,9 @@ import {
   MetadataTimeoutError,
   TooManyRequestsHttpError,
   UndiciCauseTypeError,
-} from './errors';
-import { RetryableJobError } from '../queue/errors';
-import { processImageCache } from '../images/image-cache';
+} from './errors.js';
+import { RetryableJobError } from '../queue/errors.js';
+import { processImageCache } from '../images/image-cache.js';
 import {
   RawMetadataLocale,
   RawMetadataLocalizationCType,
@@ -27,7 +27,7 @@ import {
   RawMetadataPropertiesCType,
   RawMetadataCType,
   RawMetadata,
-} from './types';
+} from './types.js';
 import { logger } from '@stacks/api-toolkit';
 
 const METADATA_FETCH_HTTP_AGENT = new Agent({

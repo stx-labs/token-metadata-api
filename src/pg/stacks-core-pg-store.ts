@@ -1,11 +1,11 @@
 import { BasePgStoreModule, PgSqlClient, batchIterate } from '@stacks/api-toolkit';
-import { ENV } from '../env';
+import { ENV } from '../env.js';
 import {
   NftMintEvent,
   SftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
-} from '../token-processor/util/sip-validation';
+} from '../token-processor/util/sip-validation.js';
 import {
   DbSmartContractInsert,
   DbTokenType,
@@ -21,9 +21,9 @@ import {
   DbMetadataInsert,
   DbMetadataAttributeInsert,
   DbMetadataPropertyInsert,
-} from './types';
-import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
-import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
+} from './types.js';
+import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers.js';
+import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor.js';
 
 export class StacksCorePgStore extends BasePgStoreModule {
   /**

@@ -1,5 +1,5 @@
-import { DbMetadataLocaleBundle } from '../../pg/types';
-import { MetadataPropertiesType, MetadataType, MetadataValueType } from '../schemas';
+import { DbMetadataLocaleBundle } from '../../pg/types.js';
+import { MetadataPropertiesType, MetadataType, MetadataValueType } from '../schemas.js';
 
 export const isDevEnv = process.env.NODE_ENV === 'development';
 export const isTestEnv = process.env.NODE_ENV === 'test';

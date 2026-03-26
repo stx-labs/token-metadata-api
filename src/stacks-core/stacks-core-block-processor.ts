@@ -7,14 +7,14 @@ import {
   SftMintEvent,
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
-} from '../token-processor/util/sip-validation';
+} from '../token-processor/util/sip-validation.js';
 import {
   ClarityTypeID,
   decodeClarityValue,
   DecodedTxResult,
   decodeTransaction,
 } from '@stacks/codec';
-import { StacksCorePgStore } from '../pg/stacks-core-pg-store';
+import { StacksCorePgStore } from '../pg/stacks-core-pg-store.js';
 import { logger, stopwatch } from '@stacks/api-toolkit';
 import {
   NewBlockContractEvent,

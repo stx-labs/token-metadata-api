@@ -1,17 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { after, afterEach, before, beforeEach, describe, test } from 'node:test';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { buildAdminRpcServer } from '../../src/admin-rpc/init';
-import { ENV } from '../../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbJobStatus, DbSipNumber } from '../../src/pg/types';
+import { buildAdminRpcServer } from '../../src/admin-rpc/init.js';
+import { ENV } from '../../src/env.js';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbJobStatus, DbSipNumber } from '../../src/pg/types.js';
 import {
   insertAndEnqueueTestContractWithTokens,
   markAllJobsAsDone,
   SIP_010_ABI,
   TestFastifyServer,
-} from '../helpers';
-import { JobQueue } from '../../src/token-processor/queue/job-queue';
+} from '../helpers.js';
+import { JobQueue } from '../../src/token-processor/queue/job-queue.js';
 import nock from 'nock';
 
 describe('Admin RPC', () => {

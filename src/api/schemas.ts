@@ -2,7 +2,11 @@ import { SwaggerOptions } from '@fastify/swagger';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 import { isProdEnv, logger, SERVER_VERSION } from '@stacks/api-toolkit';
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
 

@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { cycleMigrations, timeout } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbJob, DbSipNumber } from '../../src/pg/types';
-import { RetryableJobError } from '../../src/token-processor/queue/errors';
-import { Job } from '../../src/token-processor/queue/job/job';
-import { UserError } from '../../src/token-processor/util/errors';
-import { insertAndEnqueueTestContract } from '../helpers';
+import { ENV } from '../../src/env.js';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbJob, DbSipNumber } from '../../src/pg/types.js';
+import { RetryableJobError } from '../../src/token-processor/queue/errors.js';
+import { Job } from '../../src/token-processor/queue/job/job.js';
+import { UserError } from '../../src/token-processor/util/errors.js';
+import { insertAndEnqueueTestContract } from '../helpers.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 class TestRetryableJob extends Job {

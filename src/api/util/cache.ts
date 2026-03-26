@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { SmartContractRegEx } from '../schemas';
+import { SmartContractRegEx } from '../schemas.js';
 import { CACHE_CONTROL_MUST_REVALIDATE, parseIfNoneMatchHeader } from '@stacks/api-toolkit';
-import { parseContractIdentifiers } from './helpers';
+import { parseContractIdentifiers } from './helpers.js';
 
 enum ETagType {
   chainTip = 'chain_tip',

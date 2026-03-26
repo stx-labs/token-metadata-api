@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbSipNumber, DbToken, DbTokenType } from '../../src/pg/types';
-import { ProcessSmartContractJob } from '../../src/token-processor/queue/job/process-smart-contract-job';
-import { ENV } from '../../src/env';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbSipNumber, DbToken, DbTokenType } from '../../src/pg/types.js';
+import { ProcessSmartContractJob } from '../../src/token-processor/queue/job/process-smart-contract-job.js';
+import { ENV } from '../../src/env.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { insertAndEnqueueTestContract } from '../helpers';
+import { insertAndEnqueueTestContract } from '../helpers.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ProcessSmartContractJob', () => {

@@ -1,13 +1,13 @@
 import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbSipNumber } from '../../src/pg/types';
+import { ENV } from '../../src/env.js';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbSipNumber } from '../../src/pg/types.js';
 import {
   TestFastifyServer,
   insertAndEnqueueTestContractWithTokens,
   startTestApiServer,
-} from '../helpers';
+} from '../helpers.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('ETag cache', () => {

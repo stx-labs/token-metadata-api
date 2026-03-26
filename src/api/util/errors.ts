@@ -7,7 +7,7 @@ import {
   TokenNotProcessedResponse,
   NotFoundResponse,
   ContractNotFoundResponse,
-} from '../schemas';
+} from '../schemas.js';
 import {
   ContractNotFoundError,
   InvalidContractError,
@@ -15,9 +15,9 @@ import {
   TokenLocaleNotFoundError,
   TokenNotFoundError,
   TokenNotProcessedError,
-} from '../../pg/errors';
-import { setReplyNonCacheable } from './cache';
-import { DbJobInvalidReason } from '../../pg/types';
+} from '../../pg/errors.js';
+import { setReplyNonCacheable } from './cache.js';
+import { DbJobInvalidReason } from '../../pg/types.js';
 
 export const TokenErrorResponseSchema = {
   404: NotFoundResponse,

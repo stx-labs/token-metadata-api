@@ -1,4 +1,4 @@
-import { DbJobInvalidReason } from './types';
+import { DbJobInvalidReason } from './types.js';
 
 export class TokenNotFoundError extends Error {
   constructor() {

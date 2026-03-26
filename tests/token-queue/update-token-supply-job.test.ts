@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store';
-import { DbJob, DbSipNumber } from '../../src/pg/types';
-import { ENV } from '../../src/env';
+import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
+import { DbJob, DbSipNumber } from '../../src/pg/types.js';
+import { ENV } from '../../src/env.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { insertAndEnqueueTestContractWithTokens, markAllJobsAsDone } from '../helpers';
-import { UpdateTokenSupplyJob } from '../../src/token-processor/queue/job/update-token-supply-job';
+import { insertAndEnqueueTestContractWithTokens, markAllJobsAsDone } from '../helpers.js';
+import { UpdateTokenSupplyJob } from '../../src/token-processor/queue/job/update-token-supply-job.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
 describe('UpdateTokenSupplyJob', () => {

@@ -1,9 +1,9 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { ApiStatusResponse } from '../schemas';
+import { ApiStatusResponse } from '../schemas.js';
 import { SERVER_VERSION } from '@stacks/api-toolkit';
-import { handleChainTipCache } from '../util/cache';
+import { handleChainTipCache } from '../util/cache.js';
 
 export const StatusRoutes: FastifyPluginCallback<
   Record<never, never>,

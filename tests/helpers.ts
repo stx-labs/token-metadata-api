@@ -1,16 +1,16 @@
 import * as http from 'http';
-import { PgStore } from '../src/pg/pg-store';
-import { buildApiServer } from '../src/api/init';
+import { PgStore } from '../src/pg/pg-store.js';
+import { buildApiServer } from '../src/api/init.js';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { SmartContractDeployment } from '../src/token-processor/util/sip-validation';
-import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types';
+import { SmartContractDeployment } from '../src/token-processor/util/sip-validation.js';
+import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types.js';
 import { waiter } from '@stacks/api-toolkit';
 import {
   DecodedStacksBlock,
   DecodedStacksTransaction,
-} from '../src/stacks-core/stacks-core-block-processor';
+} from '../src/stacks-core/stacks-core-block-processor.js';
 import {
   AnchorModeID,
   DecodedTxResult,

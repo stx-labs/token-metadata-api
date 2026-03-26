@@ -1,15 +1,17 @@
 import Fastify, { FastifyPluginAsync } from 'fastify';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { FtRoutes } from './routes/ft';
-import { NftRoutes } from './routes/nft';
-import { SftRoutes } from './routes/sft';
-import { SearchRoutes } from './routes/search';
-import { PgStore } from '../pg/pg-store';
+import { FtRoutes } from './routes/ft.js';
+import { NftRoutes } from './routes/nft.js';
+import { SftRoutes } from './routes/sft.js';
+import { SearchRoutes } from './routes/search.js';
+import { PgStore } from '../pg/pg-store.js';
 import FastifyCors from '@fastify/cors';
-import { StatusRoutes } from './routes/status';
-import FastifyMetrics, { IFastifyMetrics } from 'fastify-metrics';
+import { StatusRoutes } from './routes/status.js';
+import FastifyMetricsModule from 'fastify-metrics';
+import type { IFastifyMetrics } from 'fastify-metrics';
+const FastifyMetrics = FastifyMetricsModule.default ?? FastifyMetricsModule;
 import { Server } from 'http';
-import { isProdEnv } from './util/helpers';
+import { isProdEnv } from './util/helpers.js';
 import { PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
 
 export const Api: FastifyPluginAsync<Record<never, never>, Server, TypeBoxTypeProvider> = async (

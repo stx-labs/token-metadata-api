@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
-import { ENV } from '../../src/env';
-import { processImageCache } from '../../src/token-processor/images/image-cache';
-import { closeTestServer, startTestResponseServer, startTimeoutServer } from '../helpers';
+import { ENV } from '../../src/env.js';
+import { processImageCache } from '../../src/token-processor/images/image-cache.js';
+import { closeTestServer, startTestResponseServer, startTimeoutServer } from '../helpers.js';
 import {
   ImageHttpError,
   ImageTimeoutError,
   TooManyRequestsHttpError,
-} from '../../src/token-processor/util/errors';
+} from '../../src/token-processor/util/errors.js';
 import { before, describe, test } from 'node:test';
 
 describe('Image cache', () => {

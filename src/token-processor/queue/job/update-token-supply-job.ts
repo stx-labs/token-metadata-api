@@ -1,9 +1,9 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
 import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
-import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types';
-import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { SmartContractClarityError } from '../../util/errors';
-import { Job } from './job';
+import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types.js';
+import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
+import { SmartContractClarityError } from '../../util/errors.js';
+import { Job } from './job.js';
 import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**

@@ -1,5 +1,5 @@
 import { errors } from 'undici';
-import { DbSipNumber, DbTokenType } from '../../pg/types';
+import { DbSipNumber, DbTokenType } from '../../pg/types.js';
 
 export function dbSipNumberToDbTokenType(sip: DbSipNumber): DbTokenType {
   switch (sip) {

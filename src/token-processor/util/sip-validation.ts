@@ -8,8 +8,8 @@ import {
   decodeClarityValue,
   TxPayloadTypeID,
 } from '@stacks/codec';
-import { DbSipNumber } from '../../pg/types';
-import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor';
+import { DbSipNumber } from '../../pg/types.js';
+import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor.js';
 import { NewBlockContractEvent } from '@stacks/node-publisher-client';
 
 const FtTraitFunctions: ClarityAbiFunction[] = [

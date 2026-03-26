@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { parseContractIdentifiers } from '../../src/api/util/helpers';
+import { parseContractIdentifiers } from '../../src/api/util/helpers.js';
 import { describe, test } from 'node:test';
 
 describe('parseContractIdentifiers', () => {

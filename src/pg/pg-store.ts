@@ -1,4 +1,4 @@
-import { ENV } from '../env';
+import { ENV } from '../env.js';
 import {
   DbSmartContract,
   DbJobStatus,
@@ -18,7 +18,7 @@ import {
   DbFungibleTokenOrder,
   DbJobInvalidReason,
   DbBlock,
-} from './types';
+} from './types.js';
 import {
   ContractNotFoundError,
   InvalidContractError,
@@ -26,8 +26,8 @@ import {
   TokenLocaleNotFoundError,
   TokenNotFoundError,
   TokenNotProcessedError,
-} from './errors';
-import { FtOrderBy, Order } from '../api/schemas';
+} from './errors.js';
+import { FtOrderBy, Order } from '../api/schemas.js';
 import {
   BasePgStore,
   PgSqlClient,
@@ -36,7 +36,11 @@ import {
   runMigrations,
 } from '@stacks/api-toolkit';
 import * as path from 'path';
-import { StacksCorePgStore } from './stacks-core-pg-store';
+import { fileURLToPath } from 'url';
+import { StacksCorePgStore } from './stacks-core-pg-store.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 

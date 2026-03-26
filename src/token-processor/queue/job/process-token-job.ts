@@ -6,16 +6,16 @@ import {
   DbSmartContract,
   DbToken,
   DbTokenType,
-} from '../../../pg/types';
-import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client';
-import { SmartContractClarityError } from '../../util/errors';
+} from '../../../pg/types.js';
+import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
+import { SmartContractClarityError } from '../../util/errors.js';
 import {
   fetchAllMetadataLocalesFromBaseUri,
   getFetchableMetadataUrl,
   getTokenSpecificUri,
-} from '../../util/metadata-helpers';
-import { RetryableJobError } from '../errors';
-import { Job } from './job';
+} from '../../util/metadata-helpers.js';
+import { RetryableJobError } from '../errors.js';
+import { Job } from './job.js';
 import { PgNumeric, logger } from '@stacks/api-toolkit';
 
 /**

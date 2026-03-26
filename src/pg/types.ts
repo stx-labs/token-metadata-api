@@ -1,5 +1,5 @@
 import { PgJsonb, PgNumeric } from '@stacks/api-toolkit';
-import { FtOrderBy, Order } from '../api/schemas';
+import { FtOrderBy, Order } from '../api/schemas.js';
 
 export type DbBlock = {
   index_block_hash: string;

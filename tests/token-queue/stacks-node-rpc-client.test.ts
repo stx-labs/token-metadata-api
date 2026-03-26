@@ -7,13 +7,13 @@ import {
   noneCV,
 } from '@stacks/transactions';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { ENV } from '../../src/env';
-import { RetryableJobError } from '../../src/token-processor/queue/errors';
-import { StacksNodeRpcClient } from '../../src/token-processor/stacks-node/stacks-node-rpc-client';
+import { ENV } from '../../src/env.js';
+import { RetryableJobError } from '../../src/token-processor/queue/errors.js';
+import { StacksNodeRpcClient } from '../../src/token-processor/stacks-node/stacks-node-rpc-client.js';
 import {
   StacksNodeJsonParseError,
   StacksNodeHttpError,
-} from '../../src/token-processor/util/errors';
+} from '../../src/token-processor/util/errors.js';
 import { beforeEach, describe, test } from 'node:test';
 
 describe('StacksNodeRpcClient', () => {
