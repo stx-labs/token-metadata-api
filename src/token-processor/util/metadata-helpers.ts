@@ -1,5 +1,5 @@
 import * as querystring from 'querystring';
-import * as JSON5 from 'json5';
+import JSON5 from 'json5';
 import { Agent, errors, request } from 'undici';
 import {
   DbMetadataAttributeInsert,
@@ -358,6 +358,7 @@ function parseJsonMetadata(url: string, content?: string): RawMetadata {
       throw new MetadataParseError(`Invalid raw metadata JSON schema: ${url}`);
     }
   } catch (error) {
+    if (error instanceof MetadataParseError) throw error;
     throw new MetadataParseError(`JSON parse error: ${url}`);
   }
 }

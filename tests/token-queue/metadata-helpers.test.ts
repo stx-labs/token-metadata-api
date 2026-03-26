@@ -43,7 +43,7 @@ describe('Metadata Helpers', () => {
 
     await assert.rejects(
       getMetadataFromUri('http://test.io/1.json', 'ABCD.test', 1n),
-      /JSON parse error/
+      MetadataParseError
     );
   });
 
