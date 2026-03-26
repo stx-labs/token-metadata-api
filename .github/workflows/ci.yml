@@ -59,17 +59,6 @@ jobs:
       matrix:
         suite: [admin, api, stacks-core, token-queue]
     runs-on: ubuntu-latest
-    env:
-      API_HOST: 127.0.0.1
-      API_PORT: 3000
-      PROMETHEUS_PORT: 9153
-      PGHOST: 127.0.0.1
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: postgres
-      STACKS_NODE_RPC_HOST: 127.0.0.1
-      STACKS_NODE_RPC_PORT: 24440
     steps:
       - uses: actions/checkout@v6
         with:

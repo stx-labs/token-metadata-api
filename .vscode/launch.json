@@ -6,8 +6,8 @@
       "request": "launch",
       "name": "start",
       "runtimeArgs": [
-        "-r",
-        "ts-node/register"
+        "--import",
+        "tsx"
       ],
       "args": [
         "${workspaceFolder}/src/index.ts"
@@ -15,8 +15,7 @@
       "outputCapture": "std",
       "internalConsoleOptions": "openOnSessionStart",
       "env": {
-        "NODE_ENV": "development",
-        "TS_NODE_SKIP_IGNORE": "true"
+        "NODE_ENV": "development"
       },
       "killBehavior": "polite",
     },
@@ -25,8 +24,8 @@
       "request": "launch",
       "name": "start: readonly",
       "runtimeArgs": [
-        "-r",
-        "ts-node/register"
+        "--import",
+        "tsx"
       ],
       "args": [
         "${workspaceFolder}/src/index.ts"
@@ -35,7 +34,6 @@
       "internalConsoleOptions": "openOnSessionStart",
       "env": {
         "NODE_ENV": "development",
-        "TS_NODE_SKIP_IGNORE": "true",
         "RUN_MODE": "readonly"
       },
       "killBehavior": "polite",
@@ -45,8 +43,8 @@
       "request": "launch",
       "name": "start: writeonly",
       "runtimeArgs": [
-        "-r",
-        "ts-node/register"
+        "--import",
+        "tsx"
       ],
       "args": [
         "${workspaceFolder}/src/index.ts"
@@ -55,31 +53,9 @@
       "internalConsoleOptions": "openOnSessionStart",
       "env": {
         "NODE_ENV": "development",
-        "TS_NODE_SKIP_IGNORE": "true",
         "RUN_MODE": "writeonly"
       },
       "killBehavior": "polite",
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "test",
-      "runtimeExecutable": "node",
-      "args": [
-        "--import",
-        "tsx",
-        "--import",
-        "${workspaceFolder}/tests/setup-env.ts",
-        "--test",
-        "--test-concurrency=1",
-      ],
-      "outputCapture": "std",
-      "console": "integratedTerminal",
-      "preLaunchTask": "npm: testenv:run",
-      "postDebugTask": "npm: testenv:stop",
-      "env": {
-        "NODE_ENV": "test"
-      },
     },
     {
       "type": "node",
@@ -108,16 +84,13 @@
       "args": [
         "--import",
         "tsx",
-        "--import",
-        "${workspaceFolder}/tests/setup-env.ts",
         "--test",
+        "--test-global-setup=./tests/setup.ts",
         "--test-concurrency=1",
         "${workspaceFolder}/tests/api/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: testenv:run",
-      "postDebugTask": "npm: testenv:stop",
       "env": {
         "NODE_ENV": "test"
       },
@@ -130,16 +103,13 @@
       "args": [
         "--import",
         "tsx",
-        "--import",
-        "${workspaceFolder}/tests/setup-env.ts",
         "--test",
+        "--test-global-setup=./tests/setup.ts",
         "--test-concurrency=1",
         "${workspaceFolder}/tests/stacks-core/*.test.ts",
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: testenv:run",
-      "postDebugTask": "npm: testenv:stop",
       "env": {
         "NODE_ENV": "test"
       },
@@ -152,16 +122,13 @@
       "args": [
         "--import",
         "tsx",
-        "--import",
-        "${workspaceFolder}/tests/setup-env.ts",
         "--test",
+        "--test-global-setup=./tests/setup.ts",
         "--test-concurrency=1",
         "${workspaceFolder}/tests/token-queue/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: testenv:run",
-      "postDebugTask": "npm: testenv:stop",
       "env": {
         "NODE_ENV": "test"
       },
