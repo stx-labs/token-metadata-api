@@ -14,7 +14,7 @@ import { generateTokenErrorResponse, TokenErrorResponseSchema } from '../util/er
 
 export const SftRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleTokenCache);

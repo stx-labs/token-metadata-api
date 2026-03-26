@@ -23,15 +23,15 @@
     "test:stacks-core": "NODE_ENV=test node --import tsx --test --test-global-setup=./tests/setup.ts --test-concurrency=1 ./tests/stacks-core/*.test.ts",
     "test:token-queue": "NODE_ENV=test node --import tsx --test --test-global-setup=./tests/setup.ts --test-concurrency=1 ./tests/token-queue/*.test.ts",
     "migrate": "node --import tsx node_modules/.bin/node-pg-migrate -j ts",
-    "lint:eslint": "eslint . --ext .js,.jsx,.ts,.tsx -f unix",
-    "lint:prettier": "prettier --check src/**/*.ts tests/**/*.ts migrations/**/*.ts",
+    "lint:eslint": "eslint .",
+    "lint:prettier": "prettier --check src/**/*.ts",
     "generate:openapi": "rimraf ./openapi.yaml && node --import tsx ./util/openapi-generator.ts",
     "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
     "generate:client": "openapi-typescript ./openapi.yaml -o ./client/src/generated/schema.d.ts"
   },
   "prettier": "@stacks/prettier-config",
   "devDependencies": {
-    "@stacks/eslint-config": "^2.0.0",
+    "@stacks/eslint-config": "^3.0.0-develop.2",
     "@types/dockerode": "^3.3.40",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",

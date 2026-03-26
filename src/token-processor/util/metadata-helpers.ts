@@ -298,7 +298,9 @@ export async function fetchMetadata(
       throw new TooManyRequestsHttpError(httpUrl, error);
     } else if (
       error instanceof TypeError &&
-      ((error as UndiciCauseTypeError).cause as any).toString().includes('ECONNRESET')
+      ((error as UndiciCauseTypeError).cause as { toString(): string })
+        .toString()
+        .includes('ECONNRESET')
     ) {
       throw new MetadataHttpError(`Server connection interrupted`, error);
     }
@@ -411,7 +413,7 @@ export function getFetchableMetadataUrl(uri: string): FetchableMetadataUrl {
     }
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     throw new MetadataParseError(`Invalid uri: ${uri}`);
   }
 }
@@ -454,7 +456,7 @@ export function parseDataUrl(
     parsed.base64 = !!parts[parts.length - 2];
     parsed.data = parts[parts.length - 1] || '';
     return parsed;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }

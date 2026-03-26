@@ -24,7 +24,7 @@ export const TokenErrorResponseSchema = {
   422: ErrorResponse,
 };
 
-export async function generateTokenErrorResponse(error: any, reply: FastifyReply) {
+export async function generateTokenErrorResponse(error: unknown, reply: FastifyReply) {
   setReplyNonCacheable(reply);
   if (error instanceof TokenNotFoundError) {
     await reply.code(404).send(Value.Create(TokenNotFoundResponse));

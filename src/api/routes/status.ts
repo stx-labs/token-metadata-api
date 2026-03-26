@@ -9,7 +9,7 @@ export const StatusRoutes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
-> = (fastify, options, done) => {
+> = (fastify, _options, done) => {
   fastify.addHook('preHandler', handleChainTipCache);
   fastify.get(
     '/',
@@ -24,7 +24,7 @@ export const StatusRoutes: FastifyPluginCallback<
         },
       },
     },
-    async (request, reply) => {
+    async (_request, reply) => {
       const result = await fastify.db.sqlTransaction(async sql => {
         let chain_tip = null;
         const chainTipResult = await fastify.db.core.getChainTip(sql);

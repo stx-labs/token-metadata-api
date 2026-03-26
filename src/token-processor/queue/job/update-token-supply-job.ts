@@ -20,7 +20,7 @@ export class UpdateTokenSupplyJob extends Job {
     if (!tokenId) {
       return;
     }
-    const [token, contract] = await this.db.sqlTransaction(async sql => {
+    const [token, contract] = await this.db.sqlTransaction(async _sql => {
       const token = await this.db.getToken({ id: tokenId });
       if (!token) {
         logger.warn(`UpdateTokenSupplyJob token not found id=${tokenId}`);

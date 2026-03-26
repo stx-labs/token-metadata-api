@@ -69,7 +69,7 @@ export class StacksNodeRpcClient {
     const uintVal = this.checkAndParseUintCV(clarityValue);
     try {
       return BigInt(uintVal.value.toString());
-    } catch (error) {
+    } catch (_error) {
       throw new SmartContractClarityError(`Invalid uint value '${uintVal.value}'`);
     }
   }
@@ -88,7 +88,7 @@ export class StacksNodeRpcClient {
       }
       try {
         return JSON.parse(text) as ClarityAbi;
-      } catch (error) {
+      } catch (_error) {
         throw new StacksNodeJsonParseError(`JSON parse error ${url}: ${text}`);
       }
     } catch (error) {
@@ -122,7 +122,7 @@ export class StacksNodeRpcClient {
       }
       try {
         return JSON.parse(text) as ReadOnlyContractCallResponse;
-      } catch (error) {
+      } catch (_error) {
         throw new StacksNodeJsonParseError(`JSON parse error ${url}: ${text}`);
       }
     } catch (error) {

@@ -16,7 +16,7 @@ import { PINO_LOGGER_CONFIG } from '@stacks/api-toolkit';
 
 export const Api: FastifyPluginAsync<Record<never, never>, Server, TypeBoxTypeProvider> = async (
   fastify,
-  options
+  _options
 ) => {
   await fastify.register(FtRoutes);
   await fastify.register(NftRoutes);

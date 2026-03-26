@@ -224,7 +224,7 @@ export function getSmartContractSip(abi: ClarityAbi): DbSipNumber | undefined {
     if (abi.fungible_tokens.length > 0 && abiContains(abi, FtTraitFunctions)) {
       return DbSipNumber.sip010;
     }
-  } catch (error) {
+  } catch (_error) {
     // Not a token contract.
   }
 }
@@ -249,10 +249,11 @@ function findFunction(fun: ClarityAbiFunction, functionList: ClarityAbiFunction[
 
 function stringFromValue(value: codec.ClarityValue): string {
   switch (value.type_id) {
-    case codec.ClarityTypeID.Buffer:
+    case codec.ClarityTypeID.Buffer: {
       const parts = value.buffer.substring(2).match(/.{1,2}/g) ?? [];
       const arr = Uint8Array.from(parts.map(byte => parseInt(byte, 16)));
       return Buffer.from(arr).toString('utf8');
+    }
     case codec.ClarityTypeID.StringAscii:
     case codec.ClarityTypeID.StringUtf8:
       return value.data;
@@ -381,7 +382,7 @@ export function getContractLogMetadataUpdateNotification(
       update_mode: updateMode,
       ttl: ttl,
     };
-  } catch (error) {
+  } catch (_error) {
     return;
   }
 }
@@ -411,7 +412,7 @@ export function getContractLogSftMintEvent(
       amount: BigInt(amount),
       recipient: recipient,
     };
-  } catch (error) {
+  } catch (_error) {
     return;
   }
 }

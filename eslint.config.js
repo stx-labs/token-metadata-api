@@ -3,14 +3,7 @@ import tsdoc from 'eslint-plugin-tsdoc';
 
 export default [
   {
-    ignores: [
-      'lib/**',
-      'client/**',
-      'utils/**',
-      'migrations/**',
-      'tests/**',
-      'stacks-blockchain/**',
-    ],
+    ignores: ['dist/**', 'client/**', 'util/**', 'migrations/**', 'tests/**', 'coverage/**'],
   },
   ...stacksConfig,
   {

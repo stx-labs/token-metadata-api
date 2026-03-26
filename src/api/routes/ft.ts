@@ -22,7 +22,7 @@ import { parseMetadataLocaleBundle } from '../util/helpers.js';
 
 const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleChainTipCache);
@@ -98,7 +98,7 @@ const IndexRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
 
 const ShowRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
-  options,
+  _options,
   done
 ) => {
   fastify.addHook('preHandler', handleTokenCache);

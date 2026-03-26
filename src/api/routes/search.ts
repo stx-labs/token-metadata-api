@@ -9,7 +9,7 @@ export const SearchRoutes: FastifyPluginCallback<
   Record<never, never>,
   Server,
   TypeBoxTypeProvider
-> = (fastify, options, done) => {
+> = (fastify, _options, done) => {
   fastify.addHook('preHandler', handleBulkTokenCache);
   fastify.get(
     '/search',

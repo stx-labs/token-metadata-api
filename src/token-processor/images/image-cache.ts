@@ -175,7 +175,7 @@ export async function processImageCache(
       if (typeError.cause instanceof errors.ResponseExceededMaxSizeError) {
         throw new ImageSizeExceededError(`ImageCache image too large: ${rawImgUrl}`);
       }
-      if ((typeError.cause as any).toString().includes('ECONNRESET')) {
+      if ((typeError.cause as { toString(): string }).toString().includes('ECONNRESET')) {
         throw new ImageHttpError(`ImageCache server connection interrupted`, typeError);
       }
     }
@@ -188,7 +188,7 @@ export async function reprocessTokenImageCache(
   contractPrincipal: string,
   tokenIds?: number[]
 ): Promise<void> {
-  await db.sqlWriteTransaction(async sql => {
+  await db.sqlWriteTransaction(async _sql => {
     const imageUris = await db.getTokenImageUris(contractPrincipal, tokenIds);
     for (const token of imageUris) {
       try {
