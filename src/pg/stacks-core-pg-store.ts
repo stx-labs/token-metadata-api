@@ -20,6 +20,7 @@ import {
   DbRateLimitedHostInsert,
   DbMetadataInsert,
   DbMetadataAttributeInsert,
+  DbMetadataPropertyInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
 import { DecodedStacksBlock } from '../stacks-core/stacks-core-block-processor';
@@ -573,7 +574,7 @@ export class StacksCorePgStore extends BasePgStoreModule {
             await sql`INSERT INTO metadata_attributes ${sql(values)}`;
           }
           if (locale.properties && locale.properties.length > 0) {
-            const values = locale.properties.map(property => ({
+            const values: DbMetadataPropertyInsert[] = locale.properties.map(property => ({
               name: property.name,
               value:
                 typeof property.value == 'boolean'
