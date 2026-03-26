@@ -79,7 +79,6 @@ export class StacksNodeRpcClient {
     try {
       const result = await request(url, {
         method: 'GET',
-        throwOnError: true,
       });
       const text = await result.body.text();
       if (result.statusCode >= 400) {
@@ -114,7 +113,6 @@ export class StacksNodeRpcClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        throwOnError: true,
       });
       const text = await result.body.text();
       if (result.statusCode >= 400) {

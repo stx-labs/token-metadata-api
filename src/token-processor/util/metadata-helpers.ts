@@ -266,7 +266,6 @@ export async function fetchMetadata(
     logger.info(`MetadataFetch for ${contract_principal}#${token_number} from ${url}`);
     const result = await request(url, {
       method: 'GET',
-      throwOnError: true,
       headers,
       dispatcher:
         // Disable during tests so we can inject a global mock agent.
