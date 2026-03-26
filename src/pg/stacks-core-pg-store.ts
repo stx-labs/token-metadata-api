@@ -18,6 +18,7 @@ import {
   DbProcessedTokenUpdateBundle,
   DbRateLimitedHost,
   DbRateLimitedHostInsert,
+  DbMetadataInsert,
   DbMetadataAttributeInsert,
 } from './types';
 import { dbSipNumberToDbTokenType } from '../token-processor/util/helpers';
@@ -546,9 +547,20 @@ export class StacksCorePgStore extends BasePgStoreModule {
       // Write new metadata
       if (args.values.metadataLocales && args.values.metadataLocales.length > 0) {
         for (const locale of args.values.metadataLocales) {
-          delete (locale.metadata as Record<string, unknown>)['id'];
+          const metadataValues: DbMetadataInsert = {
+            sip: locale.metadata.sip,
+            token_id: args.id,
+            name: locale.metadata.name,
+            l10n_locale: locale.metadata.l10n_locale,
+            l10n_uri: locale.metadata.l10n_uri,
+            l10n_default: locale.metadata.l10n_default,
+            description: locale.metadata.description,
+            image: locale.metadata.image,
+            cached_image: locale.metadata.cached_image,
+            cached_thumbnail_image: locale.metadata.cached_thumbnail_image,
+          };
           const metadataInsert = await sql<{ id: number }[]>`
-            INSERT INTO metadata ${sql(locale.metadata)} RETURNING id
+            INSERT INTO metadata ${sql(metadataValues)} RETURNING id
           `;
           const metadataId = metadataInsert[0].id;
           if (locale.attributes && locale.attributes.length > 0) {
