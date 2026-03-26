@@ -8,6 +8,7 @@ import { DbJobStatus, DbSipNumber } from '../../src/pg/types.js';
 import {
   insertAndEnqueueTestContractWithTokens,
   markAllJobsAsDone,
+  setupEnv,
   SIP_010_ABI,
   TestFastifyServer,
 } from '../helpers.js';
@@ -20,7 +21,7 @@ describe('Admin RPC', () => {
   let jobQueue: JobQueue;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     jobQueue = new JobQueue({ db, network: 'mainnet' });
     fastify = await buildAdminRpcServer({ db, jobQueue });

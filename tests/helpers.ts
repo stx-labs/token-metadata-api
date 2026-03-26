@@ -2,7 +2,7 @@ import * as http from 'http';
 import { PgStore } from '../src/pg/pg-store.js';
 import { buildApiServer } from '../src/api/init.js';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import { IncomingMessage, Server, ServerResponse } from 'http';
+import { IncomingMessage, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { SmartContractDeployment } from '../src/token-processor/util/sip-validation.js';
 import { DbJob, DbSipNumber, DbSmartContract, DbUpdateNotification } from '../src/pg/types.js';
@@ -20,14 +20,31 @@ import {
 } from '@stacks/codec';
 import { ClarityAbi } from '@stacks/transactions';
 import { NewBlockEventType } from '@stacks/node-publisher-client';
+import { ENV } from '../src/env.js';
 
 export type TestFastifyServer = FastifyInstance<
-  Server,
+  http.Server,
   IncomingMessage,
   ServerResponse,
   FastifyBaseLogger,
   TypeBoxTypeProvider
 >;
+
+export function setupEnv() {
+  process.env.PGUSER = 'postgres';
+  process.env.PGDATABASE = 'postgres';
+  process.env.PGPASSWORD = 'postgres';
+  ENV.STACKS_NODE_RPC_HOST = 'localhost';
+  ENV.STACKS_NODE_RPC_PORT = 24000;
+  ENV.PGHOST = 'localhost';
+  ENV.PGPORT = 5432;
+  ENV.PGUSER = 'postgres';
+  ENV.PGDATABASE = 'postgres';
+  ENV.PGPASSWORD = 'postgres';
+  ENV.NETWORK = 'mainnet';
+  ENV.SNP_REDIS_URL = 'redis://localhost:6379';
+  ENV.SNP_REDIS_STREAM_KEY_PREFIX = 'test';
+}
 
 export async function startTestApiServer(db: PgStore): Promise<TestFastifyServer> {
   return await buildApiServer({ db });

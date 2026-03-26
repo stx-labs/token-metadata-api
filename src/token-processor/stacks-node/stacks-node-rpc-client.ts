@@ -1,4 +1,4 @@
-import { ClarityTypeID, ClarityValue, ClarityValueUInt, decodeClarityValue } from '@stacks/codec';
+import codec from '@stacks/codec';
 import { request, errors } from 'undici';
 import { ENV } from '../../env.js';
 import { RetryableJobError } from '../queue/errors.js';
@@ -55,7 +55,7 @@ export class StacksNodeRpcClient {
 
   async readStringFromContract(
     functionName: string,
-    functionArgs: ClarityValue[] = []
+    functionArgs: codec.ClarityValue[] = []
   ): Promise<string | undefined> {
     const clarityValue = await this.makeReadOnlyContractCall(functionName, functionArgs);
     return this.checkAndParseString(clarityValue);
@@ -63,7 +63,7 @@ export class StacksNodeRpcClient {
 
   async readUIntFromContract(
     functionName: string,
-    functionArgs: ClarityValue[] = []
+    functionArgs: codec.ClarityValue[] = []
   ): Promise<bigint | undefined> {
     const clarityValue = await this.makeReadOnlyContractCall(functionName, functionArgs);
     const uintVal = this.checkAndParseUintCV(clarityValue);
@@ -101,7 +101,7 @@ export class StacksNodeRpcClient {
 
   private async sendReadOnlyContractCall(
     functionName: string,
-    functionArgs: ClarityValue[]
+    functionArgs: codec.ClarityValue[]
   ): Promise<ReadOnlyContractCallResponse> {
     const body = {
       sender: this.senderAddress,
@@ -135,8 +135,8 @@ export class StacksNodeRpcClient {
 
   private async makeReadOnlyContractCall(
     functionName: string,
-    functionArgs: ClarityValue[]
-  ): Promise<ClarityValue> {
+    functionArgs: codec.ClarityValue[]
+  ): Promise<codec.ClarityValue> {
     const result = await this.sendReadOnlyContractCall(functionName, functionArgs);
     if (!result.okay) {
       if (result.cause.startsWith('Runtime')) {
@@ -150,23 +150,23 @@ export class StacksNodeRpcClient {
       }
       throw new SmartContractClarityError(`Read-only error ${functionName}: ${result.cause}`);
     }
-    return decodeClarityValue(result.result);
+    return codec.decodeClarityValue(result.result);
   }
 
-  private unwrapClarityType(clarityValue: ClarityValue): ClarityValue {
-    let unwrappedClarityValue: ClarityValue = clarityValue;
+  private unwrapClarityType(clarityValue: codec.ClarityValue): codec.ClarityValue {
+    let unwrappedClarityValue: codec.ClarityValue = clarityValue;
     while (
-      unwrappedClarityValue.type_id === ClarityTypeID.ResponseOk ||
-      unwrappedClarityValue.type_id === ClarityTypeID.OptionalSome
+      unwrappedClarityValue.type_id === codec.ClarityTypeID.ResponseOk ||
+      unwrappedClarityValue.type_id === codec.ClarityTypeID.OptionalSome
     ) {
       unwrappedClarityValue = unwrappedClarityValue.value;
     }
     return unwrappedClarityValue;
   }
 
-  private checkAndParseUintCV(responseCV: ClarityValue): ClarityValueUInt {
+  private checkAndParseUintCV(responseCV: codec.ClarityValue): codec.ClarityValueUInt {
     const unwrappedClarityValue = this.unwrapClarityType(responseCV);
-    if (unwrappedClarityValue.type_id === ClarityTypeID.UInt) {
+    if (unwrappedClarityValue.type_id === codec.ClarityTypeID.UInt) {
       return unwrappedClarityValue;
     }
     throw new SmartContractClarityError(
@@ -174,14 +174,14 @@ export class StacksNodeRpcClient {
     );
   }
 
-  private checkAndParseString(responseCV: ClarityValue): string | undefined {
+  private checkAndParseString(responseCV: codec.ClarityValue): string | undefined {
     const unwrappedClarityValue = this.unwrapClarityType(responseCV);
     if (
-      unwrappedClarityValue.type_id === ClarityTypeID.StringAscii ||
-      unwrappedClarityValue.type_id === ClarityTypeID.StringUtf8
+      unwrappedClarityValue.type_id === codec.ClarityTypeID.StringAscii ||
+      unwrappedClarityValue.type_id === codec.ClarityTypeID.StringUtf8
     ) {
       return unwrappedClarityValue.data;
-    } else if (unwrappedClarityValue.type_id === ClarityTypeID.OptionalNone) {
+    } else if (unwrappedClarityValue.type_id === codec.ClarityTypeID.OptionalNone) {
       return undefined;
     }
     throw new SmartContractClarityError(

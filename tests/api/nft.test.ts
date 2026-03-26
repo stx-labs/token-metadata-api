@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { ENV } from '../../src/env.js';
 import { MIGRATIONS_DIR, PgStore } from '../../src/pg/pg-store.js';
 import {
   insertAndEnqueueTestContract,
   insertAndEnqueueTestContractWithTokens,
+  setupEnv,
   startTestApiServer,
   TestFastifyServer,
 } from '../helpers.js';
@@ -16,7 +16,7 @@ describe('NFT routes', () => {
   let fastify: TestFastifyServer;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     fastify = await startTestApiServer(db);
     await cycleMigrations(MIGRATIONS_DIR);

@@ -1,5 +1,5 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
+import codec from '@stacks/codec';
 import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types.js';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
 import { SmartContractClarityError } from '../../util/errors.js';
@@ -80,7 +80,7 @@ export class UpdateTokenSupplyJob extends Job {
   private async updateTokenSupply(
     client: StacksNodeRpcClient,
     token: DbToken,
-    arg: ClarityValueUInt[] = []
+    arg: codec.ClarityValueUInt[] = []
   ) {
     let fTotalSupply: PgNumeric | undefined;
     try {
@@ -100,13 +100,13 @@ export class UpdateTokenSupplyJob extends Job {
     await this.db.core.updateTokenSupply({ id: token.id, total_supply: fTotalSupply });
   }
 
-  private uIntCv(n: bigint): ClarityValueUInt {
+  private uIntCv(n: bigint): codec.ClarityValueUInt {
     const cv = uintCV(n);
     const hex = cvToHex(cv);
     return {
       value: n.toString(),
       hex: hex,
-      repr: decodeClarityValueToRepr(hex),
-    } as ClarityValueUInt;
+      repr: codec.decodeClarityValueToRepr(hex),
+    } as codec.ClarityValueUInt;
   }
 }

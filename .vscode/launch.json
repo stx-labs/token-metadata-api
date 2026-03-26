@@ -89,16 +89,13 @@
       "args": [
         "--import",
         "tsx",
-        "--import",
-        "${workspaceFolder}/tests/setup-env.ts",
         "--test",
+        "--test-global-setup=./tests/setup.ts",
         "--test-concurrency=1",
         "${workspaceFolder}/tests/admin/*.test.ts"
       ],
       "outputCapture": "std",
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: testenv:run",
-      "postDebugTask": "npm: testenv:stop",
       "env": {
         "NODE_ENV": "test"
       },

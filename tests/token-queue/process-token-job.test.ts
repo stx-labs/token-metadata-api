@@ -15,7 +15,7 @@ import { ProcessTokenJob } from '../../src/token-processor/queue/job/process-tok
 import { parseRetryAfterResponseHeader } from '../../src/token-processor/util/helpers.js';
 import { RetryableJobError } from '../../src/token-processor/queue/errors.js';
 import { cycleMigrations } from '@stacks/api-toolkit';
-import { insertAndEnqueueTestContractWithTokens } from '../helpers.js';
+import { insertAndEnqueueTestContractWithTokens, setupEnv } from '../helpers.js';
 import { InvalidTokenError } from '../../src/pg/errors.js';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 
@@ -23,7 +23,7 @@ describe('ProcessTokenJob', () => {
   let db: PgStore;
 
   beforeEach(async () => {
-    ENV.PGDATABASE = 'postgres';
+    setupEnv();
     db = await PgStore.connect({ skipMigrations: true });
     await cycleMigrations(MIGRATIONS_DIR);
   });
