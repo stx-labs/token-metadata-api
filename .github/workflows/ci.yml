@@ -70,6 +70,7 @@ jobs:
       PGDATABASE: postgres
       STACKS_NODE_RPC_HOST: 127.0.0.1
       STACKS_NODE_RPC_PORT: 24440
+      SNP_REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v6
         with:
