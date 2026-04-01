@@ -47,7 +47,10 @@ export class UpdateTokenSupplyJob extends Job {
         await this.handleFt(client, token);
         break;
       case DbTokenType.nft:
-        throw new Error(`UpdateTokenSupplyJob does not support NFTs`);
+        logger.warn(
+          `UpdateTokenSupplyJob does not support NFTs, ignoring job ${this.description()}`
+        );
+        return;
       case DbTokenType.sft:
         await this.handleSft(client, token);
         break;
@@ -62,7 +65,7 @@ export class UpdateTokenSupplyJob extends Job {
       case DbTokenType.ft:
         return `FT SUPPLY ${this.contract.principal} (id=${this.token.id})`;
       case DbTokenType.nft:
-        throw new Error(`UpdateTokenSupplyJob does not support NFTs`);
+        return `NFT SUPPLY ${this.contract.principal}#${this.token.token_number} (id=${this.token.id})`;
       case DbTokenType.sft:
         return `SFT SUPPLY ${this.contract.principal}#${this.token.token_number} (id=${this.token.id})`;
     }
