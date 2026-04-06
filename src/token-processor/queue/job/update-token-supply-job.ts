@@ -2,7 +2,7 @@ import { cvToHex, uintCV } from '@stacks/transactions';
 import codec from '@stacks/codec';
 import { DbSmartContract, DbToken, DbTokenType } from '../../../pg/types.js';
 import { StacksNodeRpcClient } from '../../stacks-node/stacks-node-rpc-client.js';
-import { SmartContractClarityError } from '../../util/errors.js';
+import { SmartContractClarityError, UserError } from '../../util/errors.js';
 import { Job } from './job.js';
 import { PgNumeric, logger } from '@stacks/api-toolkit';
 
@@ -47,7 +47,9 @@ export class UpdateTokenSupplyJob extends Job {
         await this.handleFt(client, token);
         break;
       case DbTokenType.nft:
-        throw new Error(`UpdateTokenSupplyJob does not support NFTs`);
+        throw new UserError(
+          `NFTs do not have a total supply. Malformed token ${contract.principal}#${token.token_number} (id=${token.id})`
+        );
       case DbTokenType.sft:
         await this.handleSft(client, token);
         break;
@@ -62,7 +64,8 @@ export class UpdateTokenSupplyJob extends Job {
       case DbTokenType.ft:
         return `FT SUPPLY ${this.contract.principal} (id=${this.token.id})`;
       case DbTokenType.nft:
-        throw new Error(`UpdateTokenSupplyJob does not support NFTs`);
+        // Not supported.
+        return 'UpdateTokenSupplyJob';
       case DbTokenType.sft:
         return `SFT SUPPLY ${this.contract.principal}#${this.token.token_number} (id=${this.token.id})`;
     }
