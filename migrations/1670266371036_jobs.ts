@@ -72,3 +72,8 @@ export function up(pgm: MigrationBuilder): void {
     where: "status = 'queued'",
   });
 }
+
+export function down(pgm: MigrationBuilder): void {
+  pgm.dropTable('jobs');
+  pgm.dropType('job_status');
+}

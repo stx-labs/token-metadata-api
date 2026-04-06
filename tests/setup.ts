@@ -1,8 +1,8 @@
-import type { ContainerConfig } from './docker-container.ts';
-import { runDown, runUp } from './docker-container.ts';
+import type { DockerTestContainerConfig } from '@stacks/api-test-toolkit';
+import { dockerTestUp, dockerTestDown } from '@stacks/api-test-toolkit';
 
-function defaultContainers(): ContainerConfig[] {
-  const postgres: ContainerConfig = {
+function defaultContainers(): DockerTestContainerConfig[] {
+  const postgres: DockerTestContainerConfig = {
     image: 'postgres:17',
     name: `metadata-api-test-postgres`,
     ports: [{ host: 5432, container: 5432 }],
@@ -20,7 +20,7 @@ function defaultContainers(): ContainerConfig[] {
 export async function globalSetup() {
   const containers = defaultContainers();
   for (const config of containers) {
-    await runUp(config);
+    await dockerTestUp({ config });
   }
   process.stdout.write(`[testenv:metadata-api] all containers ready\n`);
 }
@@ -28,7 +28,7 @@ export async function globalSetup() {
 export async function globalTeardown() {
   const containers = defaultContainers();
   for (const config of [...containers].reverse()) {
-    await runDown(config);
+    await dockerTestDown({ config });
   }
   process.stdout.write(`[testenv:metadata-api] all containers removed\n`);
 }
