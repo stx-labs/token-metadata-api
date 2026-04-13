@@ -16,6 +16,7 @@ import {
 } from '../util/errors.js';
 import { pipeline } from 'node:stream/promises';
 import { Storage } from '@google-cloud/storage';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 /** Saves an image provided via a `data:` uri string to disk for processing. */
 function convertDataImage(uri: string, tmpPath: string): string {
@@ -113,10 +114,38 @@ async function transformImage(filePath: string, resize: boolean = false): Promis
   });
 }
 
+async function uploadImageToGcs(
+  gcs: Storage,
+  imagePath: string,
+  remoteName: string
+): Promise<void> {
+  const gcsBucket = ENV.IMAGE_CACHE_GCS_BUCKET_NAME as string;
+  const objectPrefix = ENV.IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX ?? '';
+  await gcs.bucket(gcsBucket).upload(imagePath, {
+    destination: `${objectPrefix}${remoteName}`,
+  });
+}
+
+async function uploadImageToAwsS3(
+  s3: S3Client,
+  imagePath: string,
+  remoteName: string
+): Promise<void> {
+  const awsBucket = ENV.IMAGE_CACHE_AWS_BUCKET_NAME as string;
+  const objectPrefix = ENV.IMAGE_CACHE_AWS_OBJECT_NAME_PREFIX ?? '';
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: awsBucket,
+      Key: `${objectPrefix}${remoteName}`,
+      Body: fs.createReadStream(imagePath),
+      ContentType: 'image/png',
+    })
+  );
+}
+
 /**
- * Uploads processed token metadata images to a Google Cloud Storage bucket. It also provides the
- * option to resize the image to a max width before uploading so file sizes are more manageable upon
- * display.
+ * Uploads processed token metadata images to object storage. It also provides the option to resize
+ * the image to a max width before uploading so file sizes are more manageable upon display.
  *
  * For a list of configuration options, see `env.ts`.
  */
@@ -127,8 +156,10 @@ export async function processImageCache(
 ): Promise<string[]> {
   logger.info(`ImageCache processing token ${contractPrincipal} (${tokenNumber}) at ${rawImgUrl}`);
   try {
-    const gcs = new Storage();
-    const gcsBucket = ENV.IMAGE_CACHE_GCS_BUCKET_NAME as string;
+    const storageProvider = ENV.IMAGE_CACHE_UPLOAD_PROVIDER;
+    const gcs = storageProvider === 'gcs' ? new Storage() : undefined;
+    const s3 =
+      storageProvider === 'aws' ? new S3Client({ region: ENV.IMAGE_CACHE_AWS_REGION }) : undefined;
 
     const tmpPath = `tmp/${contractPrincipal}_${tokenNumber}`;
     fs.mkdirSync(tmpPath, { recursive: true });
@@ -142,15 +173,19 @@ export async function processImageCache(
 
     const image1 = await transformImage(original);
     const remoteName1 = `${contractPrincipal}/${tokenNumber}.png`;
-    await gcs.bucket(gcsBucket).upload(image1, {
-      destination: `${ENV.IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX}${remoteName1}`,
-    });
+    if (storageProvider === 'aws' && s3) {
+      await uploadImageToAwsS3(s3, image1, remoteName1);
+    } else if (storageProvider === 'gcs' && gcs) {
+      await uploadImageToGcs(gcs, image1, remoteName1);
+    }
 
     const image2 = await transformImage(original, true);
     const remoteName2 = `${contractPrincipal}/${tokenNumber}-thumb.png`;
-    await gcs.bucket(gcsBucket).upload(image2, {
-      destination: `${ENV.IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX}${remoteName2}`,
-    });
+    if (storageProvider === 'aws' && s3) {
+      await uploadImageToAwsS3(s3, image2, remoteName2);
+    } else if (storageProvider === 'gcs' && gcs) {
+      await uploadImageToGcs(gcs, image2, remoteName2);
+    }
 
     fs.rmSync(tmpPath, { force: true, recursive: true });
     return [

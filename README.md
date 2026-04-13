@@ -46,7 +46,7 @@ fetch off-chain metadata.
 * Live tracking of FT/SFT supply through mint and burn event deltas
 * Easy to use REST JSON endpoints with ETag caching
 * Prometheus metrics for job queue status, contract and token counts, API performance, and more
-* Optional image cache/CDN via Google Cloud Storage
+* Optional image cache/CDN via Google Cloud Storage or Amazon S3
 * Run modes (`default`, `readonly`, `writeonly`) for auto-scaling deployments
 * Admin RPC server for operational tasks (retry failed jobs, refresh metadata, import contracts)
 
@@ -76,7 +76,7 @@ See the [client README](./client/README.md) or the
 | **PostgreSQL** | >= 15 (local, writable) |
 | **Stacks node** | Fully synchronized, with the RPC interface accessible |
 | **Redis** | Required for the SNP event stream (`SNP_REDIS_URL`) |
-| **Google Cloud Storage** | *(Optional)* For token image caching |
+| **Cloud object storage** | *(Optional)* Google Cloud Storage or Amazon S3 for token image caching |
 
 ### Running the service
 
@@ -215,9 +215,13 @@ All configuration is done via environment variables. Defaults are shown in paren
 | Variable | Description | Default |
 |---|---|---|
 | `IMAGE_CACHE_PROCESSOR_ENABLED` | Enable image caching | `false` |
+| `IMAGE_CACHE_UPLOAD_PROVIDER` | Image upload backend (`gcs` or `aws`) | `gcs` |
 | `IMAGE_CACHE_RESIZE_WIDTH` | Thumbnail width (px) | `300` |
 | `IMAGE_CACHE_GCS_BUCKET_NAME` | Google Cloud Storage bucket name | *(none)* |
 | `IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX` | Object name prefix in GCS | *(none)* |
+| `IMAGE_CACHE_AWS_BUCKET_NAME` | Amazon S3 bucket name | *(none)* |
+| `IMAGE_CACHE_AWS_REGION` | AWS region for S3 uploads | *(none)* |
+| `IMAGE_CACHE_AWS_OBJECT_NAME_PREFIX` | Object name prefix in S3 | *(none)* |
 | `IMAGE_CACHE_CDN_BASE_PATH` | CDN base URL for cached images | *(none)* |
 | `IMAGE_CACHE_MAX_BYTE_SIZE` | Max image size to cache (bytes) | *(none)* |
 
