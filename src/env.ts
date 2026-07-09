@@ -137,12 +137,20 @@ const schema = Type.Object({
 
   /** Enables token image uploads to a Google Cloud Storage bucket. */
   IMAGE_CACHE_PROCESSOR_ENABLED: Type.Boolean({ default: false }),
+  /** Storage provider used for token image uploads. */
+  IMAGE_CACHE_UPLOAD_PROVIDER: Type.Enum({ gcs: 'gcs', aws: 'aws' }, { default: 'gcs' }),
   /** Width to resize images into while preserving aspect ratio. */
   IMAGE_CACHE_RESIZE_WIDTH: Type.Integer({ default: 300 }),
   /** Google Cloud Storage bucket name. Example: 'assets.dev.hiro.so' */
   IMAGE_CACHE_GCS_BUCKET_NAME: Type.Optional(Type.String()),
   /** Path for object storage inside the bucket. Example: 'token-metadata-api/mainnet/' */
   IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX: Type.Optional(Type.String()),
+  /** AWS S3 bucket name for image uploads. Example: 'assets-dev-hiro-so' */
+  IMAGE_CACHE_AWS_BUCKET_NAME: Type.Optional(Type.String()),
+  /** AWS region for the S3 bucket. Example: 'us-east-1' */
+  IMAGE_CACHE_AWS_REGION: Type.Optional(Type.String()),
+  /** Path for object storage inside the AWS S3 bucket. Example: 'token-metadata-api/mainnet/' */
+  IMAGE_CACHE_AWS_OBJECT_NAME_PREFIX: Type.Optional(Type.String()),
   /**
    * Base path for URLs that will be returned to the API for storage. Example:
    * 'https://assets.dev.hiro.so/token-metadata-api/mainnet/'

@@ -15,6 +15,7 @@ describe('Image cache', () => {
 
   before(() => {
     ENV.IMAGE_CACHE_PROCESSOR_ENABLED = true;
+    ENV.IMAGE_CACHE_UPLOAD_PROVIDER = 'gcs';
     ENV.IMAGE_CACHE_GCS_BUCKET_NAME = 'test';
     ENV.IMAGE_CACHE_GCS_OBJECT_NAME_PREFIX = 'prefix/';
   });
