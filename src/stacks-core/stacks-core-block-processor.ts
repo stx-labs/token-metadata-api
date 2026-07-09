@@ -8,7 +8,12 @@ import {
   SmartContractDeployment,
   TokenMetadataUpdateNotification,
 } from '../token-processor/util/sip-validation.js';
-import codec from '@stacks/codec';
+import {
+  ClarityTypeID,
+  DecodedTxResult,
+  decodeClarityValue,
+  decodeTransaction,
+} from '@stacks/codec';
 import { StacksCorePgStore } from '../pg/stacks-core-pg-store.js';
 import { logger, stopwatch } from '@stacks/api-toolkit';
 import {
@@ -24,7 +29,7 @@ import {
 
 export type DecodedStacksTransaction = {
   tx: NewBlockTransaction;
-  decoded: codec.DecodedTxResult;
+  decoded: DecodedTxResult;
   events: NewBlockEvent[];
 };
 
@@ -53,7 +58,7 @@ export function decodeStacksCoreBlock(block: NewBlockMessage): DecodedStacksBloc
     if (tx.burnchain_op) continue;
     transactions.push({
       tx,
-      decoded: codec.decodeTransaction(tx.raw_tx.substring(2)),
+      decoded: decodeTransaction(tx.raw_tx.substring(2)),
       events: (events.get(tx.txid) || []).sort((a, b) => a.event_index - b.event_index),
     });
   }
@@ -228,8 +233,8 @@ export class StacksCoreBlockProcessor {
     event: NewBlockNftMintEvent,
     nftMints: NftMintEvent[]
   ) {
-    const value = codec.decodeClarityValue(event.nft_mint_event.raw_value);
-    if (value.type_id === codec.ClarityTypeID.UInt) {
+    const value = decodeClarityValue(event.nft_mint_event.raw_value);
+    if (value.type_id === ClarityTypeID.UInt) {
       const principal = event.nft_mint_event.asset_identifier.split('::')[0];
       const tokenId = BigInt(value.value);
       nftMints.push({

@@ -1,5 +1,5 @@
 import { cvToHex, uintCV } from '@stacks/transactions';
-import codec from '@stacks/codec';
+import { ClarityValueUInt, decodeClarityValueToRepr } from '@stacks/codec';
 import {
   DbMetadataLocaleInsertBundle,
   DbProcessedTokenUpdateBundle,
@@ -216,13 +216,13 @@ export class ProcessTokenJob extends Job {
     }
   }
 
-  private uIntCv(n: bigint): codec.ClarityValueUInt {
+  private uIntCv(n: bigint): ClarityValueUInt {
     const cv = uintCV(n);
     const hex = cvToHex(cv);
     return {
       value: n.toString(),
       hex: hex,
-      repr: codec.decodeClarityValueToRepr(hex),
-    } as codec.ClarityValueUInt;
+      repr: decodeClarityValueToRepr(hex),
+    } as ClarityValueUInt;
   }
 }

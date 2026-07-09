@@ -1,5 +1,13 @@
 import { ClarityAbiFunction, ClarityAbi } from '@stacks/transactions';
-import codec from '@stacks/codec';
+import {
+  ClarityTypeID,
+  ClarityValue,
+  ClarityValueList,
+  ClarityValueTuple,
+  ClarityValueUInt,
+  decodeClarityValue,
+  TxPayloadTypeID,
+} from '@stacks/codec';
 import { DbSipNumber } from '../../pg/types.js';
 import { DecodedStacksTransaction } from '../../stacks-core/stacks-core-block-processor.js';
 import { NewBlockContractEvent } from '@stacks/node-publisher-client';
@@ -247,19 +255,19 @@ function findFunction(fun: ClarityAbiFunction, functionList: ClarityAbiFunction[
   return found !== undefined;
 }
 
-function stringFromValue(value: codec.ClarityValue): string {
+function stringFromValue(value: ClarityValue): string {
   switch (value.type_id) {
-    case codec.ClarityTypeID.Buffer: {
+    case ClarityTypeID.Buffer: {
       const parts = value.buffer.substring(2).match(/.{1,2}/g) ?? [];
       const arr = Uint8Array.from(parts.map(byte => parseInt(byte, 16)));
       return Buffer.from(arr).toString('utf8');
     }
-    case codec.ClarityTypeID.StringAscii:
-    case codec.ClarityTypeID.StringUtf8:
+    case ClarityTypeID.StringAscii:
+    case ClarityTypeID.StringUtf8:
       return value.data;
-    case codec.ClarityTypeID.PrincipalContract:
+    case ClarityTypeID.PrincipalContract:
       return `${value.address}.${value.contract_name}`;
-    case codec.ClarityTypeID.PrincipalStandard:
+    case ClarityTypeID.PrincipalStandard:
       return value.address;
     default:
       throw new Error('Invalid clarity value');
@@ -324,12 +332,12 @@ export function getContractLogMetadataUpdateNotification(
   const sender = transaction.decoded.auth.origin_condition.signer.address;
   try {
     // Validate that we have the correct SIP-019 payload structure.
-    const value = codec.decodeClarityValue<codec.ClarityValueTuple>(log.raw_value);
+    const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);
     const notification = stringFromValue(value.data.notification);
     if (notification !== 'token-metadata-update') {
       return;
     }
-    const payload = value.data.payload as codec.ClarityValueTuple;
+    const payload = value.data.payload as ClarityValueTuple;
     const contractId = stringFromValue(payload.data['contract-id']);
     const tokenClass = stringFromValue(payload.data['token-class']);
     if (!['ft', 'nft'].includes(tokenClass)) {
@@ -349,9 +357,7 @@ export function getContractLogMetadataUpdateNotification(
     // Only NFT notifications provide token ids.
     let tokenIds: bigint[] | undefined;
     if (tokenClass === 'nft') {
-      const tokenIdList = payload.data[
-        'token-ids'
-      ] as codec.ClarityValueList<codec.ClarityValueUInt>;
+      const tokenIdList = payload.data['token-ids'] as ClarityValueList<ClarityValueUInt>;
       if (tokenIdList) {
         tokenIds = tokenIdList.list.map(i => BigInt(i.value));
       }
@@ -368,7 +374,7 @@ export function getContractLogMetadataUpdateNotification(
 
     let ttl: bigint | undefined;
     const ttlValue = payload.data['ttl'];
-    if (ttlValue && ttlValue.type_id === codec.ClarityTypeID.UInt) {
+    if (ttlValue && ttlValue.type_id === ClarityTypeID.UInt) {
       ttl = BigInt(ttlValue.value);
     }
 
@@ -394,14 +400,14 @@ export function getContractLogSftMintEvent(
   const log = event.contract_event;
   try {
     // Validate that we have the correct SIP-013 `sft_mint` payload structure.
-    const value = codec.decodeClarityValue<codec.ClarityValueTuple>(log.raw_value);
+    const value = decodeClarityValue<ClarityValueTuple>(log.raw_value);
     const type = stringFromValue(value.data.type);
     if (type !== 'sft_mint') {
       return;
     }
     const recipient = stringFromValue(value.data['recipient']);
-    const tokenId = (value.data['token-id'] as codec.ClarityValueUInt).value;
-    const amount = (value.data['amount'] as codec.ClarityValueUInt).value;
+    const tokenId = (value.data['token-id'] as ClarityValueUInt).value;
+    const amount = (value.data['amount'] as ClarityValueUInt).value;
 
     return {
       tx_id: transaction.tx.txid,
@@ -430,8 +436,8 @@ export function getSmartContractDeployment(
   const sender = transaction.decoded.auth.origin_condition.signer.address;
   const payload = transaction.decoded.payload;
   if (
-    payload.type_id === codec.TxPayloadTypeID.SmartContract ||
-    payload.type_id === codec.TxPayloadTypeID.VersionedSmartContract
+    payload.type_id === TxPayloadTypeID.SmartContract ||
+    payload.type_id === TxPayloadTypeID.VersionedSmartContract
   ) {
     const principal = `${sender}.${payload.contract_name}`;
     return {
