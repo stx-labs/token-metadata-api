@@ -58,7 +58,7 @@
     "@sinclair/typebox": "^0.34.48",
     "@stacks/api-toolkit": "^1.13.0",
     "@stacks/blockchain-api-client": "^8.14.2",
-    "@stacks/codec": "^1.6.0",
+    "@stacks/codec": "^2.1.0",
     "@stacks/node-publisher-client": "^2.0.5",
     "@stacks/transactions": "^7.4.0",
     "@types/node": "^24.0.0",
