@@ -1,7 +1,7 @@
 {
   "name": "@stx-labs/token-metadata-api",
   "description": "A microservice that indexes metadata for all Fungible, Non-Fungible, and Semi-Fungible Tokens in the Stacks blockchain and exposes it via JSON REST API endpoints",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/stx-labs/token-metadata-api.git"
@@ -25,7 +25,7 @@
     "migrate": "node --import tsx node_modules/.bin/node-pg-migrate -j ts",
     "lint:eslint": "eslint .",
     "lint:prettier": "prettier --check src/**/*.ts",
-    "generate:openapi": "rimraf ./openapi.yaml && node --import tsx ./util/openapi-generator.ts",
+    "generate:openapi": "rimraf ./openapi.yaml && NODE_ENV=development node --import tsx ./util/openapi-generator.ts",
     "generate:git-info": "rimraf .git-info && node_modules/.bin/api-toolkit-git-info",
     "generate:client": "openapi-typescript ./openapi.yaml -o ./client/src/generated/schema.d.ts"
   },

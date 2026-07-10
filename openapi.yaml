@@ -5,7 +5,7 @@ info:
     API](https://docs.hiro.so/token-metadata-api). Service that indexes metadata
     for every SIP-009, SIP-010, and SIP-013 Token in the Stacks blockchain and
     exposes it via REST API endpoints.
-  version: v2.2.1
+  version: 2.3.0
 components:
   schemas: {}
 paths:
